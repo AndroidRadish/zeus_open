@@ -1,0 +1,29 @@
+{
+  "project": {
+    "name": "zeus-open",
+    "version": "main",
+    "domain": "AI project delivery framework",
+    "tech_stack": ["Python 3", "JSON Schema", "Markdown"],
+    "created_at": "2026-04-08T14:00:00.000Z"
+  },
+  "metrics": {
+    "north_star": "adoption_rate",
+    "weights": {
+      "adoption_rate": 0.5,
+      "cross_platform_coverage": 0.3,
+      "documentation_completeness": 0.2
+    },
+    "ai_designed": false,
+    "rationale": "Framework adoption depends on ease of use across platforms, Windows support, and clear documentation."
+  },
+  "git": {
+    "commit_format": "{type}({task_id}): {description}",
+    "types": ["feat", "fix", "docs", "chore", "test", "refactor"]
+  },
+  "versions": {
+    "active": ["main"],
+    "folders": {
+      "main": ".zeus/main"
+    }
+  }
+}

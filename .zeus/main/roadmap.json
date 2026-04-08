@@ -1,0 +1,17 @@
+{
+  "version": "main",
+  "updated_at": "2026-04-08T14:00:00.000Z",
+  "milestones": [
+    {
+      "id": "M-001",
+      "title": "Bootstrap zeus-open",
+      "status": "completed",
+      "spec_ref": null,
+      "story_ids": ["US-001"],
+      "task_ids": ["T-001"],
+      "target_date": null,
+      "completed_at": "2026-04-08T14:00:00.000Z",
+      "notes": "Initial commit with runner, hooks, docs, and skills."
+    }
+  ]
+}
