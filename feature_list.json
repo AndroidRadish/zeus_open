@@ -1,13 +1,13 @@
 {
   "project": "zeus-open",
-  "updated_at": "2026-04-09T05:04:00Z",
+  "updated_at": "2026-04-09T05:06:51Z",
   "features": [
     {
       "id": "T-002",
       "title": "实现 generate_tests.py（Python 跨平台测试生成器）",
-      "status": "in_progress",
+      "status": "completed",
       "priority": "high",
-      "notes": "替代 generate-tests.sh，移除对 claude CLI 和 jq 的依赖。同事正在执行。"
+      "notes": "替代 generate-tests.sh，移除对 claude CLI 和 jq 的依赖。"
     },
     {
       "id": "T-003",
@@ -19,23 +19,23 @@
     {
       "id": "T-004",
       "title": "补齐 assets/ 静态资源",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
-      "notes": "从 zeus-main 复制 workflow SVG 和图片"
+      "notes": "从 zeus-main 复制 workflow SVG 和图片。"
     },
     {
       "id": "T-005",
       "title": "为 zeus_runner.py 增加 JSON 校验与依赖检查",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
-      "notes": "增强 runner 的健壮性，检测配置和 task 错误"
+      "notes": "增强 runner 的健壮性，检测配置和 task 错误。"
     },
     {
       "id": "T-006",
       "title": "全量文档一致性修复与收尾验证",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
-      "notes": "修复所有文档引用错误，更新 task.json/roadmap.json/evolution.md"
+      "notes": "修复所有文档引用错误，更新 task.json/roadmap.json/evolution.md，添加 .gitignore。"
     }
   ]
 }

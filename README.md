@@ -118,9 +118,9 @@ Chinese workflow diagram:
     ai-log.schema.json
     test-flow.schema.json
   scripts/
-    zeus-runner.sh
-    generate-tests.sh
-    collect-metrics.sh
+    zeus_runner.py
+    generate_tests.py
+    collect_metrics.py
 
 ## Brownfield Adoption
 
@@ -169,7 +169,7 @@ Skills should delegate intentionally:
 - brainstorming -> researcher
 - plan -> planner
 - execute -> executor
-- test generation -> tester (via `generate-tests.sh`)
+- test generation -> tester (via `generate_tests.py`)
 - feedback/evolve -> analyst
 - docs quality checks -> docs
 
@@ -179,7 +179,7 @@ Zeus uses AI-generated test flows. **Do not write test cases manually.**
 
 ```bash
 # Generate test flows for all platforms (after zeus:plan)
-bash .zeus/scripts/generate-tests.sh --version main --platforms android,chrome,ios
+python .zeus/scripts/generate_tests.py --version main --platforms android,chrome,ios
 
 # Or via skill
 /zeus:test-gen
@@ -188,7 +188,7 @@ bash .zeus/scripts/generate-tests.sh --version main --platforms android,chrome,i
 /zeus:test-gen --platforms chrome
 
 # Regenerate (overwrite existing)
-bash .zeus/scripts/generate-tests.sh --version main --force
+python .zeus/scripts/generate_tests.py --version main --force
 ```
 
 Generated files live at `.zeus/{version}/tests/{platform}.test.json` and conform to `.zeus/schemas/test-flow.schema.json`.
@@ -230,7 +230,7 @@ chore(zeus): initialize v2 evolution
 ## Troubleshooting
 
 - If `/zeus:*` commands are not discovered, restart your AI runtime session.
-- If execution stalls, verify `.zeus/scripts/zeus-runner.sh` is executable.
+- If execution stalls, verify `python .zeus/scripts/zeus_runner.py --status` works.
 - If task updates fail, check JSON validity in `.zeus/*/task.json`.
 - If commit hook fails, re-copy `.zeus/hooks/commit-msg` into `.git/hooks/`.
 

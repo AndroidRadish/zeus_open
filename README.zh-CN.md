@@ -119,9 +119,9 @@ Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档
     ai-log.schema.json
     test-flow.schema.json
   scripts/
-    zeus-runner.sh
-    generate-tests.sh
-    collect-metrics.sh
+    zeus_runner.py
+    generate_tests.py
+    collect_metrics.py
   hooks/
     commit-msg
 
@@ -170,7 +170,7 @@ Zeus 在 `.claude/agents` 下定义阶段化代理：
 - brainstorming -> researcher
 - plan -> planner
 - execute -> executor
-- 测试生成 -> tester（通过 `generate-tests.sh`）
+- 测试生成 -> tester（通过 `generate_tests.py`）
 - feedback/evolve -> analyst
 - docs quality -> docs
 
@@ -180,7 +180,7 @@ Zeus 使用 AI 自动生成测试流程。**不要手写测试用例。**
 
 ```bash
 # 在 zeus:plan 之后为所有平台生成测试流程
-bash .zeus/scripts/generate-tests.sh --version main --platforms android,chrome,ios
+python .zeus/scripts/generate_tests.py --version main --platforms android,chrome,ios
 
 # 通过 skill 调用
 /zeus:test-gen
@@ -189,7 +189,7 @@ bash .zeus/scripts/generate-tests.sh --version main --platforms android,chrome,i
 /zeus:test-gen --platforms chrome
 
 # 强制重新生成（覆盖已有文件）
-bash .zeus/scripts/generate-tests.sh --version main --force
+python .zeus/scripts/generate_tests.py --version main --force
 ```
 
 生成的文件位于 `.zeus/{version}/tests/{platform}.test.json`，遵守 `.zeus/schemas/test-flow.schema.json` 结构规范。
@@ -231,7 +231,7 @@ chore(zeus): initialize v2 evolution
 ## 故障排查
 
 - 若 `/zeus:*` 命令无法识别，请重启 AI 运行时会话。
-- 若执行阶段卡住，检查 `.zeus/scripts/zeus-runner.sh` 是否可执行。
+- 若执行阶段卡住，检查 `python .zeus/scripts/zeus_runner.py --status` 是否能正常运行。
 - 若任务更新失败，先校验 `.zeus/*/task.json` 的 JSON 格式。
 - 若 commit hook 异常，重新复制 `.zeus/hooks/commit-msg` 到 `.git/hooks/`。
 

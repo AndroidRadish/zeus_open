@@ -31,7 +31,7 @@ You receive:
 
 | Platform | How to invoke |
 |---|---|
-| **Claude Code** | `@zeus-tester` or called via `generate-tests.sh` |
+| **Claude Code** | `@zeus-tester` or called via `generate_tests.py` |
 | **Kimi Code** | `Agent(coder)` with this prompt + all input JSON pasted |
 | **GLM / Z.ai** | 主会话，提供完整输入 JSON |
 | **Codex / Gemini** | 主会话，提供完整输入 JSON |
