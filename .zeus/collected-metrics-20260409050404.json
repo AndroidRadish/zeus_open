@@ -1,0 +1,11 @@
+{
+  "collected_at": "2026-04-09T05:04:04Z",
+  "source_detail": "none",
+  "metrics": {
+    "pv": null,
+    "uv": null,
+    "conversion_rate": null,
+    "revenue": null,
+    "notes": "未配置数据源。请编辑 .zeus/scripts/collect_metrics.py 接入实际数据，或通过命令行参数指定数据源。"
+  }
+}

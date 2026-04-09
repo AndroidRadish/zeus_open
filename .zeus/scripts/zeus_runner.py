@@ -73,9 +73,84 @@ class ZeusRunner:
             return None
         return min(waves)
 
+    def validate(self) -> tuple[bool, list[str]]:
+        errors: list[str] = []
+
+        # Validate config.json
+        try:
+            config = self.load_config()
+        except Exception as e:
+            errors.append(f"config.json 无法解析: {e}")
+            return False, errors
+
+        project = config.get("project", {})
+        if not project.get("name"):
+            errors.append("config.json 缺少 project.name")
+        if not config.get("metrics", {}).get("north_star"):
+            errors.append("config.json 缺少 metrics.north_star")
+
+        # Validate task.json
+        try:
+            data = self.load_tasks()
+        except Exception as e:
+            errors.append(f"task.json 无法解析: {e}")
+            return False, errors
+
+        tasks = data.get("tasks", [])
+        if not isinstance(tasks, list):
+            errors.append("task.json 中 tasks 必须是数组")
+            return False, errors
+
+        task_ids = set()
+        for t in tasks:
+            tid = t.get("id")
+            if not tid:
+                errors.append("存在没有 id 的 task")
+                continue
+            if tid in task_ids:
+                errors.append(f"task ID 重复: {tid}")
+            task_ids.add(tid)
+
+            wave = t.get("wave")
+            if wave is not None and (not isinstance(wave, int) or wave < 1):
+                errors.append(f"{tid}: wave 必须是正整数或 null")
+
+            deps = t.get("depends_on", [])
+            if not isinstance(deps, list):
+                errors.append(f"{tid}: depends_on 必须是数组")
+                continue
+            for dep in deps:
+                if dep not in task_ids:
+                    errors.append(f"{tid}: 依赖的 task {dep} 不存在")
+
+        # Detect circular dependencies (simple DFS)
+        graph = {t["id"]: t.get("depends_on", []) for t in tasks if t.get("id")}
+
+        def has_cycle(node: str, visited: set[str], stack: set[str]) -> bool:
+            visited.add(node)
+            stack.add(node)
+            for neighbor in graph.get(node, []):
+                if neighbor not in visited:
+                    if has_cycle(neighbor, visited, stack):
+                        return True
+                elif neighbor in stack:
+                    return True
+            stack.remove(node)
+            return False
+
+        visited: set[str] = set()
+        for node in graph:
+            if node not in visited:
+                if has_cycle(node, visited, set()):
+                    errors.append("task 依赖存在闭环")
+                    break
+
+        return len(errors) == 0, errors
+
     def status(self) -> None:
         print(f"\n🚀 Zeus Status (version: {self.version})\n")
 
+        valid, errors = self.validate()
         config = self.load_config()
         data = self.load_tasks()
         tasks = data.get("tasks", [])
@@ -88,6 +163,12 @@ class ZeusRunner:
         print(f"Project : {config.get('project', {}).get('name', 'N/A')}")
         print(f"North Star: {config.get('metrics', {}).get('north_star', 'N/A')}")
         print(f"Tasks   : {passed}/{total} completed ({pending} pending)")
+        if valid:
+            print("Validation: ✅ pass")
+        else:
+            print(f"Validation: ⚠️  {len(errors)} issue(s)")
+            for err in errors[:5]:
+                print(f"  - {err}")
         if current_wave is not None:
             print(f"Next Wave: {current_wave}")
         else:

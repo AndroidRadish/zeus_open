@@ -1,20 +1,20 @@
 {
   "project": "zeus-open",
-  "updated_at": "2026-04-09T12:51:00Z",
+  "updated_at": "2026-04-09T05:04:00Z",
   "features": [
     {
       "id": "T-002",
       "title": "实现 generate_tests.py（Python 跨平台测试生成器）",
-      "status": "pending",
+      "status": "in_progress",
       "priority": "high",
-      "notes": "替代 generate-tests.sh，移除对 claude CLI 和 jq 的依赖"
+      "notes": "替代 generate-tests.sh，移除对 claude CLI 和 jq 的依赖。同事正在执行。"
     },
     {
       "id": "T-003",
       "title": "实现 collect_metrics.py（Python 跨平台指标采集器）",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
-      "notes": "替代 collect-metrics.sh，纯 Python 实现"
+      "notes": "替代 collect-metrics.sh，纯 Python 实现。支持 SQLite、PostgreSQL、GA CSV、HTTP API。"
     },
     {
       "id": "T-004",
