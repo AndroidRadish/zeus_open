@@ -1,1 +1,45 @@
-﻿{ "stories": [] }
+﻿{
+    "version":  "v2",
+    "stories":  [
+                    {
+                        "passes":  false,
+                        "title":  "Build v2 infrastructure: storage abstraction, agent bus, and workflow graph generator",
+                        "acceptance_criteria":  [
+                                                    "store.py provides AbstractStore with LocalStore implementation and file-lock support",
+                                                    "agent_bus.py produces JSONL events and Markdown discussion logs per wave",
+                                                    "workflow_graph.py generates correct Mermaid and Graphviz output from task.json"
+                                                ],
+                        "id":  "US-001"
+                    },
+                    {
+                        "passes":  false,
+                        "title":  "Build v2 core engine: async orchestrator and FastAPI backend",
+                        "acceptance_criteria":  [
+                                                    "zeus_orchestrator.py dispatches 3+ tasks concurrently within a wave without corrupting task.json",
+                                                    "Orchestrator uses asyncio.Semaphore and isolated agent workspaces",
+                                                    "zeus_server.py exposes /status, /events, /discussion, /graph/mermaid endpoints"
+                                                ],
+                        "id":  "US-002"
+                    },
+                    {
+                        "passes":  false,
+                        "title":  "Deliver dual frontend: PyQt desktop GUI and zero-build Web UI",
+                        "acceptance_criteria":  [
+                                                    "PyQt GUI launches, shows wave progress, displays workflow graph, and presents wave-approval dialog",
+                                                    "Web frontend (index.html) renders dashboard and graph without npm/build tools",
+                                                    "Both frontends consume the same FastAPI backend"
+                                                ],
+                        "id":  "US-003"
+                    },
+                    {
+                        "passes":  false,
+                        "title":  "Integrate, test, document, and validate backward compatibility",
+                        "acceptance_criteria":  [
+                                                    "Integration tests pass for end-to-end 2-wave execution with mock agents",
+                                                    "zeus_runner.py --status on main remains unchanged and functional",
+                                                    "v2 documentation (zeus-execute-v2.md) and README updates are complete"
+                                                ],
+                        "id":  "US-004"
+                    }
+                ]
+}
