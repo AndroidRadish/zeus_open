@@ -70,7 +70,7 @@
                 "T-004",
                 "T-005"
             ],
-            "commit_sha": "024823bea838d2ca43ecde21c2d5cfb0ef833ba0",
+            "commit_sha": "409533c2fcf18d5f1e8a178b10493298781b0d6a",
             "log_path": ".zeus/v2/ai-logs/2026-04-10T16-01-50-wave3.md",
             "wave": 3
         },
@@ -82,7 +82,7 @@
             "depends_on": [
                 "T-005"
             ],
-            "commit_sha": "024823bea838d2ca43ecde21c2d5cfb0ef833ba0",
+            "commit_sha": "409533c2fcf18d5f1e8a178b10493298781b0d6a",
             "log_path": ".zeus/v2/ai-logs/2026-04-10T16-01-50-wave3.md",
             "wave": 3
         },
