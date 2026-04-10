@@ -1,46 +1,137 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZeusOpen v2 Dashboard</title>
+  <title>ZeusOpen v2 控制台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"DM Sans"', '"Noto Sans SC"', 'system-ui', 'sans-serif'],
+            display: ['"DM Sans"', '"Noto Sans SC"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            zeus: {
+              bg: '#0a0a0f',
+              surface: '#111118',
+              card: 'rgba(255,255,255,0.03)',
+              border: 'rgba(255,255,255,0.06)',
+              cyan: '#06b6d4',
+              amber: '#f59e0b',
+              emerald: '#10b981',
+              rose: '#f43f5e',
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'spin-slow': 'spin 2s linear infinite',
+            'fade-in-up': 'fadeInUp 0.5s ease-out forwards',
+          },
+          keyframes: {
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(12px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
   <style>
+    body {
+      background-color: #0a0a0f;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(6,182,212,0.12), transparent),
+        radial-gradient(ellipse 60% 40% at 80% 90%, rgba(99,102,241,0.08), transparent);
+      color: #f8fafc;
+    }
+    .glass-panel {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .glass-panel-hover:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.10);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    }
+    .nav-pill-active {
+      background: rgba(6,182,212,0.12);
+      color: #22d3ee;
+      border: 1px solid rgba(6,182,212,0.25);
+      box-shadow: 0 0 20px rgba(6,182,212,0.15);
+    }
+    .status-dot {
+      box-shadow: 0 0 8px currentColor;
+    }
+    .mermaid-container {
+      background: radial-gradient(circle at center, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.20); }
     [v-cloak] { display: none; }
-    .mermaid-container { min-height: 200px; }
-    .mermaid svg { max-width: 100%; height: auto; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="antialiased min-h-screen">
   <div id="app" v-cloak class="min-h-screen flex flex-col">
-    <!-- Top Navigation -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass-panel border-b-0 border-b border-white/5">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center gap-3">
-            <div class="text-2xl font-bold text-indigo-600">⚡ ZeusOpen v2</div>
-            <span class="px-2.5 py-0.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-              Wave {{ status.current_wave }}
-            </span>
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-cyan-500/20">
+              Z
+            </div>
+            <div>
+              <div class="text-lg font-bold tracking-tight text-white">ZeusOpen <span class="text-cyan-400">v2</span></div>
+              <div class="text-xs text-slate-400 font-medium">并行任务调度控制台</div>
+            </div>
           </div>
+
           <div class="flex items-center gap-4">
+            <!-- Wave Badge -->
+            <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full glass-panel">
+              <span class="text-xs text-slate-400">当前 Wave</span>
+              <span class="text-sm font-bold text-white">{{ status.current_wave || 0 }}</span>
+            </div>
+
+            <!-- Refresh -->
             <button
               @click="refreshAll"
-              class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              class="group flex items-center gap-2 px-3 py-1.5 rounded-lg glass-panel text-sm text-slate-300 hover:text-white transition-all"
               :disabled="loading"
             >
-              <span>🔄</span>
-              <span>{{ loading ? 'Loading...' : 'Refresh' }}</span>
+              <svg class="w-4 h-4" :class="loading ? 'animate-spin-slow' : 'group-hover:rotate-180 transition-transform duration-500'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                <path d="M16 21h5v-5"/>
+              </svg>
+              <span class="hidden sm:inline">刷新</span>
             </button>
-            <div class="flex items-center gap-2">
-              <span
-                class="w-2.5 h-2.5 rounded-full"
-                :class="serverOnline ? 'bg-green-500' : 'bg-red-500'"
-              ></span>
-              <span class="text-sm text-gray-600">
-                {{ serverOnline ? 'Server Online' : 'Server Offline' }}
+
+            <!-- Server Status -->
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full glass-panel">
+              <span class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" :class="serverOnline ? 'bg-emerald-400' : 'bg-rose-400'"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5" :class="serverOnline ? 'bg-emerald-500 status-dot text-emerald-500' : 'bg-rose-500 status-dot text-rose-500'"></span>
+              </span>
+              <span class="text-xs font-medium" :class="serverOnline ? 'text-emerald-300' : 'text-rose-300'">
+                {{ serverOnline ? '在线' : '离线' }}
               </span>
             </div>
           </div>
@@ -49,31 +140,29 @@
     </header>
 
     <!-- Offline Warning -->
-    <div
-      v-if="!serverOnline"
-      class="bg-red-50 border-b border-red-200 px-4 py-3"
-    >
-      <div class="max-w-7xl mx-auto flex items-center gap-2 text-red-700 text-sm">
-        <span>⚠️</span>
-        <span>Cannot connect to Zeus server at localhost:8234. Please start it first.</span>
+    <div v-if="!serverOnline" class="bg-rose-500/10 border-b border-rose-500/20 px-4 py-3">
+      <div class="max-w-7xl mx-auto flex items-center gap-3 text-rose-300 text-sm">
+        <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+          <line x1="12" x2="12" y1="9" y2="13"/>
+          <line x1="12" x2="12.01" y1="17" y2="17"/>
+        </svg>
+        <span>无法连接到 Zeus 后端 (localhost:8234)。请先启动服务：<code class="px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-200 font-mono text-xs">python .zeus/v2/scripts/zeus_server.py --port 8234</code></span>
       </div>
     </div>
 
     <!-- Tab Navigation -->
-    <div class="bg-white border-b border-gray-200">
+    <div class="border-b border-white/5">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav class="-mb-px flex gap-6" aria-label="Tabs">
+        <nav class="flex gap-2 py-3 overflow-x-auto custom-scrollbar" aria-label="Tabs">
           <button
             v-for="tab in tabs"
             :key="tab.id"
             @click="currentTab = tab.id"
-            :class="[
-              'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
-              currentTab === tab.id
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            ]"
+            class="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-200"
+            :class="currentTab === tab.id ? 'nav-pill-active' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'"
           >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" v-html="tab.icon"></svg>
             {{ tab.label }}
           </button>
         </nav>
@@ -86,57 +175,115 @@
       <div v-if="currentTab === 'dashboard'" class="space-y-6">
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-white rounded-lg shadow p-5 border-l-4 border-blue-500">
-            <div class="text-sm font-medium text-gray-500">Pending Tasks</div>
-            <div class="mt-1 text-3xl font-bold text-gray-900">{{ status.pending_tasks }}</div>
+          <div class="glass-panel rounded-2xl p-5 glass-panel-hover transition-all duration-300" style="animation-delay: 0ms">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium text-slate-400">待执行任务</div>
+                <div class="mt-2 text-4xl font-bold text-white font-display">{{ status.pending_tasks }}</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full bg-amber-500 rounded-full transition-all duration-700" :style="{ width: pendingPercent + '%' }"></div>
+            </div>
           </div>
-          <div class="bg-white rounded-lg shadow p-5 border-l-4 border-green-500">
-            <div class="text-sm font-medium text-gray-500">Completed Tasks</div>
-            <div class="mt-1 text-3xl font-bold text-gray-900">{{ status.completed_tasks }}</div>
+
+          <div class="glass-panel rounded-2xl p-5 glass-panel-hover transition-all duration-300" style="animation-delay: 50ms">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium text-slate-400">已完成任务</div>
+                <div class="mt-2 text-4xl font-bold text-white font-display">{{ status.completed_tasks }}</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full bg-emerald-500 rounded-full transition-all duration-700" :style="{ width: completedPercent + '%' }"></div>
+            </div>
           </div>
-          <div class="bg-white rounded-lg shadow p-5 border-l-4 border-red-500">
-            <div class="text-sm font-medium text-gray-500">Failed Tasks</div>
-            <div class="mt-1 text-3xl font-bold text-gray-900">{{ failedTasksCount }}</div>
+
+          <div class="glass-panel rounded-2xl p-5 glass-panel-hover transition-all duration-300" style="animation-delay: 100ms">
+            <div class="flex items-start justify-between">
+              <div>
+                <div class="text-sm font-medium text-slate-400">验证状态</div>
+                <div class="mt-2 text-2xl font-bold font-display" :class="status.validation === 'pass' ? 'text-emerald-400' : 'text-rose-400'">
+                  {{ status.validation === 'pass' ? '通过' : '异常' }}
+                </div>
+              </div>
+              <div class="p-2.5 rounded-xl" :class="status.validation === 'pass' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'">
+                <svg v-if="status.validation === 'pass'" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <svg v-else class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+                  <line x1="12" x2="12" y1="8" y2="12"/>
+                  <line x1="12" x2="12.01" y1="16" y2="16"/>
+                </svg>
+              </div>
+            </div>
+            <div class="mt-4 text-xs text-slate-500">task.json 结构校验结果</div>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="glass-panel rounded-2xl p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-base font-semibold text-white">Wave {{ currentWave }} 进度</h3>
+            <span class="text-sm text-slate-400">{{ waveDoneCount }} / {{ waveTasks.length }} 任务</span>
+          </div>
+          <div class="h-3 w-full bg-white/5 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.45)] transition-all duration-700" :style="{ width: waveProgressPercent + '%' }"></div>
           </div>
         </div>
 
         <!-- Tasks Table -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-900">
-              Tasks for Wave {{ currentWave }}
-            </h3>
+        <div class="glass-panel rounded-2xl overflow-hidden">
+          <div class="px-6 py-4 border-b border-white/5 flex items-center justify-between">
+            <h3 class="text-base font-semibold text-white">Wave {{ currentWave }} 任务列表</h3>
+            <span class="text-xs px-2 py-1 rounded-md bg-white/5 text-slate-400">共 {{ waveTasks.length }} 个任务</span>
           </div>
           <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
+            <table class="min-w-full">
+              <thead class="bg-white/[0.02]">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Depends On</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">任务 ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">标题</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">状态</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">依赖</th>
                 </tr>
               </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="task in waveTasks" :key="task.id" class="hover:bg-gray-50">
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ task.id }}</td>
-                  <td class="px-6 py-4 text-sm text-gray-700">{{ task.title }}</td>
+              <tbody class="divide-y divide-white/5">
+                <tr v-for="task in waveTasks" :key="task.id" class="hover:bg-white/[0.02] transition-colors">
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-white font-mono">{{ task.id }}</td>
+                  <td class="px-6 py-4 text-sm text-slate-300 max-w-md">{{ task.title }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
-                    <div class="flex items-center gap-2">
-                      <span
-                        class="w-2.5 h-2.5 rounded-full"
-                        :class="getStatusColor(task)"
-                      ></span>
-                      <span class="text-gray-700">{{ getStatusLabel(task) }}</span>
+                    <div class="flex items-center gap-2.5">
+                      <span class="relative flex h-2.5 w-2.5">
+                        <span v-if="isTaskRunning(task.id)" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 status-dot" :class="getStatusDotColor(task, task.id)"></span>
+                      </span>
+                      <span class="text-slate-300">{{ getStatusLabel(task, task.id) }}</span>
                     </div>
                   </td>
-                  <td class="px-6 py-4 text-sm text-gray-500">
-                    {{ task.depends_on && task.depends_on.length ? task.depends_on.join(', ') : '—' }}
+                  <td class="px-6 py-4 text-sm text-slate-400">
+                    <span v-if="!task.depends_on || !task.depends_on.length">—</span>
+                    <span v-else class="inline-flex gap-1 flex-wrap">
+                      <span v-for="dep in task.depends_on" :key="dep" class="px-1.5 py-0.5 rounded bg-white/5 text-xs text-slate-300 font-mono">{{ dep }}</span>
+                    </span>
                   </td>
                 </tr>
                 <tr v-if="waveTasks.length === 0">
-                  <td colspan="4" class="px-6 py-8 text-center text-sm text-gray-500">
-                    No tasks found for wave {{ currentWave }}
+                  <td colspan="4" class="px-6 py-10 text-center text-sm text-slate-500">
+                    Wave {{ currentWave }} 暂无任务
                   </td>
                 </tr>
               </tbody>
@@ -147,34 +294,42 @@
 
       <!-- Agents View -->
       <div v-if="currentTab === 'agents'" class="space-y-4">
-        <div v-if="agents.length === 0" class="bg-white rounded-lg shadow p-8 text-center">
-          <div class="text-4xl mb-2">😴</div>
-          <h3 class="text-lg font-medium text-gray-900">All agents idle</h3>
-          <p class="text-sm text-gray-500 mt-1">No agents are currently running.</p>
+        <div v-if="agents.length === 0" class="glass-panel rounded-2xl p-10 text-center">
+          <div class="mx-auto w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 mb-4">
+            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 8v4l3 3"/>
+              <circle cx="12" cy="12" r="10"/>
+            </svg>
+          </div>
+          <h3 class="text-lg font-medium text-white">暂无运行中的 Agent</h3>
+          <p class="text-sm text-slate-500 mt-1">当前没有 Agent 正在执行任务。</p>
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div
-            v-for="agent in agents"
+            v-for="(agent, idx) in agents"
             :key="agent.agent_id + agent.task_id"
-            class="bg-white rounded-lg shadow p-5 border border-gray-200"
+            class="glass-panel rounded-2xl p-5 glass-panel-hover transition-all duration-300"
+            :style="{ animationDelay: (idx * 50) + 'ms' }"
           >
             <div class="flex items-start justify-between">
-              <div>
-                <div class="text-xs font-medium text-gray-500 uppercase">Agent</div>
-                <div class="text-sm font-semibold text-gray-900">{{ agent.agent_id }}</div>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/20 flex items-center justify-center text-cyan-300 font-bold text-sm">
+                  {{ agent.agent_id.slice(-1) || 'A' }}
+                </div>
+                <div>
+                  <div class="text-sm font-semibold text-white">{{ agent.agent_id }}</div>
+                  <div class="text-xs text-slate-500 font-mono mt-0.5">{{ agent.task_id }}</div>
+                </div>
               </div>
-              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                {{ agent.status }}
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-1.5 animate-pulse"></span>
+                运行中
               </span>
             </div>
-            <div class="mt-4 space-y-2">
-              <div>
-                <div class="text-xs font-medium text-gray-500">Task ID</div>
-                <div class="text-sm text-gray-900">{{ agent.task_id }}</div>
-              </div>
-              <div>
-                <div class="text-xs font-medium text-gray-500">Started At</div>
-                <div class="text-sm text-gray-900">{{ formatTime(agent.started_at) }}</div>
+            <div class="mt-4 pt-4 border-t border-white/5">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-500">启动时间</span>
+                <span class="text-slate-300 font-mono">{{ formatTime(agent.started_at) }}</span>
               </div>
             </div>
           </div>
@@ -183,46 +338,67 @@
 
       <!-- Discussion View -->
       <div v-if="currentTab === 'discussion'" class="space-y-4">
-        <div class="bg-white rounded-lg shadow p-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Select Wave</label>
-          <div class="flex items-center gap-2">
-            <select
-              v-model="discussionWave"
-              @change="loadDiscussion"
-              class="block w-32 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border px-3 py-2"
-            >
-              <option v-for="n in maxWave" :key="n" :value="n">Wave {{ n }}</option>
-            </select>
-            <button
-              @click="loadDiscussion"
-              class="px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
-            >
-              Load
-            </button>
+        <div class="glass-panel rounded-2xl p-4">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <label class="text-sm font-medium text-slate-300">选择 Wave</label>
+            <div class="flex items-center gap-2">
+              <select
+                v-model="discussionWave"
+                @change="loadDiscussion"
+                class="appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 min-w-[6rem]"
+              >
+                <option v-for="n in maxWave" :key="n" :value="n">Wave {{ n }}</option>
+              </select>
+              <button
+                @click="loadDiscussion"
+                class="px-4 py-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 text-sm font-medium transition-colors"
+              >
+                加载日志
+              </button>
+            </div>
           </div>
         </div>
-        <div class="bg-white rounded-lg shadow p-6">
-          <div v-if="discussionContent" class="font-mono text-sm text-gray-800 whitespace-pre-wrap">{{ discussionContent }}</div>
-          <div v-else class="text-center text-gray-500 py-12">
-            No discussion found for Wave {{ discussionWave }}
+        <div class="glass-panel rounded-2xl p-6 min-h-[300px]">
+          <div v-if="discussionContent" class="prose prose-invert prose-sm max-w-none custom-scrollbar overflow-auto max-h-[70vh]">
+            <div v-html="renderMarkdown(discussionContent)"></div>
+          </div>
+          <div v-else class="flex flex-col items-center justify-center h-48 text-slate-500">
+            <svg class="w-10 h-10 mb-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" x2="8" y1="13" y2="13"/>
+              <line x1="16" x2="8" y1="17" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <p>Wave {{ discussionWave }} 暂无讨论日志</p>
           </div>
         </div>
       </div>
 
       <!-- Workflow Graph View -->
       <div v-if="currentTab === 'graph'" class="space-y-4">
-        <div class="bg-white rounded-lg shadow p-6">
-          <div v-if="graphError" class="text-center py-8">
-            <div class="text-red-600 font-medium mb-4">Failed to render graph</div>
-            <div class="text-sm text-gray-600 mb-4">{{ graphError }}</div>
-            <div class="text-left bg-gray-50 rounded p-4 overflow-x-auto">
-              <pre class="text-xs text-gray-700">{{ mermaidSource }}</pre>
+        <div class="glass-panel rounded-2xl p-1">
+          <div v-if="graphError" class="text-center py-10 px-4">
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 mb-4">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
+                <line x1="12" x2="12" y1="8" y2="12"/>
+                <line x1="12" x2="12.01" y1="16" y2="16"/>
+              </svg>
+            </div>
+            <div class="text-rose-300 font-medium mb-2">图表渲染失败</div>
+            <div class="text-sm text-slate-500 mb-4">{{ graphError }}</div>
+            <div class="text-left bg-black/30 rounded-xl p-4 overflow-x-auto border border-white/5">
+              <pre class="text-xs text-slate-400 font-mono">{{ mermaidSource }}</pre>
             </div>
           </div>
-          <div v-else-if="graphLoading" class="text-center py-12 text-gray-500">
-            Rendering graph...
+          <div v-else-if="graphLoading" class="flex flex-col items-center justify-center py-20 text-slate-500">
+            <svg class="w-10 h-10 animate-spin-slow mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+            <p>正在渲染依赖图...</p>
           </div>
-          <div v-else ref="mermaidContainer" class="mermaid-container flex justify-center">
+          <div v-else ref="mermaidContainer" class="mermaid-container rounded-xl flex justify-center min-h-[300px] py-8">
             <div class="mermaid">{{ mermaidSource }}</div>
           </div>
         </div>
@@ -230,10 +406,10 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-white border-t border-gray-200 mt-auto">
+    <footer class="border-t border-white/5 mt-auto">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <p class="text-center text-xs text-gray-500">
-          ZeusOpen v2 — Zero-build Web Dashboard
+        <p class="text-center text-xs text-slate-600">
+          ZeusOpen v2 — 零构建 Web 控制台
         </p>
       </div>
     </footer>
@@ -243,6 +419,14 @@
     const { createApp, ref, computed, onMounted, onUnmounted, watch, nextTick } = Vue;
 
     const API_BASE = 'http://localhost:8234';
+
+    // Inline SVG icons for tabs
+    const ICONS = {
+      dashboard: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
+      agents: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+      discussion: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+      graph: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+    };
 
     createApp({
       setup() {
@@ -266,19 +450,36 @@
         let pollInterval = null;
 
         const tabs = [
-          { id: 'dashboard', label: 'Dashboard' },
-          { id: 'agents', label: 'Agents' },
-          { id: 'discussion', label: 'Discussion' },
-          { id: 'graph', label: 'Workflow Graph' },
+          { id: 'dashboard', label: '仪表盘', icon: ICONS.dashboard },
+          { id: 'agents', label: 'Agent 监控', icon: ICONS.agents },
+          { id: 'discussion', label: '讨论日志', icon: ICONS.discussion },
+          { id: 'graph', label: '依赖图谱', icon: ICONS.graph },
         ];
 
         const currentWave = computed(() => status.value.current_wave || 0);
         const maxWave = computed(() => {
-          // Estimate max wave from status or default to current wave
           return Math.max(currentWave.value, 4);
         });
-        const failedTasksCount = computed(() => {
-          return waveTasks.value.filter(t => t.passes === false).length;
+        const totalTasks = computed(() => (status.value.pending_tasks || 0) + (status.value.completed_tasks || 0));
+        const pendingPercent = computed(() => {
+          const t = totalTasks.value || 1;
+          return Math.round(((status.value.pending_tasks || 0) / t) * 100);
+        });
+        const completedPercent = computed(() => {
+          const t = totalTasks.value || 1;
+          return Math.round(((status.value.completed_tasks || 0) / t) * 100);
+        });
+        const waveDoneCount = computed(() => waveTasks.value.filter(t => t.passes === true).length);
+        const waveProgressPercent = computed(() => {
+          const total = waveTasks.value.length || 1;
+          return Math.round((waveDoneCount.value / total) * 100);
+        });
+
+        // Running agent task ids
+        const runningTaskIds = computed(() => {
+          const set = new Set();
+          agents.value.forEach(a => { if (a.task_id) set.add(a.task_id); });
+          return set;
         });
 
         async function apiGet(path) {
@@ -339,7 +540,6 @@
           try {
             mermaidSource.value = await apiGet('/graph/mermaid');
             await nextTick();
-            // Clear previous render and re-render
             if (mermaidContainer.value) {
               const el = mermaidContainer.value.querySelector('.mermaid');
               if (el) {
@@ -351,7 +551,7 @@
             graphLoading.value = false;
           } catch (e) {
             graphLoading.value = false;
-            graphError.value = e.message || 'Mermaid render failed';
+            graphError.value = e.message || 'Mermaid 渲染失败';
           }
         }
 
@@ -367,26 +567,58 @@
           loading.value = false;
         }
 
-        function getStatusColor(task) {
-          if (task.passes === true) return 'bg-green-500';
-          if (task.passes === false) return 'bg-red-500';
-          return 'bg-gray-400';
+        function isTaskRunning(taskId) {
+          return runningTaskIds.value.has(taskId);
         }
 
-        function getStatusLabel(task) {
-          if (task.passes === true) return 'done';
-          if (task.passes === false) return 'failed';
-          return 'pending';
+        function getStatusDotColor(task, taskId) {
+          if (task.passes === true) return 'bg-emerald-500 text-emerald-500';
+          if (isTaskRunning(taskId)) return 'bg-cyan-400 text-cyan-400';
+          return 'bg-slate-400 text-slate-400';
+        }
+
+        function getStatusLabel(task, taskId) {
+          if (task.passes === true) return '已完成';
+          if (isTaskRunning(taskId)) return '执行中';
+          return '待执行';
         }
 
         function formatTime(ts) {
           if (!ts) return '—';
           try {
             const d = new Date(ts);
-            return d.toLocaleString();
+            return d.toLocaleString('zh-CN');
           } catch (e) {
             return ts;
           }
+        }
+
+        function renderMarkdown(md) {
+          // Very lightweight markdown-to-HTML for discussion log
+          let html = md
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+          // Code blocks
+          html = html.replace(/```([\s\S]*?)```/g, '<pre class="bg-black/40 rounded-lg p-3 overflow-x-auto border border-white/5 text-slate-300 font-mono text-sm"><code>$1</code></pre>');
+          // Inline code
+          html = html.replace(/`([^`]+)`/g, '<code class="bg-white/10 px-1.5 py-0.5 rounded text-cyan-300 font-mono text-sm">$1</code>');
+          // Headers
+          html = html.replace(/^# (.*$)/gim, '<h1 class="text-xl font-bold text-white mt-4 mb-2">$1</h1>');
+          html = html.replace(/^## (.*$)/gim, '<h2 class="text-lg font-semibold text-white mt-4 mb-2 border-b border-white/5 pb-1">$1</h2>');
+          html = html.replace(/^### (.*$)/gim, '<h3 class="text-base font-semibold text-slate-200 mt-3 mb-1">$1</h3>');
+          // Bold/italic
+          html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
+          // Paragraphs
+          const blocks = html.split(/\n\n+/);
+          html = blocks.map(block => {
+            const trimmed = block.trim();
+            if (!trimmed) return '';
+            if (trimmed.startsWith('<')) return trimmed;
+            return `<p class="text-slate-300 leading-relaxed mb-3">${trimmed.replace(/\n/g, '<br>')}</p>`;
+          }).join('\n');
+          return html;
         }
 
         function startPolling() {
@@ -410,10 +642,9 @@
         });
 
         onMounted(async () => {
-          mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+          mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'dark' });
           await refreshAll();
           startPolling();
-          // Set initial discussion wave
           discussionWave.value = currentWave.value || 1;
         });
 
@@ -430,7 +661,10 @@
           currentWave,
           maxWave,
           waveTasks,
-          failedTasksCount,
+          pendingPercent,
+          completedPercent,
+          waveDoneCount,
+          waveProgressPercent,
           agents,
           discussionWave,
           discussionContent,
@@ -440,9 +674,11 @@
           mermaidContainer,
           refreshAll,
           loadDiscussion,
-          getStatusColor,
+          isTaskRunning,
+          getStatusDotColor,
           getStatusLabel,
           formatTime,
+          renderMarkdown,
         };
       }
     }).mount('#app');
