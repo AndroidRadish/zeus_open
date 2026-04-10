@@ -43,7 +43,7 @@ class ZeusRunner:
         if not path.exists():
             print(f"❌ 文件不存在: {path}")
             sys.exit(1)
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8-sig") as f:
             return json.load(f)
 
     def _save_json(self, path: Path, data: dict) -> None:
