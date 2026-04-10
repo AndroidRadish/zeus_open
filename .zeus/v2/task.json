@@ -7,38 +7,38 @@
     "tasks":  [
                   {
                       "id":  "T-001",
-                      "passes":  false,
+                      "passes":  true,
                       "story_id":  "US-001",
                       "title":  "Implement store.py with AbstractStore and LocalStore (file lock included)",
                       "depends_on":  [
 
                                      ],
-                      "commit_sha":  null,
-                      "log_path":  null,
+                      "commit_sha":  "3d29816b2073b7aa194147b8d428d1812d920db9",
+                      "log_path":  ".zeus/v2/ai-logs/2026-04-10T15-30-00-wave1.md",
                       "wave":  1
                   },
                   {
                       "id":  "T-002",
-                      "passes":  false,
+                      "passes":  true,
                       "story_id":  "US-001",
                       "title":  "Implement agent_bus.py with JSONL event writer and Markdown discussion formatter",
                       "depends_on":  [
 
                                      ],
-                      "commit_sha":  null,
-                      "log_path":  null,
+                      "commit_sha":  "3d29816b2073b7aa194147b8d428d1812d920db9",
+                      "log_path":  ".zeus/v2/ai-logs/2026-04-10T15-30-00-wave1.md",
                       "wave":  1
                   },
                   {
                       "id":  "T-003",
-                      "passes":  false,
+                      "passes":  true,
                       "story_id":  "US-001",
                       "title":  "Implement workflow_graph.py with Mermaid and Graphviz generators",
                       "depends_on":  [
 
                                      ],
-                      "commit_sha":  null,
-                      "log_path":  null,
+                      "commit_sha":  "3d29816b2073b7aa194147b8d428d1812d920db9",
+                      "log_path":  ".zeus/v2/ai-logs/2026-04-10T15-30-00-wave1.md",
                       "wave":  1
                   },
                   {
