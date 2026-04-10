@@ -1,5 +1,0 @@
-{"ts": "2026-04-10T07:17:18Z", "type": "task.started", "wave": 1, "task_id": "T-001", "agent_id": "coder-0", "payload": {"message": "hello"}}
-{"ts": "2026-04-10T07:17:18Z", "type": "task.started", "wave": 1, "task_id": "T-001", "agent_id": "coder-0", "payload": {"step": 1}}
-{"ts": "2026-04-10T07:17:18Z", "type": "task.progress", "wave": 1, "task_id": "T-001", "agent_id": "coder-0", "payload": {"step": 2}}
-{"ts": "2026-04-10T07:17:18Z", "type": "task.started", "wave": 1, "task_id": "T-002", "agent_id": "coder-1", "payload": {"step": 1}}
-{"ts": "2026-04-10T07:17:18Z", "type": "task.completed", "wave": 1, "task_id": "T-001", "agent_id": "coder-0", "payload": {"step": 3}}

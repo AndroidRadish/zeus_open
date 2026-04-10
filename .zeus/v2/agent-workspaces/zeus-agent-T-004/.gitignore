@@ -1,5 +1,0 @@
-# Zeus generated / temporary files
-.zeus/collected-metrics-*.json
-.zeus/scripts/__pycache__/
-*.pyc
-*.pyo

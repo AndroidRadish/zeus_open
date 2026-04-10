@@ -3,3 +3,4 @@
 .zeus/scripts/__pycache__/
 *.pyc
 *.pyo
+.zeus/v2/agent-workspaces/
