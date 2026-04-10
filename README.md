@@ -65,8 +65,7 @@ For parallel wave execution and a visual dashboard, use the v2 backend:
 
 ```bash
 python .zeus/v2/scripts/zeus_server.py --port 8234
-# Then open http://localhost:8234/web or run:
-python .zeus/v2/scripts/zeus_gui.py
+# Then open http://localhost:8234/web
 ```
 
 The `skills/` folder contains markdown playbooks for each workflow stage. Reference them directly in your AI session (e.g. "Please follow skills/zeus-init.md to initialize this project").

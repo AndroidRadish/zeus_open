@@ -27,16 +27,13 @@ python .zeus/v2/scripts/zeus_orchestrator.py --approve-next
 # 1) Start the backend
 python .zeus/v2/scripts/zeus_server.py --port 8234
 
-# 2a) Open the zero-build Web UI
+# 2) Open the zero-build Web UI
 #    Visit http://localhost:8234/web in your browser
-
-# 2b) Or launch the PyQt desktop GUI
-python .zeus/v2/scripts/zeus_gui.py --api-base http://localhost:8234
 ```
 
 ## Wave approval flow
 
-The GUI shows a modal when a wave completes. Approving the modal advances `meta.current_wave`, unlocking the next wave for dispatch. The orchestrator will not start a new wave until the previous wave is explicitly approved.
+The Web UI shows a modal when a wave completes. Approving the modal advances `meta.current_wave`, unlocking the next wave for dispatch. The orchestrator will not start a new wave until the previous wave is explicitly approved.
 
 ## Per-task execution contract
 

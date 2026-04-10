@@ -23,11 +23,10 @@
         },
         {
             "passes": false,
-            "title": "Deliver dual frontend: PyQt desktop GUI and zero-build Web UI",
+            "title": "Deliver zero-build Web UI dashboard",
             "acceptance_criteria": [
-                "PyQt GUI launches, shows wave progress, displays workflow graph, and presents wave-approval dialog",
                 "Web frontend (index.html) renders dashboard and graph without npm/build tools",
-                "Both frontends consume the same FastAPI backend"
+                "Web UI consumes the same FastAPI backend"
             ],
             "id": "US-003"
         },

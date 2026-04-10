@@ -142,13 +142,14 @@ class WorkflowGraph:
             nodes.append(
                 {
                     "id": tid,
-                    "name": label,
+                    "name": tid,
                     "value": downstream + dep_count + 1,
                     "category": wave_to_category.get(wave, 0),
                     "symbolSize": min(symbol_size, 80),
                     "status": status,
                     "wave": wave,
                     "title": title,
+                    "description": task.get("description", ""),
                 }
             )
 
