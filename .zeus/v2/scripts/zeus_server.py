@@ -216,35 +216,40 @@ def graph_mermaid() -> Response:
     return Response(content=graph.to_mermaid(), media_type="text/plain; charset=utf-8")
 
 
-@app.get("/graph/svg")
-def graph_svg() -> Response:
-    if shutil.which("dot") is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Graphviz 'dot' command not found. Please install Graphviz and ensure it is on your PATH.",
-        )
-
+@app.get("/graph/echarts")
+def graph_echarts() -> dict[str, Any]:
     path = _resolve(TASK_JSON_PATH)
     graph = WorkflowGraph(path)
-    dot_src = graph.to_graphviz()
+    return graph.to_echarts()
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        dot_path = os.path.join(tmpdir, "graph.dot")
-        svg_path = os.path.join(tmpdir, "graph.svg")
-        with open(dot_path, "w", encoding="utf-8") as f:
-            f.write(dot_src)
-        result = subprocess.run(
-            ["dot", "-Tsvg", dot_path, "-o", svg_path],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            err = result.stderr.strip() or "unknown error"
-            raise HTTPException(status_code=503, detail=f"dot command failed: {err}")
-        with open(svg_path, "r", encoding="utf-8") as f:
-            svg_content = f.read()
 
+@app.get("/graph/svg")
+def graph_svg() -> Response:
+    path = _resolve(TASK_JSON_PATH)
+    graph = WorkflowGraph(path)
+
+    if shutil.which("dot") is not None:
+        dot_src = graph.to_graphviz()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dot_path = os.path.join(tmpdir, "graph.dot")
+            svg_path = os.path.join(tmpdir, "graph.svg")
+            with open(dot_path, "w", encoding="utf-8") as f:
+                f.write(dot_src)
+            result = subprocess.run(
+                ["dot", "-Tsvg", dot_path, "-o", svg_path],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if result.returncode != 0:
+                err = result.stderr.strip() or "unknown error"
+                raise HTTPException(status_code=503, detail=f"dot command failed: {err}")
+            with open(svg_path, "r", encoding="utf-8") as f:
+                svg_content = f.read()
+        return Response(content=svg_content, media_type="image/svg+xml")
+
+    # Fallback: pure-Python native SVG renderer (no Graphviz required)
+    svg_content = graph.to_svg_native()
     return Response(content=svg_content, media_type="image/svg+xml")
 
 

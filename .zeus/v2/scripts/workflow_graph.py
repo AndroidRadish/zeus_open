@@ -115,6 +115,151 @@ class WorkflowGraph:
         lines.append("}")
         return "\n".join(lines) + "\n"
 
+    def to_echarts(self) -> dict[str, Any]:
+        """Return an ECharts graph-compatible JSON object with nodes, links and categories."""
+        # Group tasks by wave for categories
+        waves: dict[int, list[dict[str, Any]]] = {}
+        for task in self.tasks:
+            wave = task.get("wave", 0) or 0
+            waves.setdefault(wave, []).append(task)
+
+        sorted_waves = sorted(waves.keys())
+        wave_to_category = {wave: idx for idx, wave in enumerate(sorted_waves)}
+
+        nodes: list[dict[str, Any]] = []
+        for task in self.tasks:
+            tid = task["id"]
+            status = _resolve_status(task)
+            wave = task.get("wave", 0) or 0
+            title = task.get("title", "")
+            label = f"{tid}\n{title}" if title else tid
+
+            # Symbol size based on dependency count (hubs are bigger)
+            dep_count = len(task.get("depends_on", []))
+            downstream = sum(1 for t in self.tasks if tid in t.get("depends_on", []))
+            symbol_size = 40 + (dep_count + downstream) * 6
+
+            nodes.append(
+                {
+                    "id": tid,
+                    "name": label,
+                    "value": downstream + dep_count + 1,
+                    "category": wave_to_category.get(wave, 0),
+                    "symbolSize": min(symbol_size, 80),
+                    "status": status,
+                    "wave": wave,
+                    "title": title,
+                }
+            )
+
+        links: list[dict[str, str]] = []
+        for task in self.tasks:
+            tid = task["id"]
+            for dep in task.get("depends_on", []):
+                if dep:
+                    links.append({"source": dep, "target": tid})
+
+        categories = [{"name": f"Wave {w}"} for w in sorted_waves]
+
+        return {"nodes": nodes, "links": links, "categories": categories}
+
+    def to_svg_native(self) -> str:
+        """Render a left-to-right workflow diagram as an SVG string without Graphviz.
+
+        Tasks are laid out in columns by wave. Dependencies are drawn as cubic
+        Bezier curves. This is used as a fallback when ``dot`` is unavailable.
+        """
+        # Layout constants
+        BOX_W = 200
+        BOX_H = 56
+        COL_W = 260
+        ROW_H = 76
+        MARGIN_X = 40
+        MARGIN_Y = 30
+
+        # Group by wave and preserve order
+        waves: dict[int, list[dict[str, Any]]] = {}
+        for task in self.tasks:
+            wave = task.get("wave", 0) or 0
+            waves.setdefault(wave, []).append(task)
+        sorted_waves = sorted(waves.keys())
+
+        # Assign coordinates
+        positions: dict[str, tuple[int, int]] = {}
+        for wave in sorted_waves:
+            for idx, task in enumerate(waves[wave]):
+                tid = task["id"]
+                x = MARGIN_X + (wave - 1) * COL_W if wave > 0 else MARGIN_X
+                y = MARGIN_Y + idx * ROW_H
+                positions[tid] = (x, y)
+
+        max_wave = max(sorted_waves) if sorted_waves else 0
+        max_len = max(len(waves[w]) for w in sorted_waves) if sorted_waves else 0
+        width = MARGIN_X * 2 + max(0, max_wave - 1) * COL_W + BOX_W
+        height = MARGIN_Y * 2 + max_len * ROW_H
+
+        lines: list[str] = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}" style="background:#0a0a0f">',
+            '  <defs>',
+            '    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">',
+            '      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>',
+            '    </marker>',
+            '  </defs>',
+        ]
+
+        # Draw wave column labels
+        for wave in sorted_waves:
+            x = MARGIN_X + (wave - 1) * COL_W if wave > 0 else MARGIN_X
+            lines.append(
+                f'  <text x="{x + BOX_W // 2}" y="{MARGIN_Y - 10}" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="600">Wave {wave}</text>'
+            )
+
+        # Draw edges first (behind boxes)
+        for task in self.tasks:
+            tid = task["id"]
+            tx, ty = positions[tid]
+            for dep in task.get("depends_on", []):
+                if not dep:
+                    continue
+                sx, sy = positions.get(dep, (tx - COL_W, ty))
+                # Connect right side of source to left side of target
+                start_x = sx + BOX_W
+                start_y = sy + BOX_H // 2
+                end_x = tx
+                end_y = ty + BOX_H // 2
+                cp1_x = start_x + (end_x - start_x) // 2
+                cp2_x = end_x - (end_x - start_x) // 2
+                lines.append(
+                    f'  <path d="M{start_x},{start_y} C{cp1_x},{start_y} {cp2_x},{end_y} {end_x},{end_y}" '
+                    f'stroke="#475569" stroke-width="2" fill="none" marker-end="url(#arrow)"/>'
+                )
+
+        # Draw boxes
+        for task in self.tasks:
+            tid = task["id"]
+            tx, ty = positions[tid]
+            status = _resolve_status(task)
+            color = COLOR_MAP.get(status, COLOR_MAP["pending"])
+            title = task.get("title", "")
+
+            lines.append(
+                f'  <rect x="{tx}" y="{ty}" width="{BOX_W}" height="{BOX_H}" rx="8" ry="8" '
+                f'fill="{color}" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>'
+            )
+            lines.append(
+                f'  <text x="{tx + 12}" y="{ty + 22}" fill="#0a0a0f" font-size="13" font-weight="700">{tid}</text>'
+            )
+            if title:
+                # Simple truncation
+                display = title if len(title) <= 24 else title[:23] + "…"
+                lines.append(
+                    f'  <text x="{tx + 12}" y="{ty + 44}" fill="#0a0a0f" font-size="11" font-weight="500" opacity="0.85">{display}</text>'
+                )
+
+        lines.append("</svg>")
+        return "\n".join(lines) + "\n"
+
     def to_svg(self, dot_path: str, output_path: str) -> str:
         """Render a DOT file to SVG using the system ``dot`` binary.
 
