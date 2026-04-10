@@ -96,7 +96,7 @@
                 "T-005",
                 "T-006"
             ],
-            "commit_sha": "PLACEHOLDER",
+            "commit_sha": "b11870f660ddf9d6a106627c82d71ea8dddde8a0",
             "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md",
             "wave": 4
         },
@@ -109,7 +109,7 @@
                 "T-006",
                 "T-007"
             ],
-            "commit_sha": "PLACEHOLDER",
+            "commit_sha": "b11870f660ddf9d6a106627c82d71ea8dddde8a0",
             "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md",
             "wave": 4
         },
@@ -122,7 +122,7 @@
                 "T-008",
                 "T-009"
             ],
-            "commit_sha": "PLACEHOLDER",
+            "commit_sha": "b11870f660ddf9d6a106627c82d71ea8dddde8a0",
             "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md",
             "wave": 4
         }
