@@ -59,6 +59,16 @@ python .zeus/scripts/zeus_runner.py
 python .zeus/scripts/zeus_runner.py --plan
 ```
 
+#### v2 Parallel Mode (Optional)
+
+For parallel wave execution and a visual dashboard, use the v2 backend:
+
+```bash
+python .zeus/v2/scripts/zeus_server.py --port 8234
+# Then open http://localhost:8234/web or run:
+python .zeus/v2/scripts/zeus_gui.py
+```
+
 The `skills/` folder contains markdown playbooks for each workflow stage. Reference them directly in your AI session (e.g. "Please follow skills/zeus-init.md to initialize this project").
 
 See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specific agent mappings.
@@ -82,7 +92,7 @@ Chinese workflow diagram:
 | `/zeus:brainstorm --full` | Full-scope design dialogue and spec authoring | `.zeus/main/specs/*.md` |
 | `/zeus:brainstorm --feature <name>` | Single-feature design loop | feature spec |
 | `/zeus:plan [--version v2]` | Convert spec to user stories and tasks | `prd.json`, `task.json`, `roadmap.json` |
-| `/zeus:execute [--version v2]` | Execute pending tasks wave by wave | atomic commits, task pass states |
+| `/zeus:execute [--version v2]` | Execute pending tasks wave by wave (see `skills/zeus-execute-v2.md` for v2) | atomic commits, task pass states |
 | `/zeus:test-gen [--version v2] [--platforms android,chrome,ios]` | AI-generate platform test flows from task/prd artifacts | `{version}/tests/*.test.json` |
 | `/zeus:feedback` | Capture feedback and run attribution | `feedback/*.json`, evolution entry |
 | `/zeus:evolve` | Create a new version branch/folder model | `.zeus/vN/*` |
@@ -121,6 +131,14 @@ Chinese workflow diagram:
     zeus_runner.py
     generate_tests.py
     collect_metrics.py
+
+## v2 Dashboard
+
+Zeus v2 provides a visual dashboard on top of the same FastAPI backend (`zeus_server.py`):
+
+- **PyQt desktop app** — run `python .zeus/v2/scripts/zeus_gui.py --api-base http://localhost:8234` for daily use.
+- **Zero-build Web UI** — visit `http://localhost:8234/web` after starting the backend.
+- Both UIs consume the same backend API on port 8234.
 
 ## Brownfield Adoption
 

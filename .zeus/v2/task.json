@@ -88,7 +88,7 @@
         },
         {
             "id": "T-008",
-            "passes": false,
+            "passes": true,
             "story_id": "US-004",
             "title": "Write integration tests for end-to-end 2-wave execution and API smoke tests",
             "depends_on": [
@@ -96,34 +96,34 @@
                 "T-005",
                 "T-006"
             ],
-            "commit_sha": null,
-            "log_path": null,
+            "commit_sha": "PLACEHOLDER",
+            "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md",
             "wave": 4
         },
         {
             "id": "T-009",
-            "passes": false,
+            "passes": true,
             "story_id": "US-004",
             "title": "Write v2 documentation (zeus-execute-v2.md) and update README with GUI/Web instructions",
             "depends_on": [
                 "T-006",
                 "T-007"
             ],
-            "commit_sha": null,
-            "log_path": null,
+            "commit_sha": "PLACEHOLDER",
+            "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md",
             "wave": 4
         },
         {
             "id": "T-010",
-            "passes": false,
+            "passes": true,
             "story_id": "US-004",
             "title": "Run backward-compatibility validation and final v2 ship checklist",
             "depends_on": [
                 "T-008",
                 "T-009"
             ],
-            "commit_sha": null,
-            "log_path": null,
+            "commit_sha": "PLACEHOLDER",
+            "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md",
             "wave": 4
         }
     ]
