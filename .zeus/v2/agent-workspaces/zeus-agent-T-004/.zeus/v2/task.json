@@ -43,28 +43,28 @@
                   },
                   {
                       "id":  "T-004",
-                      "passes":  true,
+                      "passes":  false,
                       "story_id":  "US-002",
                       "title":  "Implement zeus_orchestrator.py with async dispatch, wave logic, and task.json batch updates",
                       "depends_on":  [
                                          "T-001",
                                          "T-002"
                                      ],
-                      "commit_sha":  "33d50a8c6a5294e6bc9a262af1afba176efe8910",
-                      "log_path":  ".zeus/v2/ai-logs/2026-04-10T16-00-00-wave2.md",
+                      "commit_sha":  null,
+                      "log_path":  null,
                       "wave":  2
                   },
                   {
                       "id":  "T-005",
-                      "passes":  true,
+                      "passes":  false,
                       "story_id":  "US-002",
                       "title":  "Implement zeus_server.py FastAPI backend with /status /events /discussion /graph endpoints",
                       "depends_on":  [
                                          "T-001",
                                          "T-003"
                                      ],
-                      "commit_sha":  "33d50a8c6a5294e6bc9a262af1afba176efe8910",
-                      "log_path":  ".zeus/v2/ai-logs/2026-04-10T16-00-00-wave2.md",
+                      "commit_sha":  null,
+                      "log_path":  null,
                       "wave":  2
                   },
                   {

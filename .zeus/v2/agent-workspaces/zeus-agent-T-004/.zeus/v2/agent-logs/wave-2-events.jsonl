@@ -1,0 +1,2 @@
+{"ts": "2026-04-10T07:26:45Z", "type": "task.started", "wave": 2, "task_id": "T-004", "agent_id": "zeus-agent", "payload": {"message": "Dispatching T-004"}}
+{"ts": "2026-04-10T07:26:45Z", "type": "task.started", "wave": 2, "task_id": "T-005", "agent_id": "zeus-agent", "payload": {"message": "Dispatching T-005"}}

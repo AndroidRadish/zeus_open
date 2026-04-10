@@ -1,0 +1,28 @@
+{
+  "version": "main",
+  "updated_at": "2026-04-08T14:00:00.000Z",
+  "milestones": [
+    {
+      "id": "M-001",
+      "title": "Bootstrap zeus-open",
+      "status": "completed",
+      "spec_ref": null,
+      "story_ids": ["US-001"],
+      "task_ids": ["T-001"],
+      "target_date": null,
+      "completed_at": "2026-04-08T14:00:00.000Z",
+      "notes": "Initial commit with runner, hooks, docs, and skills."
+    },
+    {
+      "id": "M-002",
+      "title": "Universal scripts and documentation alignment",
+      "status": "completed",
+      "spec_ref": null,
+      "story_ids": ["US-001"],
+      "task_ids": ["T-002", "T-003", "T-004", "T-005", "T-006"],
+      "target_date": null,
+      "completed_at": "2026-04-09T05:06:51Z",
+      "notes": "Replaced bash scripts with Python cross-platform implementations, added runner validation, synced all docs, and added missing assets."
+    }
+  ]
+}
