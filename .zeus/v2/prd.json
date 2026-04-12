@@ -51,6 +51,19 @@
                 "Tests confirm backward compatibility and state consistency under concurrent updates"
             ],
             "id": "US-005"
+        },
+        {
+            "passes": false,
+            "title": "Subagent Dispatcher Integration — enable true unattended multi-agent execution",
+            "acceptance_criteria": [
+                "subagent_dispatcher.py provides SubagentDispatcher ABC and implementations for mock, kimi, claude, and auto",
+                "zeus_orchestrator.py delegates task execution to the dispatcher without leaking platform specifics",
+                "config.json optionally accepts subagent.dispatcher and subagent.timeout_seconds",
+                "Unit tests cover command construction, auto-selection, and timeout behavior",
+                "Web UI Agent Monitor shows activity indicators for running agents",
+                "Documentation (zeus-execute-v2.md, README) explains how to enable Kimi or Claude subagent mode"
+            ],
+            "id": "US-006"
         }
     ]
 }

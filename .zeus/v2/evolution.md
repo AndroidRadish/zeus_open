@@ -27,7 +27,7 @@
   - Spec: `.zeus/v2/specs/2026-04-12-adaptive-wave-rescheduling.md`
   - Roadmap: M-005 added with T-011 ~ T-014
   - PRD: US-005 added
-- **North star impact**: multi_agent_efficiency ↑↑, developer_adoption_rate ↑
+- **North star impact**: multi_agent_adoption_rate ↑↑, developer_adoption_rate ↑
 
 ---
 
@@ -43,3 +43,16 @@
   - Web UI rescheduled-task badges and wave-progress corrections
   - Full test coverage for adaptive behavior, state consistency, and backward compatibility
 - **Next milestone**: Backlog — Auto-heal (Step 2) remains deferred until further human decision
+
+---
+
+## PLAN — 2026-04-12 (Subagent Dispatcher)
+
+- **Event**: Plan subagent dispatcher integration after discovering `kimi --print` and `claude -p` support
+- **Objective**: Turn `dispatch_task` from a mock into a true unattended subagent runner
+- **Platforms**: Kimi CLI (`kimi --print`), Claude Code (`claude`), Mock fallback
+- **New Artifacts**:
+  - Spec: `.zeus/v2/specs/2026-04-12-subagent-dispatcher.md`
+  - Roadmap: M-006 added with T-015 ~ T-019
+  - PRD: US-006 added
+- **North star impact**: developer_adoption_rate ↑↑↑, multi_agent_efficiency ↑↑

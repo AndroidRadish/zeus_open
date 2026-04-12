@@ -185,6 +185,81 @@
       "original_wave": 7,
       "scheduled_wave": 7,
       "rescheduled_from": null
+    },
+    {
+      "id": "T-015",
+      "passes": false,
+      "story_id": "US-006",
+      "title": "Create subagent_dispatcher.py with ABC + Mock + Kimi + Claude + Auto implementations",
+      "depends_on": [],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 5,
+      "original_wave": 5,
+      "scheduled_wave": 5,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-016",
+      "passes": false,
+      "story_id": "US-006",
+      "title": "Refactor zeus_orchestrator.py to delegate execution to dispatcher and add config parsing",
+      "depends_on": [
+        "T-015"
+      ],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 6,
+      "original_wave": 6,
+      "scheduled_wave": 6,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-017",
+      "passes": false,
+      "story_id": "US-006",
+      "title": "Add unit tests for dispatcher command construction, auto-selection, and timeout",
+      "depends_on": [
+        "T-015",
+        "T-016"
+      ],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 6,
+      "original_wave": 6,
+      "scheduled_wave": 6,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-018",
+      "passes": false,
+      "story_id": "US-006",
+      "title": "Update Web UI Agent Monitor to show last_seen and simple activity indicators",
+      "depends_on": [
+        "T-016"
+      ],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 7,
+      "original_wave": 7,
+      "scheduled_wave": 7,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-019",
+      "passes": false,
+      "story_id": "US-006",
+      "title": "Update README and zeus-execute-v2.md with subagent setup instructions",
+      "depends_on": [
+        "T-017",
+        "T-018"
+      ],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 7,
+      "original_wave": 7,
+      "scheduled_wave": 7,
+      "rescheduled_from": null
     }
   ]
 }

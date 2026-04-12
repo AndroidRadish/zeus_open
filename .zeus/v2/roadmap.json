@@ -69,6 +69,22 @@
             ],
             "title": "v2 Orchestrator Enhancements — Adaptive Wave Rescheduling",
             "status": "completed"
+        },
+        {
+            "id": "M-006",
+            "task_ids": [
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-018",
+                "T-019"
+            ],
+            "spec_ref": ".zeus/v2/specs/2026-04-12-subagent-dispatcher.md",
+            "story_ids": [
+                "US-006"
+            ],
+            "title": "v2 Subagent Dispatcher Integration",
+            "status": "planned"
         }
     ]
 }
