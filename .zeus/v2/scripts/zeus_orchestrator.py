@@ -255,8 +255,9 @@ class ZeusOrchestrator:
         workspace_path = store._resolve(workspace_rel)
         prompt_path = workspace_path / "PROMPT.md"
 
-        # Emit start event
+        # Emit start event and discussion log
         bus.emit("task.started", task_id, agent_id, {"message": f"Dispatching {task_id}"})
+        bus.post(task_id, agent_id, f"开始执行任务 **{task_id}**。正在准备隔离工作区并生成 PROMPT.md。")
 
         # Ensure clean workspace
         if workspace_path.exists():
@@ -280,8 +281,9 @@ class ZeusOrchestrator:
         prompt = self._build_prompt(task, store)
         await asyncio.to_thread(prompt_path.write_text, prompt, "utf-8")
 
-        # Emit completion event
+        # Emit completion event and discussion log
         bus.emit("task.completed", task_id, agent_id, {"workspace": str(workspace_path)})
+        bus.post(task_id, agent_id, f"任务 **{task_id}** 工作区准备完成，Prompt 已写入 `{prompt_path.name}`。")
 
         return {
             "task_id": task_id,
@@ -331,6 +333,7 @@ class ZeusOrchestrator:
                 if isinstance(outcome, Exception):
                     failed_count += 1
                     bus.emit("task.failed", tid, "zeus-agent", {"error": str(outcome)})
+                    bus.post(tid, "zeus-agent", f"任务 **{tid}** 执行失败：{outcome}")
 
         bus.emit("wave.completed", "wave", "zeus-orchestrator", {"wave": wave_number})
 
