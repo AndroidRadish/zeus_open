@@ -642,11 +642,12 @@
       "description_zh": "创建 SchedulerStateDB 类，包含 meta、active_tasks、mailbox 三张表。提供 save/load API。添加 test_scheduler_state.py 单元测试。",
       "status": "completed",
       "log_path": ".zeus/v2/ai-logs/T-036-A.md",
-      "commit_sha": "9cfd2ae"
+      "commit_sha": "770ebb6",
+      "completed_at": "2026-04-12T18:00:14Z"
     },
     {
       "id": "T-036-B",
-      "passes": false,
+      "passes": true,
       "story_id": "US-011",
       "title": "Add graceful shutdown and SIGTERM handlers",
       "description": "Register SIGTERM/SIGINT handlers in zeus_server.py and add stop_global_scheduler() in zeus_orchestrator.py. Persist scheduler state to SQLite on shutdown.",
@@ -661,11 +662,13 @@
       "title_zh": "添加优雅关闭和 SIGTERM 处理器",
       "description_en": "Register SIGTERM/SIGINT handlers in zeus_server.py and add stop_global_scheduler() in zeus_orchestrator.py. Persist scheduler state to SQLite on shutdown.",
       "description_zh": "在 zeus_server.py 中注册 SIGTERM/SIGINT 处理器，在 zeus_orchestrator.py 中添加 stop_global_scheduler()。关闭时将调度器状态持久化到 SQLite。",
-      "status": "pending"
+      "status": "completed",
+      "commit_sha": "770ebb6",
+      "completed_at": "2026-04-12T18:00:14Z"
     },
     {
       "id": "T-036-C",
-      "passes": false,
+      "passes": true,
       "story_id": "US-011",
       "title": "Implement state resume on startup in orchestrator and server",
       "description": "On server startup, detect scheduler_active from SQLite. Add resume_from_state() in zeus_orchestrator.py to recover or reset active tasks. Ensure /global/status reflects recovered state.",
@@ -680,7 +683,9 @@
       "title_zh": "在调度器和服务端实现启动时状态恢复",
       "description_en": "On server startup, detect scheduler_active from SQLite. Add resume_from_state() in zeus_orchestrator.py to recover or reset active tasks. Ensure /global/status reflects recovered state.",
       "description_zh": "服务器启动时检测 SQLite 中的 scheduler_active。在 zeus_orchestrator.py 中添加 resume_from_state() 恢复或重置活跃任务。确保 /global/status 正确反映恢复后的状态。",
-      "status": "pending"
+      "status": "completed",
+      "commit_sha": "770ebb6",
+      "completed_at": "2026-04-12T18:00:14Z"
     },
     {
       "id": "T-036-D",
@@ -699,11 +704,12 @@
       "description_zh": "更新 index.html，在从 SQLite 恢复调度器状态时显示恢复提示横幅。刷新 Global Execution 视图以展示恢复后的运行中/待执行/隔离区状态。",
       "status": "completed",
       "log_path": ".zeus/v2/ai-logs/T-036-D.md",
-      "commit_sha": "64ed3ba"
+      "commit_sha": "770ebb6",
+      "completed_at": "2026-04-12T18:00:14Z"
     },
     {
       "id": "T-036-E",
-      "passes": false,
+      "passes": true,
       "story_id": "US-011",
       "title": "Write integration tests for shutdown-resume cycle and update docs",
       "description": "Add tests in test_server.py covering shutdown -> restart -> state recovery. Update zeus-execute-v2.md and claude-progress.md.",
@@ -719,7 +725,10 @@
       "title_en": "Write integration tests for shutdown-resume cycle and update docs",
       "title_zh": "编写关闭-恢复周期的集成测试并更新文档",
       "description_en": "Add tests in test_server.py covering shutdown -> restart -> state recovery. Update zeus-execute-v2.md and claude-progress.md.",
-      "description_zh": "在 test_server.py 中添加覆盖关闭->重启->状态恢复的测试。更新 zeus-execute-v2.md 和 claude-progress.md。"
+      "description_zh": "在 test_server.py 中添加覆盖关闭->重启->状态恢复的测试。更新 zeus-execute-v2.md 和 claude-progress.md。",
+      "status": "completed",
+      "commit_sha": "770ebb6",
+      "completed_at": "2026-04-12T18:00:14Z"
     }
   ],
   "quarantine": []
