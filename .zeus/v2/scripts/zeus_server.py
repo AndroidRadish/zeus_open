@@ -436,6 +436,18 @@ def get_global_status(version: str = Query("v2")) -> dict[str, Any]:
     }
 
 
+@app.get("/agent-ids")
+def get_agent_ids(version: str = Query("v2")) -> dict[str, Any]:
+    """Return all agent IDs discovered from the agent-logs directory."""
+    logs_dir = store._resolve(f".zeus/{version}/agent-logs")
+    ids: list[str] = []
+    if logs_dir.exists() and logs_dir.is_dir():
+        for entry in sorted(logs_dir.iterdir()):
+            if entry.is_dir() and not entry.name.startswith("mailbox"):
+                ids.append(entry.name)
+    return {"agent_ids": ids}
+
+
 @app.get("/agents/{agent_id}/logs")
 def get_agent_logs(agent_id: str, version: str = Query("v2")) -> dict[str, Any]:
     base = store._resolve(f".zeus/{version}/agent-logs/{agent_id}")

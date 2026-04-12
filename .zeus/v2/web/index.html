@@ -724,7 +724,14 @@
         <div class="glass-panel rounded-2xl p-5">
           <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
             <label class="text-sm font-medium text-slate-300">{{ lang === 'en' ? 'Target Agent' : '目标 Agent' }}</label>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <select
+                v-model="mailboxAgentId"
+                class="appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 min-w-[12rem]"
+              >
+                <option value="">{{ lang === 'en' ? '— Select or type —' : '— 选择或输入 —' }}</option>
+                <option v-for="a in allAgentIds" :key="a" :value="a">{{ a }}</option>
+              </select>
               <input
                 v-model="mailboxAgentId"
                 type="text"
@@ -773,7 +780,7 @@
         <div class="glass-panel rounded-2xl p-5">
           <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
             <label class="text-sm font-medium text-slate-300">{{ lang === 'en' ? 'Select Agent' : '选择 Agent' }}</label>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <select
                 v-model="selectedLogAgentId"
                 class="appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 min-w-[12rem]"
@@ -1035,6 +1042,7 @@
         const mailboxMessages = ref([]);
         const selectedLogAgentId = ref('');
         const agentLogs = ref({ agent_id: '', activity: '', reasoning: [] });
+        const allAgentIds = ref([]);
         let pollInterval = null;
         let visNetwork = null;
 
@@ -1107,13 +1115,14 @@
           return waves;
         });
 
-        const allAgentIds = computed(() => {
-          const ids = new Set();
-          agents.value.forEach(a => { if (a.agent_id) ids.add(a.agent_id); });
-          recentAgents.value.forEach(a => { if (a.agent_id) ids.add(a.agent_id); });
-          (globalStatus.value.running || []).forEach(a => { if (a.agent_id) ids.add(a.agent_id); });
-          return Array.from(ids).sort();
-        });
+        async function fetchAllAgentIds() {
+          try {
+            const data = await apiGet('/agent-ids');
+            allAgentIds.value = data.agent_ids || [];
+          } catch (e) {
+            allAgentIds.value = [];
+          }
+        }
 
         // Running agent task ids
         const runningTaskIds = computed(() => {
@@ -1481,7 +1490,8 @@
           await Promise.all([
             fetchStatus(),
             fetchAgents(),
-            fetchGlobalStatus()
+            fetchGlobalStatus(),
+            fetchAllAgentIds()
           ]);
           await fetchPhases();
           // Ensure dashboardWave belongs to selected phase
@@ -1580,6 +1590,7 @@
             fetchWaveTasks();
             fetchAgents();
             fetchGlobalStatus();
+            fetchAllAgentIds();
             if (currentTab.value === 'collaboration' && mailboxAgentId.value.trim()) {
               loadMailbox();
             }
@@ -1681,6 +1692,7 @@
           agentLogs,
           allAgentIds,
           loadAgentLogs,
+          fetchAllAgentIds,
           openProjectVisible,
           openProjectPath,
           openProjectError,

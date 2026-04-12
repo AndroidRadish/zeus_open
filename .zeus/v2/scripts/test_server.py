@@ -373,3 +373,17 @@ def test_mailbox_endpoint_empty(client):
     data = response.json()
     assert data["agent_id"] == "no-one"
     assert data["messages"] == []
+
+
+def test_agent_ids_endpoint(client, tmp_path):
+    # Seed agent-specific log directories
+    logs_dir = tmp_path / ".zeus" / "v2" / "agent-logs"
+    (logs_dir / "zeus-agent-A").mkdir(parents=True)
+    (logs_dir / "zeus-agent-B").mkdir(parents=True)
+    # mailbox directory should be ignored
+    (logs_dir / "mailbox").mkdir(parents=True)
+
+    response = client.get("/agent-ids")
+    assert response.status_code == 200
+    data = response.json()
+    assert sorted(data["agent_ids"]) == ["zeus-agent-A", "zeus-agent-B"]
