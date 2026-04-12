@@ -2,10 +2,10 @@
 
 ## 当前状态
 - **项目**: zeus-open (通用 AI-CLI 版 Zeus 框架)
-- **版本**: v2 全部 34 个任务已完成
-- **状态**: Validation pass | 34/34 completed
-- **最后提交**: `44f0556` (Web UI 精简为 6 个核心标签页)
-- **当前阶段**: v2 Foundation + Global Orchestrator 阶段收官
+- **版本**: v2 全部 34 个任务已完成，进入 Wave 12 / US-011 Production Hardening
+- **状态**: Validation pass | 70/70 tests green | 34/34 completed
+- **最后提交**: `5303275` (scheduler_active + wave fix)
+- **当前阶段**: P-003 — v2 Global Orchestrator & Agent Collaboration（已完成），准备进入 Production Hardening
 
 ## v2 已完成里程碑
 
@@ -49,6 +49,14 @@
 - **T-033** Web UI 新增 Global Execution / Agent Collaboration / Agent Logs 三视图
 - **T-034** 集成测试、向后兼容验证、文档更新
 
+## Wave 12 待执行队列 (US-011: Production Hardening)
+
+| Task | 标题 | 依赖 |
+|------|------|------|
+| **T-035** | 任务生命周期控制（retry / cancel / pause）API + Web UI | — |
+| **T-036** | 优雅关闭 + SQLite 调度器状态持久化 | T-035 |
+| **T-037** | Dockerfile + 一键启动脚本 (start.sh / start.ps1) | T-036 |
+
 ## 会后增强 (Post-T-034)
 - **i18n 补全**: 里程碑、阶段、新标签页全部支持中英切换
 - **Agent ID 下拉框**: `GET /agent-ids` 服务 + Collaboration/Logs 标签页自动枚举所有历史 agent
@@ -59,7 +67,9 @@
 
 ### 2026-04-12
 - 完成 T-031 ~ T-034 的开发、测试与文档
-- 68/68 测试全绿，v2 Validation pass
+- 70/70 测试全绿，v2 Validation pass
 - 添加并发实验脚本 `.zeus/v2/scripts/experiment_concurrency.py`
 - 优化 Web UI 国际化与交互体验
 - 添加 `POST /global/run` 一键启动全局调度器能力
+- 同步外部知识库文档（Bit & Beat 工程知识库）
+- 创建 US-011 与 Wave 12 任务队列，准备进入 Production Hardening

@@ -1,190 +1,218 @@
 {
-    "version": "v2",
-    "phases": [
-        {
-            "id": "P-001",
-            "title": "v2 Foundation",
-            "title_en": "v2 Foundation",
-            "title_zh": "v2 基础架构",
-            "summary": "Core storage, async orchestrator, FastAPI backend, Web dashboard, integration validation",
-            "summary_en": "Core storage, async orchestrator, FastAPI backend, Web dashboard, integration validation",
-            "summary_zh": "核心存储、异步调度器、FastAPI 后端、Web 仪表盘、集成验证",
-            "milestone_ids": ["M-001", "M-002", "M-003", "M-004"],
-            "wave_start": 1,
-            "wave_end": 4,
-            "status": "completed"
-        },
-        {
-            "id": "P-002",
-            "title": "v2 Intelligence & Polish",
-            "title_en": "v2 Intelligence & Polish",
-            "title_zh": "v2 智能与完善",
-            "summary": "Adaptive rescheduling, subagent dispatcher, workspace bootstrap, multi-language support",
-            "summary_en": "Adaptive rescheduling, subagent dispatcher, workspace bootstrap, multi-language support",
-            "summary_zh": "自适应重调度、子代理分发器、工作区引导、多语言支持",
-            "milestone_ids": ["M-005", "M-006", "M-007", "M-008"],
-            "wave_start": 5,
-            "wave_end": 8,
-            "status": "completed"
-        },
-        {
-            "id": "P-003",
-            "title": "v2 Global Orchestrator & Agent Collaboration",
-            "title_en": "v2 Global Orchestrator & Agent Collaboration",
-            "title_zh": "v2 全局调度器与代理协作",
-            "summary": "Global orchestrator, agent collaboration bus, cross-project coordination",
-            "summary_en": "Global orchestrator, agent collaboration bus, cross-project coordination",
-            "summary_zh": "全局调度器、代理协作总线、跨项目协调",
-            "milestone_ids": ["M-009", "M-010"],
-            "wave_start": 9,
-            "wave_end": null,
-            "status": "in_progress"
-        }
-    ],
-    "milestones": [
-        {
-            "id": "M-001",
-            "task_ids": [
-                "T-001",
-                "T-002",
-                "T-003"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
-            "story_ids": [
-                "US-001"
-            ],
-            "title": "v2 Infrastructure",
-            "status": "completed"
-        },
-        {
-            "id": "M-002",
-            "task_ids": [
-                "T-004",
-                "T-005"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
-            "story_ids": [
-                "US-002"
-            ],
-            "title": "v2 Core Engine",
-            "status": "completed"
-        },
-        {
-            "id": "M-003",
-            "task_ids": [
-                "T-006",
-                "T-007"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
-            "story_ids": [
-                "US-003"
-            ],
-            "title": "v2 Dual Frontend",
-            "status": "completed"
-        },
-        {
-            "id": "M-004",
-            "task_ids": [
-                "T-008",
-                "T-009",
-                "T-010"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
-            "story_ids": [
-                "US-004"
-            ],
-            "title": "v2 Integration & Ship",
-            "status": "completed"
-        },
-        {
-            "id": "M-005",
-            "task_ids": [
-                "T-011",
-                "T-012",
-                "T-013",
-                "T-014"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-12-adaptive-wave-rescheduling.md",
-            "story_ids": [
-                "US-005"
-            ],
-            "title": "v2 Orchestrator Enhancements — Adaptive Wave Rescheduling",
-            "status": "completed"
-        },
-        {
-            "id": "M-006",
-            "task_ids": [
-                "T-015",
-                "T-016",
-                "T-017",
-                "T-018",
-                "T-019"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-12-subagent-dispatcher.md",
-            "story_ids": [
-                "US-006"
-            ],
-            "title": "v2 Subagent Dispatcher Integration",
-            "status": "completed"
-        },
-        {
-            "id": "M-007",
-            "task_ids": [
-                "T-020",
-                "T-021",
-                "T-022"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-12-subagent-workspace-bootstrap.md",
-            "story_ids": [
-                "US-007"
-            ],
-            "title": "v2 Subagent Workspace Bootstrap",
-            "status": "completed"
-        },
-        {
-            "id": "M-008",
-            "task_ids": [
-                "T-023",
-                "T-024",
-                "T-025"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-12-web-ui-improvements.md",
-            "story_ids": [
-                "US-008"
-            ],
-            "title": "v2 Web UI Improvements & Multi-language Support",
-            "status": "completed"
-        },
-        {
-            "id": "M-009",
-            "task_ids": [
-                "T-026",
-                "T-027",
-                "T-028",
-                "T-029"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-12-phase-layer-design.md",
-            "story_ids": [
-                "US-009"
-            ],
-            "title": "v2 Phase Layer — Delivery Batch Management",
-            "status": "completed"
-        },
-        {
-            "id": "M-010",
-            "task_ids": [
-                "T-030",
-                "T-031",
-                "T-032",
-                "T-033",
-                "T-034"
-            ],
-            "spec_ref": ".zeus/v2/specs/2026-04-12-global-orchestrator-agent-collaboration.md",
-            "story_ids": [
-                "US-010"
-            ],
-            "title": "v2 Global Orchestrator & Agent Collaboration",
-            "status": "planned"
-        }
-    ]
+  "version": "v2",
+  "phases": [
+    {
+      "id": "P-001",
+      "title": "v2 Foundation",
+      "title_en": "v2 Foundation",
+      "title_zh": "v2 基础架构",
+      "summary": "Core storage, async orchestrator, FastAPI backend, Web dashboard, integration validation",
+      "summary_en": "Core storage, async orchestrator, FastAPI backend, Web dashboard, integration validation",
+      "summary_zh": "核心存储、异步调度器、FastAPI 后端、Web 仪表盘、集成验证",
+      "milestone_ids": [
+        "M-001",
+        "M-002",
+        "M-003",
+        "M-004"
+      ],
+      "wave_start": 1,
+      "wave_end": 4,
+      "status": "completed"
+    },
+    {
+      "id": "P-002",
+      "title": "v2 Intelligence & Polish",
+      "title_en": "v2 Intelligence & Polish",
+      "title_zh": "v2 智能与完善",
+      "summary": "Adaptive rescheduling, subagent dispatcher, workspace bootstrap, multi-language support",
+      "summary_en": "Adaptive rescheduling, subagent dispatcher, workspace bootstrap, multi-language support",
+      "summary_zh": "自适应重调度、子代理分发器、工作区引导、多语言支持",
+      "milestone_ids": [
+        "M-005",
+        "M-006",
+        "M-007",
+        "M-008"
+      ],
+      "wave_start": 5,
+      "wave_end": 8,
+      "status": "completed"
+    },
+    {
+      "id": "P-003",
+      "title": "v2 Global Orchestrator & Agent Collaboration",
+      "title_en": "v2 Global Orchestrator & Agent Collaboration",
+      "title_zh": "v2 全局调度器与代理协作",
+      "summary": "Global orchestrator, agent collaboration bus, cross-project coordination",
+      "summary_en": "Global orchestrator, agent collaboration bus, cross-project coordination",
+      "summary_zh": "全局调度器、代理协作总线、跨项目协调",
+      "milestone_ids": [
+        "M-009",
+        "M-010",
+        "M-011"
+      ],
+      "wave_start": 9,
+      "wave_end": 12,
+      "status": "in_progress"
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M-001",
+      "task_ids": [
+        "T-001",
+        "T-002",
+        "T-003"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
+      "story_ids": [
+        "US-001"
+      ],
+      "title": "v2 Infrastructure",
+      "status": "completed"
+    },
+    {
+      "id": "M-002",
+      "task_ids": [
+        "T-004",
+        "T-005"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
+      "story_ids": [
+        "US-002"
+      ],
+      "title": "v2 Core Engine",
+      "status": "completed"
+    },
+    {
+      "id": "M-003",
+      "task_ids": [
+        "T-006",
+        "T-007"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
+      "story_ids": [
+        "US-003"
+      ],
+      "title": "v2 Dual Frontend",
+      "status": "completed"
+    },
+    {
+      "id": "M-004",
+      "task_ids": [
+        "T-008",
+        "T-009",
+        "T-010"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
+      "story_ids": [
+        "US-004"
+      ],
+      "title": "v2 Integration & Ship",
+      "status": "completed"
+    },
+    {
+      "id": "M-005",
+      "task_ids": [
+        "T-011",
+        "T-012",
+        "T-013",
+        "T-014"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-12-adaptive-wave-rescheduling.md",
+      "story_ids": [
+        "US-005"
+      ],
+      "title": "v2 Orchestrator Enhancements — Adaptive Wave Rescheduling",
+      "status": "completed"
+    },
+    {
+      "id": "M-006",
+      "task_ids": [
+        "T-015",
+        "T-016",
+        "T-017",
+        "T-018",
+        "T-019"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-12-subagent-dispatcher.md",
+      "story_ids": [
+        "US-006"
+      ],
+      "title": "v2 Subagent Dispatcher Integration",
+      "status": "completed"
+    },
+    {
+      "id": "M-007",
+      "task_ids": [
+        "T-020",
+        "T-021",
+        "T-022"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-12-subagent-workspace-bootstrap.md",
+      "story_ids": [
+        "US-007"
+      ],
+      "title": "v2 Subagent Workspace Bootstrap",
+      "status": "completed"
+    },
+    {
+      "id": "M-008",
+      "task_ids": [
+        "T-023",
+        "T-024",
+        "T-025"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-12-web-ui-improvements.md",
+      "story_ids": [
+        "US-008"
+      ],
+      "title": "v2 Web UI Improvements & Multi-language Support",
+      "status": "completed"
+    },
+    {
+      "id": "M-009",
+      "task_ids": [
+        "T-026",
+        "T-027",
+        "T-028",
+        "T-029"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-12-phase-layer-design.md",
+      "story_ids": [
+        "US-009"
+      ],
+      "title": "v2 Phase Layer — Delivery Batch Management",
+      "status": "completed"
+    },
+    {
+      "id": "M-010",
+      "task_ids": [
+        "T-030",
+        "T-031",
+        "T-032",
+        "T-033",
+        "T-034"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-12-global-orchestrator-agent-collaboration.md",
+      "story_ids": [
+        "US-010"
+      ],
+      "title": "v2 Global Orchestrator & Agent Collaboration",
+      "status": "completed"
+    },
+    {
+      "id": "M-011",
+      "task_ids": [
+        "T-035",
+        "T-036",
+        "T-037"
+      ],
+      "spec_ref": ".zeus/v2/specs/2026-04-12-production-hardening.md",
+      "story_ids": [
+        "US-011"
+      ],
+      "title": "v2 Production Hardening",
+      "status": "planned"
+    }
+  ]
 }

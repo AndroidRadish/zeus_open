@@ -1,121 +1,131 @@
 {
-    "version": "v2",
-    "stories": [
-        {
-            "passes": true,
-            "title": "Build v2 infrastructure: storage abstraction, agent bus, and workflow graph generator",
-            "acceptance_criteria": [
-                "store.py provides AbstractStore with LocalStore implementation and file-lock support",
-                "agent_bus.py produces JSONL events and Markdown discussion logs per wave",
-                "workflow_graph.py generates correct Mermaid and Graphviz output from task.json"
-            ],
-            "id": "US-001"
-        },
-        {
-            "passes": true,
-            "title": "Build v2 core engine: async orchestrator and FastAPI backend",
-            "acceptance_criteria": [
-                "zeus_orchestrator.py dispatches 3+ tasks concurrently within a wave without corrupting task.json",
-                "Orchestrator uses asyncio.Semaphore and isolated agent workspaces",
-                "zeus_server.py exposes /status, /events, /discussion, /graph/mermaid endpoints"
-            ],
-            "id": "US-002"
-        },
-        {
-            "passes": true,
-            "title": "Deliver zero-build Web UI dashboard",
-            "acceptance_criteria": [
-                "Web frontend (index.html) renders dashboard and graph without npm/build tools",
-                "Web UI consumes the same FastAPI backend"
-            ],
-            "id": "US-003"
-        },
-        {
-            "passes": true,
-            "title": "Integrate, test, document, and validate backward compatibility",
-            "acceptance_criteria": [
-                "Integration tests pass for end-to-end 2-wave execution with mock agents",
-                "zeus_runner.py --status on main remains unchanged and functional",
-                "v2 documentation (zeus-execute-v2.md) and README updates are complete"
-            ],
-            "id": "US-004"
-        },
-        {
-            "passes": true,
-            "title": "Adaptive Wave Rescheduling — maximize concurrency slot utilization",
-            "acceptance_criteria": [
-                "task.json schema supports original_wave, scheduled_wave, and rescheduled_from",
-                "zeus_orchestrator.py uses a priority queue and fills empty slots from future waves when current wave tasks block",
-                "Agent Bus emits task.rescheduled events for every dynamic move",
-                "Web UI correctly displays rescheduled tasks and updated wave progress",
-                "Tests confirm backward compatibility and state consistency under concurrent updates"
-            ],
-            "id": "US-005"
-        },
-        {
-            "passes": true,
-            "title": "Subagent Dispatcher Integration — enable true unattended multi-agent execution",
-            "acceptance_criteria": [
-                "subagent_dispatcher.py provides SubagentDispatcher ABC and implementations for mock, kimi, claude, and auto",
-                "zeus_orchestrator.py delegates task execution to the dispatcher without leaking platform specifics",
-                "config.json optionally accepts subagent.dispatcher and subagent.timeout_seconds",
-                "Unit tests cover command construction, auto-selection, and timeout behavior",
-                "Web UI Agent Monitor shows activity indicators for running agents",
-                "Documentation (zeus-execute-v2.md, README) explains how to enable Kimi or Claude subagent mode"
-            ],
-            "id": "US-006"
-        },
-        {
-            "passes": true,
-            "title": "Subagent Workspace Bootstrap — auto-inject identity and context files",
-            "acceptance_criteria": [
-                "zeus_orchestrator.py copies AGENTS.md, USER.md, IDENTITY.md, and SOUL.md into every agent workspace before dispatch",
-                "config.json optionally accepts subagent.bootstrap.files to customize the list",
-                "Missing files are skipped without raising exceptions",
-                "A task.bootstrapped event is emitted for observability",
-                "Tests cover default behavior and config override",
-                "Documentation (zeus-execute-v2.md) explains the bootstrap behavior and config option"
-            ],
-            "id": "US-007"
-        },
-        {
-            "passes": true,
-            "title": "Web UI Improvements & Multi-language Support",
-            "acceptance_criteria": [
-                "Web UI provides a Milestones tab that groups tasks by roadmap milestone with per-milestone progress bars",
-                "Task schema supports optional title_en, title_zh, description_en, description_zh",
-                "Web UI has a language toggle (EN/ZH) and all task displays are localized with graceful fallback",
-                "All existing tests pass and new tests cover the /milestones endpoint",
-                "i18n fields are seeded for all existing v2 tasks and documented in zeus-execute-v2.md"
-            ],
-            "id": "US-008"
-        },
-        {
-            "passes": true,
-            "title": "Phase Layer — Delivery Batch Management for Wave Proliferation",
-            "acceptance_criteria": [
-                "roadmap.json schema supports an optional phases array with title, summary, milestone_ids, and wave_range",
-                "GET /phases endpoint returns phases with computed status, progress_percent, and nested milestones",
-                "Web UI shows a Phases tab with summary-bearing phase cards and phase-aware wave selector",
-                "task.json optionally tracks meta.current_phase",
-                "All tests pass and new tests cover /phases and phase status calculation",
-                "Documentation explains how to define phases in roadmap.json"
-            ],
-            "id": "US-009"
-        },
-        {
-            "passes": false,
-            "title": "Global Orchestrator & Agent Collaboration",
-            "acceptance_criteria": [
-                "GlobalScheduler replaces wave-locked execution: tasks are dispatched by global dependency readiness while wave remains a planning/observation dimension",
-                "Failed tasks enter a quarantine zone without blocking unrelated downstream tasks",
-                "Agent Mailbox protocol enables point-to-point messaging between agents via agent_bus",
-                "Each dispatched agent gets its own ai-logs directory under .zeus/v2/agent-logs/{agent_id}/",
-                "Web UI adds Global Execution view, Agent Message Stream panel, and per-agent log browser",
-                "All existing tests pass; new tests cover global scheduling, mailbox delivery, and agent log isolation",
-                "Documentation updated in zeus-execute-v2.md"
-            ],
-            "id": "US-010"
-        }
-    ]
+  "version": "v2",
+  "stories": [
+    {
+      "passes": true,
+      "title": "Build v2 infrastructure: storage abstraction, agent bus, and workflow graph generator",
+      "acceptance_criteria": [
+        "store.py provides AbstractStore with LocalStore implementation and file-lock support",
+        "agent_bus.py produces JSONL events and Markdown discussion logs per wave",
+        "workflow_graph.py generates correct Mermaid and Graphviz output from task.json"
+      ],
+      "id": "US-001"
+    },
+    {
+      "passes": true,
+      "title": "Build v2 core engine: async orchestrator and FastAPI backend",
+      "acceptance_criteria": [
+        "zeus_orchestrator.py dispatches 3+ tasks concurrently within a wave without corrupting task.json",
+        "Orchestrator uses asyncio.Semaphore and isolated agent workspaces",
+        "zeus_server.py exposes /status, /events, /discussion, /graph/mermaid endpoints"
+      ],
+      "id": "US-002"
+    },
+    {
+      "passes": true,
+      "title": "Deliver zero-build Web UI dashboard",
+      "acceptance_criteria": [
+        "Web frontend (index.html) renders dashboard and graph without npm/build tools",
+        "Web UI consumes the same FastAPI backend"
+      ],
+      "id": "US-003"
+    },
+    {
+      "passes": true,
+      "title": "Integrate, test, document, and validate backward compatibility",
+      "acceptance_criteria": [
+        "Integration tests pass for end-to-end 2-wave execution with mock agents",
+        "zeus_runner.py --status on main remains unchanged and functional",
+        "v2 documentation (zeus-execute-v2.md) and README updates are complete"
+      ],
+      "id": "US-004"
+    },
+    {
+      "passes": true,
+      "title": "Adaptive Wave Rescheduling — maximize concurrency slot utilization",
+      "acceptance_criteria": [
+        "task.json schema supports original_wave, scheduled_wave, and rescheduled_from",
+        "zeus_orchestrator.py uses a priority queue and fills empty slots from future waves when current wave tasks block",
+        "Agent Bus emits task.rescheduled events for every dynamic move",
+        "Web UI correctly displays rescheduled tasks and updated wave progress",
+        "Tests confirm backward compatibility and state consistency under concurrent updates"
+      ],
+      "id": "US-005"
+    },
+    {
+      "passes": true,
+      "title": "Subagent Dispatcher Integration — enable true unattended multi-agent execution",
+      "acceptance_criteria": [
+        "subagent_dispatcher.py provides SubagentDispatcher ABC and implementations for mock, kimi, claude, and auto",
+        "zeus_orchestrator.py delegates task execution to the dispatcher without leaking platform specifics",
+        "config.json optionally accepts subagent.dispatcher and subagent.timeout_seconds",
+        "Unit tests cover command construction, auto-selection, and timeout behavior",
+        "Web UI Agent Monitor shows activity indicators for running agents",
+        "Documentation (zeus-execute-v2.md, README) explains how to enable Kimi or Claude subagent mode"
+      ],
+      "id": "US-006"
+    },
+    {
+      "passes": true,
+      "title": "Subagent Workspace Bootstrap — auto-inject identity and context files",
+      "acceptance_criteria": [
+        "zeus_orchestrator.py copies AGENTS.md, USER.md, IDENTITY.md, and SOUL.md into every agent workspace before dispatch",
+        "config.json optionally accepts subagent.bootstrap.files to customize the list",
+        "Missing files are skipped without raising exceptions",
+        "A task.bootstrapped event is emitted for observability",
+        "Tests cover default behavior and config override",
+        "Documentation (zeus-execute-v2.md) explains the bootstrap behavior and config option"
+      ],
+      "id": "US-007"
+    },
+    {
+      "passes": true,
+      "title": "Web UI Improvements & Multi-language Support",
+      "acceptance_criteria": [
+        "Web UI provides a Milestones tab that groups tasks by roadmap milestone with per-milestone progress bars",
+        "Task schema supports optional title_en, title_zh, description_en, description_zh",
+        "Web UI has a language toggle (EN/ZH) and all task displays are localized with graceful fallback",
+        "All existing tests pass and new tests cover the /milestones endpoint",
+        "i18n fields are seeded for all existing v2 tasks and documented in zeus-execute-v2.md"
+      ],
+      "id": "US-008"
+    },
+    {
+      "passes": true,
+      "title": "Phase Layer — Delivery Batch Management for Wave Proliferation",
+      "acceptance_criteria": [
+        "roadmap.json schema supports an optional phases array with title, summary, milestone_ids, and wave_range",
+        "GET /phases endpoint returns phases with computed status, progress_percent, and nested milestones",
+        "Web UI shows a Phases tab with summary-bearing phase cards and phase-aware wave selector",
+        "task.json optionally tracks meta.current_phase",
+        "All tests pass and new tests cover /phases and phase status calculation",
+        "Documentation explains how to define phases in roadmap.json"
+      ],
+      "id": "US-009"
+    },
+    {
+      "passes": true,
+      "title": "Global Orchestrator & Agent Collaboration",
+      "acceptance_criteria": [
+        "GlobalScheduler replaces wave-locked execution: tasks are dispatched by global dependency readiness while wave remains a planning/observation dimension",
+        "Failed tasks enter a quarantine zone without blocking unrelated downstream tasks",
+        "Agent Mailbox protocol enables point-to-point messaging between agents via agent_bus",
+        "Each dispatched agent gets its own ai-logs directory under .zeus/v2/agent-logs/{agent_id}/",
+        "Web UI adds Global Execution view, Agent Message Stream panel, and per-agent log browser",
+        "All existing tests pass; new tests cover global scheduling, mailbox delivery, and agent log isolation",
+        "Documentation updated in zeus-execute-v2.md"
+      ],
+      "id": "US-010"
+    },
+    {
+      "passes": false,
+      "title": "Production Hardening — resilient execution, state persistence, and deployability",
+      "acceptance_criteria": [
+        "Tasks can be retried, cancelled, and paused from both Web UI and API",
+        "Orchestrator supports graceful shutdown (SIGTERM), and scheduler state is persisted to SQLite instead of memory-only",
+        "Docker image and one-click start scripts are provided for v2 backend"
+      ],
+      "id": "US-011"
+    }
+  ]
 }

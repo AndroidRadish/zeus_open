@@ -1,10 +1,10 @@
 {
   "meta": {
-    "current_wave": 11,
+    "current_wave": 12,
     "wave_approval_required": true,
     "max_parallel_agents": 3,
     "scheduling_mode": "adaptive",
-    "current_phase": "P-002"
+    "current_phase": "P-003"
   },
   "tasks": [
     {
@@ -552,6 +552,58 @@
       "original_wave": 11,
       "scheduled_wave": 11,
       "rescheduled_from": null
+    },
+    {
+      "id": "T-035",
+      "passes": false,
+      "story_id": "US-011",
+      "title": "Implement task lifecycle controls (retry, cancel, pause) in API and Web UI",
+      "description": "Add POST endpoints for /tasks/{task_id}/retry, /cancel, /pause. Introduce task status model (pending|running|paused|completed|failed|cancelled). Add action buttons in Global Execution view. Write integration tests.",
+      "depends_on": [],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Implement task lifecycle controls (retry, cancel, pause) in API and Web UI",
+      "title_zh": "在 API 和 Web UI 中实现任务生命周期控制（重试、取消、暂停）",
+      "description_en": "Add POST endpoints for /tasks/{task_id}/retry, /cancel, /pause. Introduce task status model (pending|running|paused|completed|failed|cancelled). Add action buttons in Global Execution view. Write integration tests.",
+      "description_zh": "添加 POST 端点支持任务重试、取消、暂停。引入当前任务状态模型（pending|running|paused|completed|failed|cancelled）。在全局执行页面添加操作按钮。编写集成测试。"
+    },
+    {
+      "id": "T-036",
+      "passes": false,
+      "story_id": "US-011",
+      "title": "Implement graceful shutdown and SQLite-based scheduler state persistence",
+      "description": "Add SIGTERM/SIGINT handlers. Persist running global scheduler state, active tasks, and mailbox to SQLite. Resume state on server startup. Write tests for shutdown-resume cycle.",
+      "depends_on": [
+        "T-035"
+      ],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Implement graceful shutdown and SQLite-based scheduler state persistence",
+      "title_zh": "实现优雅关闭和 SQLite 调度器状态持久化",
+      "description_en": "Add SIGTERM/SIGINT handlers. Persist running global scheduler state, active tasks, and mailbox to SQLite. Resume state on server startup. Write tests for shutdown-resume cycle.",
+      "description_zh": "添加 SIGTERM/SIGINT 信号处理器。将运行的全局调度器状态、活跃任务和邮箱持久化到 SQLite。服务器重启时恢复状态。编写关闭-恢复周期的测试。"
+    },
+    {
+      "id": "T-037",
+      "passes": false,
+      "story_id": "US-011",
+      "title": "Create Dockerfile and one-click start scripts for v2 backend deployment",
+      "description": "Provide a Dockerfile that packages the v2 backend. Add start.sh (Linux/macOS) and start.ps1 (Windows) one-click scripts. Update README with deployment instructions. Verify local Docker build.",
+      "depends_on": [
+        "T-036"
+      ],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Create Dockerfile and one-click start scripts for v2 backend deployment",
+      "title_zh": "为 v2 后端部署创建 Dockerfile 和一键启动脚本",
+      "description_en": "Provide a Dockerfile that packages the v2 backend. Add start.sh (Linux/macOS) and start.ps1 (Windows) one-click scripts. Update README with deployment instructions. Verify local Docker build.",
+      "description_zh": "提供打包 v2 后端的 Dockerfile。添加 start.sh 和 start.ps1 一键启动脚本。更新 README 部署说明。验证本地 Docker 构建。"
     }
   ]
 }
