@@ -83,6 +83,25 @@ class ZeusOrchestrator:
             return localized
         return task.get(field, "")
 
+    @staticmethod
+    def _build_dependency_graph(tasks: list[dict]) -> dict[str, list[str]]:
+        """Build a task-id -> list of direct dependency ids graph."""
+        return {t["id"]: t.get("depends_on", []) for t in tasks if t.get("id")}
+
+    @staticmethod
+    def _get_transitive_deps(task_id: str, graph: dict[str, list[str]], _cache: dict[str, set[str]] | None = None) -> set[str]:
+        """Return all transitive dependency ids for a given task."""
+        if _cache is None:
+            _cache = {}
+        if task_id in _cache:
+            return _cache[task_id]
+        deps: set[str] = set()
+        for d in graph.get(task_id, []):
+            deps.add(d)
+            deps.update(ZeusOrchestrator._get_transitive_deps(d, graph, _cache))
+        _cache[task_id] = deps
+        return deps
+
     def _build_prompt(self, task: dict, store: LocalStore) -> str:
         config = self._load_config_json(store)
         north_star = config.get("metrics", {}).get("north_star", "N/A")
@@ -253,6 +272,149 @@ class ZeusOrchestrator:
             return task["id"], result
         except Exception as exc:
             return task["id"], exc
+
+    def _quarantine_task(
+        self,
+        task: dict,
+        reason: str,
+        store: LocalStore,
+        bus: AgentBus,
+        workspace: str | None = None,
+    ) -> None:
+        """Move a failed task into the quarantine zone and persist atomically."""
+        tid = task["id"]
+
+        with store.lock(self._task_json_path):
+            data = store.read_json(self._task_json_path)
+            quarantine = data.setdefault("quarantine", [])
+            # Idempotent: remove existing entry if present
+            quarantine = [q for q in quarantine if q.get("task_id") != tid]
+            quarantine.append(
+                {
+                    "task_id": tid,
+                    "reason": reason,
+                    "quarantined_at": _now_iso(),
+                    "workspace": workspace or "",
+                }
+            )
+            data["quarantine"] = quarantine
+            store.write_json(self._task_json_path, data)
+
+        bus.emit(
+            "task.quarantined",
+            tid,
+            "zeus-orchestrator",
+            {"reason": reason, "workspace": workspace or ""},
+        )
+        bus.post(tid, "zeus-orchestrator", f"任务 **{tid}** 已被隔离：{reason}")
+
+    def _get_global_ready_tasks(
+        self,
+        tasks: list[dict],
+        pass_map: dict[str, bool],
+        dispatched_ids: set[str],
+        quarantined_ids: set[str],
+    ) -> list[dict]:
+        """Return globally ready tasks sorted by (original_wave, id)."""
+        graph = self._build_dependency_graph(tasks)
+
+        ready: list[dict] = []
+        for t in tasks:
+            tid = t["id"]
+            if tid in dispatched_ids:
+                continue
+            if pass_map.get(tid, False):
+                continue
+            if tid in quarantined_ids:
+                continue
+
+            deps = t.get("depends_on", [])
+            # All direct deps must have passed and must not be quarantined
+            if not all(pass_map.get(d, False) for d in deps):
+                continue
+            if any(d in quarantined_ids for d in deps):
+                continue
+
+            ready.append(t)
+
+        ready.sort(key=lambda t: (self._task_original_wave(t) or 0, t["id"]))
+        return ready
+
+    async def run_global(self) -> dict:
+        """
+        Global scheduler entry point.
+
+        Dispatches tasks across all waves based purely on dependency readiness.
+        Failed tasks are quarantined so they do not block unrelated downstream work.
+        Wave numbers remain untouched and serve only as planning/observation fields.
+        """
+        store = self._store()
+        bus = AgentBus(version=self.version, wave=-1, store=store)
+
+        dispatched_ids: set[str] = set()
+        dispatched_count = 0
+        failed_count = 0
+        running_tasks: set[asyncio.Task] = set()
+
+        while True:
+            # Refresh state from disk each iteration
+            data = self._load_task_json(store)
+            tasks = data.get("tasks", [])
+            pass_map = {t["id"]: t.get("passes", False) for t in tasks}
+            quarantined_ids = {q["task_id"] for q in data.get("quarantine", []) if q.get("task_id")}
+
+            free_slots = self.max_parallel - len(running_tasks)
+            if free_slots > 0:
+                ready = self._get_global_ready_tasks(
+                    tasks, pass_map, dispatched_ids, quarantined_ids
+                )
+                for task in ready[:free_slots]:
+                    tid = task["id"]
+                    dispatched_ids.add(tid)
+                    coro = self._run_and_capture(task, bus, store)
+                    aio_task = asyncio.create_task(coro)
+                    running_tasks.add(aio_task)
+                    dispatched_count += 1
+
+            if not running_tasks:
+                break
+
+            done, running_tasks = await asyncio.wait(
+                running_tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            for task in done:
+                tid, outcome = await task
+                workspace_path = str(
+                    store._resolve(f".zeus/{self.version}/agent-workspaces/zeus-agent-{tid}")
+                )
+                if isinstance(outcome, Exception):
+                    failed_count += 1
+                    self._quarantine_task(
+                        {"id": tid},
+                        reason=f"exception: {outcome}",
+                        store=store,
+                        bus=bus,
+                        workspace=workspace_path,
+                    )
+                elif isinstance(outcome, dict) and outcome.get("status") == "failed":
+                    failed_count += 1
+                    self._quarantine_task(
+                        {"id": tid},
+                        reason=outcome.get("error", "dispatcher_failed"),
+                        store=store,
+                        bus=bus,
+                        workspace=workspace_path,
+                    )
+                # Dispatcher mock/claude/kimi already emits task.completed / task.failed;
+                # we additionally emit task.quarantined for global tracking.
+
+        bus.emit("global.completed", "global", "zeus-orchestrator", {})
+
+        return {
+            "mode": "global",
+            "dispatched": dispatched_count,
+            "failed": failed_count,
+        }
 
     def _build_dispatcher(self, store: LocalStore):
         """Factory for the subagent dispatcher based on project config."""
@@ -468,6 +630,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="ZeusOpen v2 Orchestrator")
     parser.add_argument("--version", default="v2", help="目标版本文件夹名 (默认: v2)")
     parser.add_argument("--wave", type=int, default=None, help="执行指定 wave")
+    parser.add_argument("--run-global", action="store_true", dest="run_global", help="全局调度模式（跨 wave 依赖就绪即执行）")
     parser.add_argument("--status", action="store_true", help="打印 v2 项目状态")
     parser.add_argument("--approve-next", action="store_true", help="人类批准后进入下一 wave")
 
@@ -481,6 +644,9 @@ def main() -> None:
         data = orch._load_task_json(store)
         current_wave = data.get("meta", {}).get("current_wave", 1)
         orch.transition_to_next_wave(current_wave, auto=True)
+    elif args.run_global:
+        summary = asyncio.run(orch.run_global())
+        print(json.dumps(summary, indent=2))
     elif args.wave is not None:
         summary = asyncio.run(orch.await_wave_completion(args.wave))
         print(json.dumps(summary, indent=2))

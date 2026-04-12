@@ -436,3 +436,224 @@ def test_transition_requires_approval_when_auto_false(orchestrator, temp_project
     store = LocalStore(base_dir=str(temp_project))
     data = store.read_json(".zeus/v2/task.json")
     assert data["meta"]["current_wave"] == 1
+
+
+# ---------------------------------------------------------------------------
+# Global Scheduler & Quarantine
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def global_project():
+    """Provide a project with tasks across multiple waves for global scheduling tests."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        zeus_dir = root / ".zeus" / "v2"
+        zeus_dir.mkdir(parents=True, exist_ok=True)
+
+        task_data = {
+            "meta": {
+                "current_wave": 1,
+                "wave_approval_required": True,
+                "max_parallel_agents": 2,
+            },
+            "tasks": [
+                {
+                    "id": "T-001",
+                    "passes": False,
+                    "story_id": "US-001",
+                    "title": "Task wave 1",
+                    "depends_on": [],
+                    "wave": 1,
+                    "original_wave": 1,
+                    "scheduled_wave": 1,
+                },
+                {
+                    "id": "T-002",
+                    "passes": False,
+                    "story_id": "US-001",
+                    "title": "Task wave 1 b",
+                    "depends_on": [],
+                    "wave": 1,
+                    "original_wave": 1,
+                    "scheduled_wave": 1,
+                },
+                {
+                    "id": "T-003",
+                    "passes": False,
+                    "story_id": "US-002",
+                    "title": "Task wave 2 depends on T-001",
+                    "depends_on": ["T-001"],
+                    "wave": 2,
+                    "original_wave": 2,
+                    "scheduled_wave": 2,
+                },
+                {
+                    "id": "T-004",
+                    "passes": False,
+                    "story_id": "US-002",
+                    "title": "Task wave 2 no deps",
+                    "depends_on": [],
+                    "wave": 2,
+                    "original_wave": 2,
+                    "scheduled_wave": 2,
+                },
+                {
+                    "id": "T-005",
+                    "passes": False,
+                    "story_id": "US-003",
+                    "title": "Task wave 3 depends on T-004",
+                    "depends_on": ["T-004"],
+                    "wave": 3,
+                    "original_wave": 3,
+                    "scheduled_wave": 3,
+                },
+            ],
+        }
+        (zeus_dir / "task.json").write_text(json.dumps(task_data), encoding="utf-8")
+
+        config_data = {
+            "project": {"name": "Global Test Project"},
+            "metrics": {"north_star": "efficiency"},
+            "subagent": {"dispatcher": "mock"},
+        }
+        (zeus_dir / "config.json").write_text(json.dumps(config_data), encoding="utf-8")
+
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "main.py").write_text("# hello\n", encoding="utf-8")
+
+        old_cwd = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            yield root
+        finally:
+            os.chdir(old_cwd)
+
+
+@pytest.mark.asyncio
+async def test_run_global_dispatches_cross_wave(global_project):
+    """Global scheduler should dispatch T-003/T-004/T-005 as soon as their deps are ready, ignoring wave boundaries."""
+    orch = ZeusOrchestrator(version="v2", project_root=str(global_project), max_parallel=2)
+
+    dispatch_order: list[str] = []
+
+    async def fake_dispatch(task, bus, store):
+        await asyncio.sleep(0.01)
+        dispatch_order.append(task["id"])
+        # Simulate subagent updating passes in task.json
+        orch.update_task_state(task["id"], {"passes": True, "commit_sha": "abc123"})
+        bus.emit("task.completed", task["id"], "mock-agent", {})
+        return {"task_id": task["id"], "status": "completed"}
+
+    with patch.object(orch, "dispatch_task", side_effect=fake_dispatch):
+        summary = await orch.run_global()
+
+    assert summary["mode"] == "global"
+    assert summary["dispatched"] == 5
+    assert summary["failed"] == 0
+
+    # T-001 and T-002 should start first (only two slots)
+    first_batch = set(dispatch_order[:2])
+    assert first_batch == {"T-001", "T-002"}
+
+    # After T-001 and T-002 finish, T-003 (depends T-001), T-004 (no deps) should go next
+    second_batch = set(dispatch_order[2:4])
+    assert second_batch == {"T-003", "T-004"}
+
+    # Finally T-005 depends on T-004
+    assert dispatch_order[4] == "T-005"
+
+
+@pytest.mark.asyncio
+async def test_quarantine_unblocks_unrelated_tasks(global_project):
+    """When T-001 fails, T-004 and T-005 (which do not depend on T-001) should still proceed."""
+    orch = ZeusOrchestrator(version="v2", project_root=str(global_project), max_parallel=2)
+    store = LocalStore(base_dir=str(global_project))
+
+    async def fake_dispatch(task, bus, store):
+        await asyncio.sleep(0.01)
+        if task["id"] == "T-001":
+            raise RuntimeError("simulated failure")
+        orch.update_task_state(task["id"], {"passes": True, "commit_sha": "abc123"})
+        bus.emit("task.completed", task["id"], "mock-agent", {})
+        return {"task_id": task["id"], "status": "completed"}
+
+    with patch.object(orch, "dispatch_task", side_effect=fake_dispatch):
+        summary = await orch.run_global()
+
+    # T-001 fails; T-002, T-004, T-005 succeed; T-003 is never dispatched because T-001 is quarantined
+    assert summary["dispatched"] == 4
+    assert summary["failed"] == 1
+
+    # T-001 should be quarantined
+    data = store.read_json(".zeus/v2/task.json")
+    quarantine_ids = {q["task_id"] for q in data.get("quarantine", [])}
+    assert "T-001" in quarantine_ids
+
+    # T-003, which depends on T-001, should NOT have been dispatched and should not have passed
+    t003 = next(t for t in data["tasks"] if t["id"] == "T-003")
+    assert t003.get("passes") is False
+
+    # T-004 and T-005 should have completed successfully
+    t004 = next(t for t in data["tasks"] if t["id"] == "T-004")
+    t005 = next(t for t in data["tasks"] if t["id"] == "T-005")
+    assert t004.get("passes") is True
+    assert t005.get("passes") is True
+
+    # Verify bus events
+    bus = AgentBus(version="v2", wave=-1, store=store)
+    events = bus.get_events()
+    quarantine_events = [e for e in events if e["type"] == "task.quarantined"]
+    assert len(quarantine_events) == 1
+    assert quarantine_events[0]["task_id"] == "T-001"
+
+
+@pytest.mark.asyncio
+async def test_quarantine_blocks_dependent_tasks(global_project):
+    """T-003 depends on T-001; if T-001 is quarantined, T-003 must never be dispatched."""
+    orch = ZeusOrchestrator(version="v2", project_root=str(global_project), max_parallel=2)
+
+    dispatched: list[str] = []
+
+    async def fake_dispatch(task, bus, store):
+        await asyncio.sleep(0.01)
+        dispatched.append(task["id"])
+        if task["id"] == "T-001":
+            raise RuntimeError("simulated failure")
+        orch.update_task_state(task["id"], {"passes": True, "commit_sha": "abc123"})
+        bus.emit("task.completed", task["id"], "mock-agent", {})
+        return {"task_id": task["id"], "status": "completed"}
+
+    with patch.object(orch, "dispatch_task", side_effect=fake_dispatch):
+        await orch.run_global()
+
+    # T-003 should never have been dispatched because T-001 failed and was quarantined
+    assert "T-003" not in dispatched
+
+
+@pytest.mark.asyncio
+async def test_run_global_respects_max_parallel(global_project):
+    """Only max_parallel tasks should run concurrently."""
+    orch = ZeusOrchestrator(version="v2", project_root=str(global_project), max_parallel=2)
+
+    concurrent = 0
+    max_concurrent = 0
+    block_event = asyncio.Event()
+
+    async def fake_dispatch(task, bus, store):
+        nonlocal concurrent, max_concurrent
+        concurrent += 1
+        max_concurrent = max(max_concurrent, concurrent)
+        await block_event.wait()
+        concurrent -= 1
+        orch.update_task_state(task["id"], {"passes": True, "commit_sha": "abc123"})
+        bus.emit("task.completed", task["id"], "mock-agent", {})
+        return {"task_id": task["id"], "status": "completed"}
+
+    async def unblock():
+        await asyncio.sleep(0.1)
+        block_event.set()
+
+    with patch.object(orch, "dispatch_task", side_effect=fake_dispatch):
+        asyncio.create_task(unblock())
+        await orch.run_global()
+
+    assert max_concurrent <= 2

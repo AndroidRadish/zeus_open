@@ -50,6 +50,39 @@
 
 - **Event**: Complete M-009 — Phase Layer (Delivery Batch Management)
 - **Tasks completed**: T-026, T-027, T-028, T-029
+- **Status**: All v2 tests pass (55/55)
+- **Key deliverables**:
+  - `roadmap.json` extended with `phases` array (P-001, P-002, P-003) grouping milestones into human-readable delivery batches
+  - `GET /phases` endpoint computes phase status and progress from milestone/task states
+  - Web UI Phases tab with collapsible phase cards, milestone nesting, and phase-aware wave selector
+  - Dashboard header shows current phase badge dynamically based on `meta.current_wave`
+  - `skills/zeus-execute-v2.md` documents phase layer configuration
+- **Next milestone**: M-010 — Global Orchestrator & Agent Collaboration
+
+---
+
+## PLAN — 2026-04-12 (Global Orchestrator & Agent Collaboration)
+
+- **Event**: Plan a new milestone that breaks wave execution locks while keeping wave as a planning/observation view, and enables real-time agent collaboration with per-agent traceability
+- **Objective**: 
+  - Introduce `GlobalScheduler` to dispatch tasks by global dependency readiness across wave boundaries
+  - Add a `quarantine` zone for failed tasks so they do not block unrelated downstream work
+  - Extend `agent_bus.py` with a Mailbox protocol for point-to-point agent messaging
+  - Restructure `agent-logs` from wave-centric to agent-centric directories
+  - Update Web UI with Global Execution, Agent Collaboration, and per-agent log browser views
+- **New Artifacts**:
+  - Spec: `.zeus/v2/specs/2026-04-12-global-orchestrator-agent-collaboration.md`
+  - Roadmap: M-010 added with T-030 ~ T-034
+  - PRD: US-010 added
+- **North star impact**: `multi_agent_efficiency` ↑↑↑, `developer_adoption_rate` ↑↑, `observability` ↑↑
+- **Status**: Ready for execution
+
+---
+
+## SHIP — 2026-04-12
+
+- **Event**: Complete M-009 — Phase Layer (Delivery Batch Management)
+- **Tasks completed**: T-026, T-027, T-028, T-029
 - **Status**: All v2 tests pass (53/53)
 - **Key deliverables**:
   - `roadmap.json` now supports a `phases` array with title, summary, milestone_ids, and wave_range
