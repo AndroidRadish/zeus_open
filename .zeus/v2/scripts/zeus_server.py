@@ -6,6 +6,7 @@ Provides REST APIs for the PyQt GUI and Web frontend.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import os
 import shutil
@@ -23,8 +24,12 @@ from fastapi.staticfiles import StaticFiles
 
 from store import LocalStore
 from workflow_graph import WorkflowGraph
+from zeus_orchestrator import ZeusOrchestrator
 
 app = FastAPI(title="ZeusOpen v2 Server")
+
+# Track active global scheduler runs to avoid duplicates
+_active_global_runs: set[str] = set()
 
 app.add_middleware(
     CORSMiddleware,
@@ -434,6 +439,23 @@ def get_global_status(version: str = Query("v2")) -> dict[str, Any]:
         "pending_by_wave": pending_by_wave,
         "quarantine": quarantine,
     }
+
+
+@app.post("/global/run")
+async def run_global(version: str = Query("v2")) -> dict[str, Any]:
+    if version in _active_global_runs:
+        raise HTTPException(status_code=409, detail="Global scheduler already running for this version")
+
+    async def _run() -> None:
+        try:
+            orch = ZeusOrchestrator(version=version, project_root=str(store.base_dir), max_parallel=3)
+            await orch.run_global()
+        finally:
+            _active_global_runs.discard(version)
+
+    _active_global_runs.add(version)
+    asyncio.create_task(_run())
+    return {"started": True, "version": version}
 
 
 @app.get("/agent-ids")

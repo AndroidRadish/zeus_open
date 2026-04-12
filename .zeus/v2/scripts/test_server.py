@@ -387,3 +387,33 @@ def test_agent_ids_endpoint(client, tmp_path):
     assert response.status_code == 200
     data = response.json()
     assert sorted(data["agent_ids"]) == ["zeus-agent-A", "zeus-agent-B"]
+
+
+def test_run_global_endpoint_success(client):
+    from unittest.mock import patch, AsyncMock
+    import zeus_server as zs
+
+    original = zs._active_global_runs.copy()
+    zs._active_global_runs.clear()
+    mock_run = AsyncMock()
+    with patch.object(zs, "ZeusOrchestrator") as MockOrch:
+        MockOrch.return_value.run_global = mock_run
+        response = client.post("/global/run")
+        assert response.status_code == 200
+        assert response.json()["started"] is True
+    zs._active_global_runs.clear()
+    zs._active_global_runs.update(original)
+
+
+def test_run_global_endpoint_conflict(client):
+    import zeus_server as zs
+
+    original = zs._active_global_runs.copy()
+    zs._active_global_runs.add("v2")
+    try:
+        response = client.post("/global/run")
+        assert response.status_code == 409
+        assert "already running" in response.json()["detail"]
+    finally:
+        zs._active_global_runs.clear()
+        zs._active_global_runs.update(original)
