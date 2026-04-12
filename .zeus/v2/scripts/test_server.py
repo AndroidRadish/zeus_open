@@ -58,7 +58,7 @@ def client(tmp_path):
     zs.store = original_store
 
 
-def test_status_endpoint(client):
+def test_status_endpoint(client, tmp_path):
     response = client.get("/status")
     assert response.status_code == 200
     data = response.json()
@@ -68,6 +68,8 @@ def test_status_endpoint(client):
     assert data["pending_tasks"] == 1
     assert data["completed_tasks"] == 2
     assert data["validation"] == "pass"
+    assert "project_dir" in data
+    assert str(tmp_path) in data["project_dir"]
 
 
 def test_wave_endpoint(client):
@@ -83,6 +85,33 @@ def test_wave_endpoint(client):
         assert "title" in t
         assert "passes" in t
         assert "depends_on" in t
+        assert "original_wave" in t
+        assert "scheduled_wave" in t
+        assert "rescheduled_from" in t
+
+
+def test_approve_endpoint_uses_original_wave(client, tmp_path):
+    """Approval gate should count tasks by original_wave, not scheduled wave."""
+    task_path = tmp_path / ".zeus" / "v2" / "task.json"
+    task_data = {
+        "meta": {"current_wave": 1, "wave_approval_required": True, "max_parallel_agents": 2},
+        "tasks": [
+            {"id": "T-001", "title": "Task 1", "passes": True, "depends_on": [], "wave": 1, "original_wave": 1},
+            {"id": "T-002", "title": "Task 2", "passes": False, "depends_on": [], "wave": 1, "original_wave": 2, "scheduled_wave": 1, "rescheduled_from": 2},
+        ],
+    }
+    task_path.write_text(json.dumps(task_data), encoding="utf-8")
+
+    # T-001 (original_wave=1) is done; T-002 (original_wave=2) is pending.
+    # Wave 1 approval should succeed because all original_wave==1 tasks are passed.
+    response = client.post("/wave/1/approve")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["approved"] is True
+    assert data["next_wave"] == 2
+
+    updated = json.loads(task_path.read_text(encoding="utf-8"))
+    assert updated["meta"]["current_wave"] == 2
 
 
 def test_graph_mermaid_endpoint(client):
@@ -116,3 +145,108 @@ def test_approve_endpoint_invalid_wave(client):
     assert response.status_code == 400
     data = response.json()
     assert data["detail"] == "Wave 1 has pending tasks"
+
+
+def test_versions_endpoint(client, tmp_path):
+    response = client.get("/versions")
+    assert response.status_code == 200
+    data = response.json()
+    assert "versions" in data
+    ids = {v["id"] for v in data["versions"]}
+    assert "v2" in ids
+
+
+def test_status_with_version_query(client, tmp_path):
+    # Also create a main version to switch to
+    main_dir = tmp_path / ".zeus" / "main"
+    main_dir.mkdir(parents=True)
+    main_task = {
+        "meta": {"current_wave": 3, "wave_approval_required": True, "max_parallel_agents": 2},
+        "tasks": [
+            {"id": "M-001", "title": "Main task", "passes": True, "depends_on": [], "wave": 1},
+        ],
+    }
+    (main_dir / "task.json").write_text(json.dumps(main_task), encoding="utf-8")
+    main_config = {"project": {"name": "main-project"}}
+    (main_dir / "config.json").write_text(json.dumps(main_config), encoding="utf-8")
+
+    response = client.get("/status?version=main")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["version"] == "main"
+    assert data["project_name"] == "main-project"
+    assert data["current_wave"] == 3
+
+    response = client.get("/wave/1?version=main")
+    assert response.status_code == 200
+    wave_data = response.json()
+    assert wave_data["wave"] == 1
+    assert any(t["id"] == "M-001" for t in wave_data["tasks"])
+
+
+def test_graph_mermaid_with_version(client, tmp_path):
+    main_dir = tmp_path / ".zeus" / "main"
+    main_dir.mkdir(parents=True)
+    main_task = {
+        "meta": {"current_wave": 1},
+        "tasks": [
+            {"id": "M-001", "title": "Main task", "passes": True, "depends_on": [], "wave": 1},
+        ],
+    }
+    (main_dir / "task.json").write_text(json.dumps(main_task), encoding="utf-8")
+
+    response = client.get("/graph/mermaid?version=main")
+    assert response.status_code == 200
+    text = response.text
+    assert "flowchart TD" in text
+    assert "M001" in text
+
+
+def test_open_project_success(client, tmp_path):
+    import zeus_server as zs
+
+    # Create a second zeus project directory
+    other = tmp_path / "other-project"
+    other.mkdir()
+    zeus_dir = other / ".zeus" / "v2"
+    zeus_dir.mkdir(parents=True)
+    task_data = {
+        "meta": {"current_wave": 2, "wave_approval_required": True, "max_parallel_agents": 2},
+        "tasks": [
+            {"id": "O-001", "title": "Other task", "passes": True, "depends_on": [], "wave": 1},
+        ],
+    }
+    (zeus_dir / "task.json").write_text(json.dumps(task_data), encoding="utf-8")
+    (zeus_dir / "config.json").write_text(json.dumps({"project": {"name": "other"}}), encoding="utf-8")
+
+    response = client.post("/project/open", json={"project_dir": str(other)})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert str(other) in data["project_dir"]
+    assert data["status"]["project_name"] == "other"
+    assert data["status"]["current_wave"] == 2
+
+    # Verify /versions now scans the new project
+    response = client.get("/versions")
+    assert response.status_code == 200
+    versions_data = response.json()
+    ids = {v["id"] for v in versions_data["versions"]}
+    assert "v2" in ids
+
+    # Restore store so other tests in the same session are not affected
+    zs.store = LocalStore(base_dir=str(tmp_path))
+
+
+def test_open_project_invalid_dir(client):
+    response = client.post("/project/open", json={"project_dir": "D:\\nonexistent-zeus-project-xyz"})
+    assert response.status_code == 400
+    assert "project_dir must be a directory" in response.json()["detail"]
+
+
+def test_open_project_not_zeus(client, tmp_path):
+    plain_dir = tmp_path / "plain-folder"
+    plain_dir.mkdir()
+    response = client.post("/project/open", json={"project_dir": str(plain_dir)})
+    assert response.status_code == 400
+    assert "Not a valid Zeus project" in response.json()["detail"]

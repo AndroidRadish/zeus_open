@@ -189,6 +189,155 @@ def test_update_task_state_with_lock(orchestrator, temp_project):
 
 
 # ---------------------------------------------------------------------------
+# Adaptive wave rescheduling
+# ---------------------------------------------------------------------------
+@pytest.fixture
+def adaptive_project():
+    """Provide a project configured for adaptive scheduling with a blocking wave-1 task."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        root = Path(tmpdir)
+        zeus_dir = root / ".zeus" / "v2"
+        zeus_dir.mkdir(parents=True, exist_ok=True)
+
+        task_data = {
+            "meta": {
+                "current_wave": 1,
+                "wave_approval_required": True,
+                "max_parallel_agents": 2,
+                "scheduling_mode": "adaptive",
+            },
+            "tasks": [
+                {
+                    "id": "T-001",
+                    "passes": False,
+                    "story_id": "US-001",
+                    "title": "Blocking task wave 1",
+                    "depends_on": [],
+                    "wave": 1,
+                    "original_wave": 1,
+                    "scheduled_wave": 1,
+                },
+                {
+                    "id": "T-002",
+                    "passes": False,
+                    "story_id": "US-001",
+                    "title": "Quick task wave 1",
+                    "depends_on": [],
+                    "wave": 1,
+                    "original_wave": 1,
+                    "scheduled_wave": 1,
+                },
+                {
+                    "id": "T-003",
+                    "passes": False,
+                    "story_id": "US-002",
+                    "title": "Future wave 2 task",
+                    "depends_on": [],
+                    "wave": 2,
+                    "original_wave": 2,
+                    "scheduled_wave": 2,
+                },
+            ],
+        }
+        (zeus_dir / "task.json").write_text(json.dumps(task_data), encoding="utf-8")
+
+        config_data = {
+            "project": {"name": "Adaptive Test Project"},
+            "metrics": {"north_star": "efficiency"},
+        }
+        (zeus_dir / "config.json").write_text(json.dumps(config_data), encoding="utf-8")
+
+        (root / "src").mkdir(parents=True, exist_ok=True)
+        (root / "src" / "main.py").write_text("# hello\n", encoding="utf-8")
+
+        old_cwd = os.getcwd()
+        os.chdir(tmpdir)
+        try:
+            yield root
+        finally:
+            os.chdir(old_cwd)
+
+
+@pytest.mark.asyncio
+async def test_adaptive_rescheduling_fills_slots_from_future_wave(adaptive_project):
+    """When a wave-1 slot frees up, a ready wave-2 task should be rescheduled and dispatched."""
+    orch = ZeusOrchestrator(version="v2", project_root=str(adaptive_project), max_parallel=2)
+    store = LocalStore(base_dir=str(adaptive_project))
+
+    block_event = asyncio.Event()
+
+    async def fake_dispatch(task, bus, store):
+        if task["id"] == "T-001":
+            await asyncio.wait_for(block_event.wait(), timeout=5)
+        else:
+            await asyncio.sleep(0.05)
+        bus.emit("task.completed", task["id"], "mock-agent", {})
+        return {"task_id": task["id"], "status": "dispatched"}
+
+    async def unblock():
+        await asyncio.sleep(0.2)
+        block_event.set()
+
+    with patch.object(orch, "dispatch_task", side_effect=fake_dispatch):
+        asyncio.create_task(unblock())
+        summary = await orch.await_wave_completion(1)
+
+    # T-001, T-002, and T-003 should all have been dispatched
+    assert summary["wave"] == 1
+    assert summary["dispatched"] == 3
+    assert summary["failed"] == 0
+
+    # T-003 should have been rescheduled into wave 1
+    data = store.read_json(".zeus/v2/task.json")
+    t003 = next(t for t in data["tasks"] if t["id"] == "T-003")
+    assert t003["scheduled_wave"] == 1
+    assert t003["wave"] == 1
+    assert t003["rescheduled_from"] == 2
+    assert t003["original_wave"] == 2
+
+    # Bus should contain a reschedule event for T-003
+    bus = AgentBus(version="v2", wave=1, store=store)
+    events = bus.get_events()
+    reschedule_events = [e for e in events if e["type"] == "task.rescheduled" and e.get("task_id") == "T-003"]
+    assert len(reschedule_events) == 1
+    assert reschedule_events[0]["payload"]["new_wave"] == 1
+    assert reschedule_events[0]["payload"]["previous_wave"] == 2
+
+
+@pytest.mark.asyncio
+async def test_no_rescheduling_when_lookahead_disabled(adaptive_project):
+    """With scheduling_mode=legacy, wave-2 tasks must not be pulled into wave 1."""
+    store = LocalStore(base_dir=str(adaptive_project))
+    data = store.read_json(".zeus/v2/task.json")
+    data["meta"]["scheduling_mode"] = "legacy"
+    data["meta"]["lookahead_waves"] = 0
+    store.write_json(".zeus/v2/task.json", data)
+
+    orch = ZeusOrchestrator(version="v2", project_root=str(adaptive_project), max_parallel=2)
+    block_event = asyncio.Event()
+
+    async def fake_dispatch(task, bus, store):
+        if task["id"] == "T-001":
+            await asyncio.wait_for(block_event.wait(), timeout=5)
+        else:
+            await asyncio.sleep(0.05)
+        bus.emit("task.completed", task["id"], "mock-agent", {})
+        return {"task_id": task["id"], "status": "dispatched"}
+
+    with patch.object(orch, "dispatch_task", side_effect=fake_dispatch):
+        summary = await orch.await_wave_completion(1)
+
+    # Only T-001 and T-002 should be dispatched
+    assert summary["dispatched"] == 2
+
+    # T-003 must remain untouched
+    data = store.read_json(".zeus/v2/task.json")
+    t003 = next(t for t in data["tasks"] if t["id"] == "T-003")
+    assert t003.get("wave") == 2
+    assert t003.get("scheduled_wave") == 2
+
+
+# ---------------------------------------------------------------------------
 # transition_to_next_wave
 # ---------------------------------------------------------------------------
 def test_transition_requires_approval_when_auto_false(orchestrator, temp_project, capsys):
