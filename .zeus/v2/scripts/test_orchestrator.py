@@ -12,6 +12,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from agent_bus import AgentBus
+from scheduler_state import SchedulerStateDB
 from store import LocalStore
 from zeus_orchestrator import ZeusOrchestrator
 
@@ -698,3 +699,71 @@ async def test_dispatch_task_creates_agent_specific_and_legacy_logs(orchestrator
     legacy_events = bus.get_events()
     assert any(e["type"] == "task.started" for e in legacy_events)
     assert any(e["type"] == "task.completed" for e in legacy_events)
+
+
+@pytest.mark.asyncio
+async def test_stop_global_scheduler_persists_state(temp_project):
+    """T-036-B: stop_global_scheduler persists running tasks to SQLite."""
+    store = LocalStore(base_dir=str(temp_project))
+    task_json = {
+        "meta": {"current_wave": 1, "max_parallel_agents": 2},
+        "tasks": [
+            {"id": "T-001", "title": "Task 1", "passes": False, "status": "running", "depends_on": [], "wave": 1},
+        ],
+    }
+    task_path = temp_project / ".zeus" / "v2" / "task.json"
+    task_path.write_text(json.dumps(task_json), encoding="utf-8")
+
+    orch = ZeusOrchestrator(version="v2", project_root=str(temp_project), max_parallel=2)
+    orch._running_task_ids = {"T-001"}
+    orch._bus = AgentBus(version="v2", wave=-1, store=store)
+
+    orch.stop_global_scheduler()
+    assert orch._shutdown is True
+
+    db_path = temp_project / ".zeus" / "v2" / "scheduler_state.db"
+    db = SchedulerStateDB(str(db_path))
+    snapshot = db.load()
+    assert snapshot["meta"]["scheduler_active"] is True
+    assert any(at["task_id"] == "T-001" for at in snapshot["active_tasks"])
+
+
+def test_resume_from_state_updates_task_json(temp_project):
+    """T-036-C: resume_from_state restores task.json statuses from SQLite."""
+    task_path = temp_project / ".zeus" / "v2" / "task.json"
+    task_json = {
+        "meta": {"current_wave": 1, "max_parallel_agents": 2},
+        "tasks": [
+            {"id": "T-001", "title": "Task 1", "passes": False, "status": "pending", "depends_on": [], "wave": 1},
+            {"id": "T-002", "title": "Task 2", "passes": True, "status": "completed", "depends_on": [], "wave": 1},
+        ],
+    }
+    task_path.write_text(json.dumps(task_json), encoding="utf-8")
+
+    orch = ZeusOrchestrator(version="v2", project_root=str(temp_project), max_parallel=2)
+    orch._running_task_ids = {"T-001"}
+    orch._persist_scheduler_state()
+
+    # Reset to pending to prove resume actually writes
+    task_json["tasks"][0]["status"] = "failed"
+    task_path.write_text(json.dumps(task_json), encoding="utf-8")
+
+    recovered = orch.resume_from_state()
+    assert "T-001" in recovered
+    assert "T-002" not in recovered  # completed task should not be recovered
+
+    updated = json.loads(task_path.read_text(encoding="utf-8"))
+    assert next(t for t in updated["tasks"] if t["id"] == "T-001")["status"] == "running"
+
+
+def test_scheduler_active_from_state(temp_project):
+    """T-036-C: scheduler_active_from_state reads scheduler_active from SQLite."""
+    orch = ZeusOrchestrator(version="v2", project_root=str(temp_project), max_parallel=2)
+    assert orch.scheduler_active_from_state() is False
+
+    orch._running_task_ids = {"T-001"}
+    orch.stop_global_scheduler()
+    assert orch.scheduler_active_from_state() is True
+
+    orch._clear_scheduler_state()
+    assert orch.scheduler_active_from_state() is False

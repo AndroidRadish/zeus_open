@@ -180,6 +180,28 @@ python .zeus/v2/scripts/zeus_orchestrator.py --run-global
 - Quarantined tasks block their downstream dependents, but do **not** block unrelated tasks.
 - The Web UI **Global Execution** tab shows running tasks, pending tasks grouped by wave, and the quarantine panel in real time.
 
+## Graceful Shutdown & State Recovery
+
+The v2 server can survive restarts without losing track of in-flight tasks.
+
+**Persistence:** `.zeus/v2/scheduler_state.db` (SQLite)
+
+**What is persisted on shutdown:**
+- `scheduler_active` flag
+- List of currently running tasks (task_id, agent_id, wave, status)
+
+**Triggering persistence:**
+- Sending `SIGINT` or `SIGTERM` to `zeus_server.py` triggers a graceful shutdown. The orchestrator saves active tasks to SQLite before exiting.
+- The FastAPI `shutdown` event also triggers the same save path.
+
+**Recovery on startup:**
+- When `zeus_server.py` starts, it checks `scheduler_state.db`. If `scheduler_active` is true, it automatically restores those tasks as `running` in `task.json` and the Web UI shows a recovery banner.
+- `/global/status` merges recovered tasks into the `running` list so the dashboard is accurate immediately after restart.
+- `/global/recovery` returns `{recovered, recovered_at, active_tasks_count}` for custom UI handling.
+
+**Normal completion:**
+- When the global scheduler finishes all tasks successfully, it clears the SQLite snapshot so the next startup does not trigger a false recovery.
+
 ## Agent Mailbox
 
 Agents can communicate asynchronously via a lightweight mailbox backed by JSONL files.

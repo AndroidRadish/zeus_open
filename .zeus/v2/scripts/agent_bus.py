@@ -44,6 +44,8 @@ class AgentBus:
             "agent.message",
             "wave.completed",
             "global.completed",
+            "global.stopped",
+            "global.completed",
         }
     )
 

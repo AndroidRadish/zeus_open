@@ -584,3 +584,100 @@ def test_global_status_includes_recovered_tasks(client, tmp_path):
     # Verify wave mapping from task.json
     recovered = next(r for r in data["running"] if r["task_id"] == "T-RECOVERED")
     assert recovered["wave"] == 2
+
+
+def test_startup_resumes_scheduler_state(tmp_path):
+    """T-036-C: server startup should resume active tasks from SQLite and reflect them in /global/status."""
+    from scheduler_state import SchedulerStateDB
+    from fastapi.testclient import TestClient
+    import zeus_server as zs
+
+    test_store = LocalStore(base_dir=str(tmp_path))
+    task_dir = tmp_path / ".zeus" / "v2"
+    task_dir.mkdir(parents=True)
+    task_data = {
+        "meta": {"current_wave": 1, "wave_approval_required": True, "max_parallel_agents": 2},
+        "tasks": [
+            {"id": "T-001", "title": "Task 1", "passes": True, "status": "completed", "depends_on": [], "wave": 1},
+            {"id": "T-002", "title": "Task 2", "passes": False, "status": "pending", "depends_on": [], "wave": 1},
+        ],
+    }
+    (task_dir / "task.json").write_text(json.dumps(task_data), encoding="utf-8")
+    (task_dir / "roadmap.json").write_text(
+        json.dumps({"version": "v2", "phases": [], "milestones": []}), encoding="utf-8"
+    )
+    (task_dir / "agent-logs").mkdir()
+
+    db = SchedulerStateDB(str(task_dir / "scheduler_state.db"))
+    db.save(
+        meta={"scheduler_active": True},
+        active_tasks=[
+            {
+                "task_id": "T-002",
+                "agent_id": "zeus-agent-T-002",
+                "status": "running",
+                "started_at": "2026-04-13T01:00:00Z",
+                "wave": 1,
+            }
+        ],
+    )
+
+    original_store = zs.store
+    zs.store = test_store
+    try:
+        with TestClient(app) as client:
+            response = client.get("/global/status")
+            assert response.status_code == 200
+            data = response.json()
+            ids = {r["task_id"] for r in data["running"]}
+            assert "T-002" in ids
+
+            updated = json.loads((task_dir / "task.json").read_text(encoding="utf-8"))
+            assert next(t for t in updated["tasks"] if t["id"] == "T-002")["status"] == "running"
+    finally:
+        zs.store = original_store
+
+
+def test_shutdown_event_persists_scheduler_state(tmp_path):
+    """T-036-B: server shutdown event should persist orchestrator state to SQLite."""
+    from scheduler_state import SchedulerStateDB
+    from zeus_orchestrator import ZeusOrchestrator
+    import zeus_server as zs
+
+    test_store = LocalStore(base_dir=str(tmp_path))
+    task_dir = tmp_path / ".zeus" / "v2"
+    task_dir.mkdir(parents=True)
+    task_data = {
+        "meta": {"current_wave": 1, "wave_approval_required": True, "max_parallel_agents": 2},
+        "tasks": [
+            {"id": "T-001", "title": "Task 1", "passes": False, "status": "running", "depends_on": [], "wave": 1},
+        ],
+    }
+    (task_dir / "task.json").write_text(json.dumps(task_data), encoding="utf-8")
+    (task_dir / "roadmap.json").write_text(
+        json.dumps({"version": "v2", "phases": [], "milestones": []}), encoding="utf-8"
+    )
+    (task_dir / "agent-logs").mkdir()
+
+    original_store = zs.store
+    zs.store = test_store
+    original_active = zs._active_global_runs.copy()
+    zs._active_global_runs.clear()
+    try:
+        orch = ZeusOrchestrator(version="v2", project_root=str(tmp_path), max_parallel=2)
+        orch._running_task_ids = {"T-001"}
+        zs._global_orchs["v2"] = orch
+        zs._shutdown_called = False
+
+        zs._stop_schedulers()
+
+        db = SchedulerStateDB(str(task_dir / "scheduler_state.db"))
+        snapshot = db.load()
+        assert snapshot["meta"]["scheduler_active"] is True
+        assert any(at["task_id"] == "T-001" for at in snapshot["active_tasks"])
+    finally:
+        zs._global_orchs.pop("v2", None)
+        zs._shutdown_called = False
+        zs._active_global_runs.clear()
+        zs._active_global_runs.update(original_active)
+        zs.store = original_store

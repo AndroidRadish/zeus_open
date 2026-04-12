@@ -10,7 +10,9 @@ import asyncio
 import json
 import os
 import shutil
+import signal
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -31,6 +33,42 @@ app = FastAPI(title="ZeusOpen v2 Server")
 
 # Track active global scheduler runs to avoid duplicates
 _active_global_runs: set[str] = set()
+
+# Reference to active orchestrators for graceful shutdown
+_global_orchs: dict[str, ZeusOrchestrator] = {}
+_shutdown_called = False
+
+
+def _stop_schedulers() -> None:
+    global _shutdown_called
+    if _shutdown_called:
+        return
+    _shutdown_called = True
+    for version, orch in list(_global_orchs.items()):
+        try:
+            orch.stop_global_scheduler()
+        except Exception:
+            pass
+
+
+@app.on_event("startup")
+async def on_startup() -> None:
+    version = "v2"
+    db_path = _scheduler_db_path(version)
+    if os.path.exists(db_path):
+        try:
+            db = SchedulerStateDB(db_path)
+            snapshot = db.load()
+            if snapshot.get("meta", {}).get("scheduler_active"):
+                orch = ZeusOrchestrator(version=version, project_root=str(store.base_dir), max_parallel=3)
+                orch.resume_from_state()
+        except Exception:
+            pass
+
+
+@app.on_event("shutdown")
+async def on_shutdown() -> None:
+    _stop_schedulers()
 
 app.add_middleware(
     CORSMiddleware,
@@ -527,11 +565,13 @@ async def run_global(version: str = Query("v2")) -> dict[str, Any]:
         raise HTTPException(status_code=409, detail="Global scheduler already running for this version")
 
     async def _run() -> None:
+        orch = ZeusOrchestrator(version=version, project_root=str(store.base_dir), max_parallel=3)
+        _global_orchs[version] = orch
         try:
-            orch = ZeusOrchestrator(version=version, project_root=str(store.base_dir), max_parallel=3)
             await orch.run_global()
         finally:
             _active_global_runs.discard(version)
+            _global_orchs.pop(version, None)
 
     _active_global_runs.add(version)
     asyncio.create_task(_run())
@@ -697,6 +737,18 @@ if os.path.isdir(web_dir):
 # CLI entrypoint
 # ----------------------------------------------------------------------
 def main() -> None:
+    def _signal_handler(signum: int, frame: Any) -> None:
+        _stop_schedulers()
+        if signum == signal.SIGINT:
+            raise KeyboardInterrupt
+        sys.exit(0)
+
+    try:
+        signal.signal(signal.SIGINT, _signal_handler)
+        signal.signal(signal.SIGTERM, _signal_handler)
+    except Exception:
+        pass
+
     parser = argparse.ArgumentParser(description="ZeusOpen v2 Server")
     parser.add_argument("--port", type=int, default=8234)
     parser.add_argument("--project-dir", type=str, default=None, help="Zeus project root directory")

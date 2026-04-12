@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_bus import AgentBus
+from scheduler_state import SchedulerStateDB
 from store import LocalStore
 from subagent_dispatcher import build_dispatcher
 
@@ -62,6 +63,10 @@ class ZeusOrchestrator:
         self._task_json_path = f".zeus/{version}/task.json"
         self._config_json_path = f".zeus/{version}/config.json"
         self._semaphore = asyncio.Semaphore(max_parallel)
+        self._shutdown = False
+        self._bus: AgentBus | None = None
+        self._running_task_ids: set[str] = set()
+        self._scheduler_db: SchedulerStateDB | None = None
 
     # -----------------------------------------------------------------------
     # Helpers
@@ -151,15 +156,11 @@ class ZeusOrchestrator:
 ## 执行要求
 1. 在隔离工作区中实现上述任务，遵循项目现有的代码风格和架构模式。
 2. 如有 typecheck / lint / test 配置，运行并保证通过。
-3. 完成后立即进行原子 git commit，格式建议：
-   ```
-   {self._suggest_commit_type(task_type)}({task_id}): {task_title}
-   ```
-4. 更新 `.zeus/{self.version}/task.json` 中此任务的 `passes` 为 `true`，并填写 `commit_sha`。
-5. 在 `.zeus/{self.version}/ai-logs/` 目录写入 ai-log 文件（如 `{task_id}.md`），包含以下内容：
+3. 在 `.zeus/{self.version}/ai-logs/` 目录写入 ai-log 文件（如 `{task_id}.md`），包含以下内容：
    - **Decision Rationale**：关键技术选择及原因
-   - **Execution Summary**：修改了哪些文件，新增了什么，commit SHA
+   - **Execution Summary**：修改了哪些文件，新增了什么
    - **Target Impact**：此 task 如何贡献北极星指标 `{north_star}`，尽量量化
+4. **不需要**在隔离工作区中执行 `git commit`，也**不需要**修改主项目的 `task.json`；只需确保代码和测试正确即可。
 
 ## 注意事项
 - 本 Prompt 所在目录即为你的隔离工作区，项目源码已复制至此。
@@ -297,6 +298,8 @@ class ZeusOrchestrator:
                 _update_task_status(self._task_json_path, store, tid, "failed")
             else:
                 _update_task_status(self._task_json_path, store, tid, "completed")
+                # Ensure completed tasks are removed from quarantine so they don't block deps
+                self._unquarantine_task({"id": tid}, store)
             return tid, result
         except Exception as exc:
             _update_task_status(self._task_json_path, store, tid, "failed")
@@ -337,6 +340,18 @@ class ZeusOrchestrator:
         )
         bus.post(tid, "zeus-orchestrator", f"任务 **{tid}** 已被隔离：{reason}")
 
+    def _unquarantine_task(self, task: dict, store: LocalStore) -> None:
+        """Silently remove a task from quarantine if present."""
+        tid = task["id"]
+        with store.lock(self._task_json_path):
+            data = store.read_json(self._task_json_path)
+            quarantine = data.get("quarantine", [])
+            original_len = len(quarantine)
+            quarantine = [q for q in quarantine if q.get("task_id") != tid]
+            if len(quarantine) < original_len:
+                data["quarantine"] = quarantine
+                store.write_json(self._task_json_path, data)
+
     def _get_global_ready_tasks(
         self,
         tasks: list[dict],
@@ -371,6 +386,76 @@ class ZeusOrchestrator:
         ready.sort(key=lambda t: (self._task_original_wave(t) or 0, t["id"]))
         return ready
 
+    def _get_scheduler_db(self) -> SchedulerStateDB:
+        if self._scheduler_db is None:
+            db_path = self.project_root / f".zeus/{self.version}/scheduler_state.db"
+            self._scheduler_db = SchedulerStateDB(db_path)
+        return self._scheduler_db
+
+    def _persist_scheduler_state(self) -> None:
+        """Persist current running tasks to SQLite."""
+        db = self._get_scheduler_db()
+        store = self._store()
+        data = self._load_task_json(store)
+        tasks = data.get("tasks", [])
+        active_tasks = []
+        for tid in self._running_task_ids:
+            task = next((t for t in tasks if t["id"] == tid), None)
+            if task and not task.get("passes", False):
+                active_tasks.append({
+                    "task_id": tid,
+                    "agent_id": f"zeus-agent-{tid}",
+                    "status": task.get("status", "running"),
+                    "started_at": _now_iso(),
+                    "wave": task.get("wave", 1),
+                })
+        db.save(
+            meta={"scheduler_active": True, "persisted_at": _now_iso()},
+            active_tasks=active_tasks,
+            mailbox=[],
+        )
+
+    def _clear_scheduler_state(self) -> None:
+        db = self._get_scheduler_db()
+        db.clear()
+
+    def stop_global_scheduler(self) -> None:
+        """Signal the global scheduler to shut down gracefully."""
+        self._shutdown = True
+        self._persist_scheduler_state()
+        if self._bus:
+            self._bus.emit("global.stopped", "global", "zeus-orchestrator", {"reason": "shutdown_signal"})
+
+    def resume_from_state(self) -> list[str]:
+        """Recover active tasks from SQLite and update task.json."""
+        db = self._get_scheduler_db()
+        snapshot = db.load()
+        active_tasks = snapshot.get("active_tasks", [])
+        if not active_tasks:
+            return []
+        store = self._store()
+        recovered: list[str] = []
+        with store.lock(self._task_json_path):
+            data = store.read_json(self._task_json_path)
+            tasks = data.get("tasks", [])
+            for at in active_tasks:
+                tid = at.get("task_id")
+                for t in tasks:
+                    if t.get("id") == tid:
+                        if t.get("status") != "completed" and not t.get("passes"):
+                            t["status"] = "running"
+                            recovered.append(tid)
+                        break
+            store.write_json(self._task_json_path, data)
+        return recovered
+
+    def scheduler_active_from_state(self) -> bool:
+        try:
+            db = self._get_scheduler_db()
+            return bool(db.load().get("meta", {}).get("scheduler_active"))
+        except Exception:
+            return False
+
     async def run_global(self) -> dict:
         """
         Global scheduler entry point.
@@ -381,57 +466,96 @@ class ZeusOrchestrator:
         """
         store = self._store()
         bus = AgentBus(version=self.version, wave=-1, store=store)
+        self._bus = bus
+        self._shutdown = False
+        self._running_task_ids = set()
 
         dispatched_ids: set[str] = set()
         dispatched_count = 0
         failed_count = 0
         running_tasks: set[asyncio.Task] = set()
 
-        while True:
-            # Refresh state from disk each iteration
-            data = self._load_task_json(store)
-            tasks = data.get("tasks", [])
-            pass_map = {t["id"]: t.get("passes", False) for t in tasks}
-            quarantined_ids = {q["task_id"] for q in data.get("quarantine", []) if q.get("task_id")}
-
-            free_slots = self.max_parallel - len(running_tasks)
-            if free_slots > 0:
-                ready = self._get_global_ready_tasks(
-                    tasks, pass_map, dispatched_ids, quarantined_ids
-                )
-                for task in ready[:free_slots]:
-                    tid = task["id"]
-                    dispatched_ids.add(tid)
-                    coro = self._run_and_capture(task, bus, store)
-                    aio_task = asyncio.create_task(coro)
-                    running_tasks.add(aio_task)
-                    dispatched_count += 1
-
-            if not running_tasks:
-                break
-
-            done, running_tasks = await asyncio.wait(
-                running_tasks, return_when=asyncio.FIRST_COMPLETED
-            )
-            # Re-read tasks from disk since _run_and_capture may have updated status
-            fresh_data = self._load_task_json(store)
-            fresh_tasks = fresh_data.get("tasks", [])
-            for task in done:
-                tid, outcome = await task
-                workspace_path = str(
-                    store._resolve(f".zeus/{self.version}/agent-workspaces/zeus-agent-{tid}")
-                )
-                task_obj = next((t for t in fresh_tasks if t["id"] == tid), None)
-                if task_obj and task_obj.get("status") == "failed":
-                    failed_count += 1
-                    reason = str(outcome) if isinstance(outcome, Exception) else outcome.get("error", "dispatcher_failed")
-                    self._quarantine_task(
-                        {"id": tid},
-                        reason=reason,
-                        store=store,
-                        bus=bus,
-                        workspace=workspace_path,
+        try:
+            while True:
+                if self._shutdown:
+                    self._persist_scheduler_state()
+                    if not running_tasks:
+                        break
+                    # Wait for existing tasks without dispatching new ones
+                    done, running_tasks = await asyncio.wait(
+                        running_tasks, return_when=asyncio.ALL_COMPLETED
                     )
+                    for task in done:
+                        tid, outcome = await task
+                        self._running_task_ids.discard(tid)
+                        workspace_path = str(
+                            store._resolve(f".zeus/{self.version}/agent-workspaces/zeus-agent-{tid}")
+                        )
+                        fresh_data = self._load_task_json(store)
+                        fresh_tasks = fresh_data.get("tasks", [])
+                        task_obj = next((t for t in fresh_tasks if t["id"] == tid), None)
+                        if task_obj and task_obj.get("status") == "failed":
+                            failed_count += 1
+                            reason = str(outcome) if isinstance(outcome, Exception) else outcome.get("error", "dispatcher_failed")
+                            self._quarantine_task(
+                                {"id": tid},
+                                reason=reason,
+                                store=store,
+                                bus=bus,
+                                workspace=workspace_path,
+                            )
+                    break
+
+                # Refresh state from disk each iteration
+                data = self._load_task_json(store)
+                tasks = data.get("tasks", [])
+                pass_map = {t["id"]: t.get("passes", False) for t in tasks}
+                quarantined_ids = {q["task_id"] for q in data.get("quarantine", []) if q.get("task_id")}
+
+                free_slots = self.max_parallel - len(running_tasks)
+                if free_slots > 0:
+                    ready = self._get_global_ready_tasks(
+                        tasks, pass_map, dispatched_ids, quarantined_ids
+                    )
+                    for task in ready[:free_slots]:
+                        tid = task["id"]
+                        dispatched_ids.add(tid)
+                        self._running_task_ids.add(tid)
+                        coro = self._run_and_capture(task, bus, store)
+                        aio_task = asyncio.create_task(coro)
+                        running_tasks.add(aio_task)
+                        dispatched_count += 1
+
+                if not running_tasks:
+                    break
+
+                done, running_tasks = await asyncio.wait(
+                    running_tasks, return_when=asyncio.FIRST_COMPLETED
+                )
+                # Re-read tasks from disk since _run_and_capture may have updated status
+                fresh_data = self._load_task_json(store)
+                fresh_tasks = fresh_data.get("tasks", [])
+                for task in done:
+                    tid, outcome = await task
+                    self._running_task_ids.discard(tid)
+                    workspace_path = str(
+                        store._resolve(f".zeus/{self.version}/agent-workspaces/zeus-agent-{tid}")
+                    )
+                    task_obj = next((t for t in fresh_tasks if t["id"] == tid), None)
+                    if task_obj and task_obj.get("status") == "failed":
+                        failed_count += 1
+                        reason = str(outcome) if isinstance(outcome, Exception) else outcome.get("error", "dispatcher_failed")
+                        self._quarantine_task(
+                            {"id": tid},
+                            reason=reason,
+                            store=store,
+                            bus=bus,
+                            workspace=workspace_path,
+                        )
+        finally:
+            self._clear_scheduler_state()
+            self._bus = None
+            self._running_task_ids.clear()
 
         bus.emit("global.completed", "global", "zeus-orchestrator", {})
 
@@ -554,7 +678,7 @@ class ZeusOrchestrator:
 
         # Workspace path: .zeus/v2/agent-workspaces/{agent_id}/
         workspace_rel = f".zeus/{self.version}/agent-workspaces/{agent_id}"
-        workspace_path = store._resolve(workspace_rel)
+        workspace_path = store._resolve(workspace_rel).resolve()
         prompt_path = workspace_path / "PROMPT.md"
 
         # Ensure clean workspace
@@ -571,6 +695,14 @@ class ZeusOrchestrator:
                 workspace_path,
                 dirs_exist_ok=True,
                 ignore=ignore,
+            )
+            # Initialise an isolated git repo so subagent commits stay inside the workspace
+            import subprocess
+            subprocess.run(
+                ["git", "init"],
+                cwd=str(workspace_path),
+                capture_output=True,
+                check=False,
             )
 
         await asyncio.to_thread(_do_copy)

@@ -210,3 +210,21 @@
   - Full test coverage for default behavior and config override
   - Documentation updated in `skills/zeus-execute-v2.md`
 - **Next milestone**: Backlog — Auto-heal (Step 2) remains deferred until further human decision
+
+
+---
+
+## SHIP — 2026-04-13
+
+- **Event**: Complete M-011 — Production Hardening (T-036)
+- **Tasks completed**: T-036-A, T-036-B, T-036-C, T-036-D, T-036-E
+- **Status**: All v2 tests pass (96/96)
+- **Key deliverables**:
+  - `scheduler_state.py` SQLite persistence core for scheduler meta, active_tasks, and mailbox
+  - `zeus_orchestrator.py` graceful shutdown via `stop_global_scheduler()` — persists running tasks to SQLite on SIGINT/SIGTERM
+  - `zeus_orchestrator.py` `resume_from_state()` — restores task.json running statuses from SQLite on startup
+  - `zeus_server.py` startup/shutdown lifespan events + signal handlers that trigger state save/recovery
+  - Web UI recovery banner (`/global/recovery`) and Global Execution view that merges recovered tasks into `running`
+  - Integration tests covering shutdown → persist → restart → resume → reflect in `/global/status`
+  - Documentation updated in `skills/zeus-execute-v2.md`
+- **Next milestone**: T-037 — Dockerfile + one-click startup scripts

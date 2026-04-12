@@ -54,7 +54,11 @@
 | Task | 标题 | 状态 |
 |------|------|------|
 | **T-035** | 任务生命周期控制（retry / cancel / pause）API + Web UI | ✅ 已完成 |
-| **T-036** | 优雅关闭 + SQLite 调度器状态持久化 | ⏳ 待执行 |
+| **T-036-A** | SQLite 持久化核心（scheduler_state.py） | ✅ 已完成 |
+| **T-036-B** | 优雅关闭 + SIGTERM 处理器 + SQLite 状态保存 | ✅ 已完成 |
+| **T-036-C** | 启动状态恢复 + resume_from_state + /global/status | ✅ 已完成 |
+| **T-036-D** | Web UI 恢复横幅和刷新后的全局状态 | ✅ 已完成 |
+| **T-036-E** | 集成测试（shutdown-resume 周期）+ 文档更新 | ✅ 已完成 |
 | **T-037** | Dockerfile + 一键启动脚本 (start.sh / start.ps1) | ⏳ 待执行 |
 
 ## 会后增强 (Post-T-034)

@@ -660,7 +660,8 @@
       "title_en": "Add graceful shutdown and SIGTERM handlers",
       "title_zh": "添加优雅关闭和 SIGTERM 处理器",
       "description_en": "Register SIGTERM/SIGINT handlers in zeus_server.py and add stop_global_scheduler() in zeus_orchestrator.py. Persist scheduler state to SQLite on shutdown.",
-      "description_zh": "在 zeus_server.py 中注册 SIGTERM/SIGINT 处理器，在 zeus_orchestrator.py 中添加 stop_global_scheduler()。关闭时将调度器状态持久化到 SQLite。"
+      "description_zh": "在 zeus_server.py 中注册 SIGTERM/SIGINT 处理器，在 zeus_orchestrator.py 中添加 stop_global_scheduler()。关闭时将调度器状态持久化到 SQLite。",
+      "status": "pending"
     },
     {
       "id": "T-036-C",
@@ -678,7 +679,8 @@
       "title_en": "Implement state resume on startup in orchestrator and server",
       "title_zh": "在调度器和服务端实现启动时状态恢复",
       "description_en": "On server startup, detect scheduler_active from SQLite. Add resume_from_state() in zeus_orchestrator.py to recover or reset active tasks. Ensure /global/status reflects recovered state.",
-      "description_zh": "服务器启动时检测 SQLite 中的 scheduler_active。在 zeus_orchestrator.py 中添加 resume_from_state() 恢复或重置活跃任务。确保 /global/status 正确反映恢复后的状态。"
+      "description_zh": "服务器启动时检测 SQLite 中的 scheduler_active。在 zeus_orchestrator.py 中添加 resume_from_state() 恢复或重置活跃任务。确保 /global/status 正确反映恢复后的状态。",
+      "status": "pending"
     },
     {
       "id": "T-036-D",
@@ -720,18 +722,5 @@
       "description_zh": "在 test_server.py 中添加覆盖关闭->重启->状态恢复的测试。更新 zeus-execute-v2.md 和 claude-progress.md。"
     }
   ],
-  "quarantine": [
-    {
-      "task_id": "T-036-D",
-      "reason": "dispatcher_failed",
-      "quarantined_at": "2026-04-12T17:13:41Z",
-      "workspace": "D:\\SchoolDoc\\TrueProject\\zeus-open\\.zeus\\v2\\agent-workspaces\\zeus-agent-T-036-D"
-    },
-    {
-      "task_id": "T-036-A",
-      "reason": "dispatcher_failed",
-      "quarantined_at": "2026-04-12T17:15:32Z",
-      "workspace": "D:\\SchoolDoc\\TrueProject\\zeus-open\\.zeus\\v2\\agent-workspaces\\zeus-agent-T-036-A"
-    }
-  ]
+  "quarantine": []
 }
