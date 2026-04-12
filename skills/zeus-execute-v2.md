@@ -21,6 +21,32 @@ python .zeus/v2/scripts/zeus_orchestrator.py --wave 1
 python .zeus/v2/scripts/zeus_orchestrator.py --approve-next
 ```
 
+## Subagent Dispatcher Configuration
+
+Zeus v2 can delegate task execution to platform-native AI CLIs. Add the optional `subagent` block to `.zeus/v2/config.json`:
+
+```json
+{
+  "subagent": {
+    "dispatcher": "auto",
+    "timeout_seconds": 600
+  }
+}
+```
+
+Supported `dispatcher` values:
+
+| Value | Behavior |
+|-------|----------|
+| `"auto"` (default) | Detect `kimi` → `claude` → fallback to `mock` |
+| `"kimi"` | Use `kimi --print --prompt ... --work-dir ...` |
+| `"claude"` | Use `claude -p ... --allowedTools Read,Edit,Bash,Agent --cwd ...` |
+| `"mock"` | Write prompt and return immediately (backward-compatible) |
+
+**Note for Kimi users:** `kimi --print` implicitly runs in `--yolo` mode (auto-approve). Ensure your workspace is the isolated copy under `.zeus/v2/agent-workspaces/`.
+
+**Note for Claude users:** The `claude` CLI must be installed and authenticated separately.
+
 ## How to run (Dashboard)
 
 ```bash

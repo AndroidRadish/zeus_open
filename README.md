@@ -71,6 +71,19 @@ python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
 # http://localhost:8234/web
 ```
 
+To enable true unattended execution, configure the subagent dispatcher in `.zeus/v2/config.json`:
+
+```json
+{
+  "subagent": {
+    "dispatcher": "auto",
+    "timeout_seconds": 600
+  }
+}
+```
+
+See `skills/zeus-execute-v2.md` for full dispatcher options (`kimi`, `claude`, `mock`).
+
 The `skills/` folder contains markdown playbooks for each workflow stage. Reference them directly in your AI session (e.g. "Please follow skills/zeus-init.md to initialize this project").
 
 See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specific agent mappings.
@@ -82,6 +95,7 @@ See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specif
 - **Graphviz-free SVG Fallback** — `workflow_graph.py` renders dependency diagrams in pure Python when `dot` is unavailable.
 - **Multi-version Switching** — switch between `main`, `v2`, and future versions directly in the Web UI.
 - **Project Picker** — open and manage other local Zeus projects from the dashboard without restarting the server.
+- **Subagent Dispatcher** — delegates task execution to `kimi --print` or `claude -p` for true unattended multi-agent runs.
 
 ## Workflow
 
