@@ -603,7 +603,7 @@
       "description_en": "Add POST endpoints for /tasks/{task_id}/retry, /cancel, /pause. Introduce task status model (pending|running|paused|completed|failed|cancelled). Add action buttons in Global Execution view. Write integration tests.",
       "description_zh": "添加 POST 端点支持任务重试、取消、暂停。引入当前任务状态模型（pending|running|paused|completed|failed|cancelled）。在全局执行页面添加操作按钮。编写集成测试。",
       "status": "completed",
-      "commit_sha": "c17741573c4d19913ead25f24725153ba0c15037",
+      "commit_sha": "4438fcf90d1d283d25ccdea7ff01a1abebd56939",
       "log_path": ".zeus/v2/ai-logs/T-035.md"
     },
     {
