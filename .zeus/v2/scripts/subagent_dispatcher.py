@@ -182,6 +182,7 @@ class KimiSubagentDispatcher(_CliDispatcher):
         return [
             "kimi",
             "--print",
+            "--yolo",
             "--prompt", prompt,
             "--work-dir", str(workspace),
             "--output-format", "text",
