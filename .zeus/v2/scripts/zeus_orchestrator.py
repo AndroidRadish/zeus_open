@@ -47,6 +47,16 @@ class ZeusOrchestrator:
     # -----------------------------------------------------------------------
     # Helpers
     # -----------------------------------------------------------------------
+    @staticmethod
+    def _task_effective_wave(task: dict) -> int | None:
+        """Return the runtime wave (scheduled_wave falls back to wave)."""
+        return task.get("scheduled_wave", task.get("wave"))
+
+    @staticmethod
+    def _task_original_wave(task: dict) -> int | None:
+        """Return the originally planned wave."""
+        return task.get("original_wave", task.get("wave"))
+
     def _store(self) -> LocalStore:
         """Factory for a fresh LocalStore instance wired to project_root."""
         return LocalStore(base_dir=str(self.project_root))
@@ -135,9 +145,105 @@ class ZeusOrchestrator:
         tasks = data.get("tasks", [])
         pending = [
             t for t in tasks
-            if t.get("wave") == wave_number and not t.get("passes", False)
+            if self._task_effective_wave(t) == wave_number and not t.get("passes", False)
         ]
         return pending
+
+    def _get_ready_tasks(
+        self,
+        current_wave: int,
+        dispatched_ids: set[str],
+        store: LocalStore,
+    ) -> list[dict]:
+        """Return all tasks that are ready to run, sorted by (original_wave, id)."""
+        data = self._load_task_json(store)
+        tasks = data.get("tasks", [])
+        meta = data.get("meta", {})
+
+        scheduling_mode = meta.get("scheduling_mode", "legacy")
+        lookahead = meta.get("lookahead_waves", 1 if scheduling_mode == "adaptive" else 0)
+
+        pass_map = {t["id"]: t.get("passes", False) for t in tasks}
+
+        ready = []
+        for t in tasks:
+            tid = t["id"]
+            if tid in dispatched_ids:
+                continue
+            if pass_map.get(tid, False):
+                continue
+
+            eff_wave = self._task_effective_wave(t) or 0
+            orig_wave = self._task_original_wave(t) or 0
+
+            if scheduling_mode != "adaptive" or lookahead == 0:
+                if eff_wave != current_wave:
+                    continue
+            else:
+                if eff_wave > current_wave + lookahead:
+                    continue
+                if eff_wave < current_wave:
+                    # Allow only if explicitly rescheduled into current wave
+                    if orig_wave != current_wave and eff_wave != current_wave:
+                        continue
+
+            deps = t.get("depends_on", [])
+            if not all(pass_map.get(d, False) for d in deps):
+                continue
+
+            ready.append(t)
+
+        ready.sort(key=lambda t: (self._task_original_wave(t) or 0, t["id"]))
+        return ready
+
+    def _reschedule_task(
+        self,
+        task: dict,
+        new_wave: int,
+        store: LocalStore,
+        bus: AgentBus,
+    ) -> None:
+        """Move a task to a new wave and persist the change atomically."""
+        tid = task["id"]
+        old_wave = self._task_effective_wave(task)
+        orig_wave = self._task_original_wave(task)
+
+        if old_wave == new_wave:
+            return
+
+        updates = {
+            "scheduled_wave": new_wave,
+            "wave": new_wave,
+            "rescheduled_from": old_wave,
+        }
+        task.update(updates)
+
+        store.update_json_fields(
+            self._task_json_path,
+            list_key="tasks",
+            id_field="id",
+            updates=[{"id": tid, **updates}],
+        )
+
+        bus.emit(
+            "task.rescheduled",
+            tid,
+            "zeus-orchestrator",
+            {
+                "original_wave": orig_wave,
+                "new_wave": new_wave,
+                "previous_wave": old_wave,
+                "reason": "slot_available_while_wave_blocked",
+            },
+        )
+
+    async def _run_and_capture(self, task: dict, bus: AgentBus, store: LocalStore) -> tuple[str, Any]:
+        """Wrapper that preserves task_id for result/error correlation."""
+        try:
+            result = await self._dispatch_with_semaphore(task, bus, store)
+            return task["id"], result
+        except Exception as exc:
+            return task["id"], exc
 
     async def dispatch_task(self, task: dict, bus: AgentBus, store: LocalStore) -> dict:
         task_id = task["id"]
@@ -191,36 +297,48 @@ class ZeusOrchestrator:
     async def await_wave_completion(self, wave_number: int) -> dict:
         store = self._store()
         bus = AgentBus(version=self.version, wave=wave_number, store=store)
-        tasks = self.load_wave(wave_number)
 
-        if not tasks:
-            return {
-                "wave": wave_number,
-                "total": 0,
-                "dispatched": 0,
-                "failed": 0,
-            }
+        dispatched_ids: set[str] = set()
+        dispatched_count = 0
+        failed_count = 0
+        running_tasks: set[asyncio.Task] = set()
 
-        coros = [self._dispatch_with_semaphore(t, bus, store) for t in tasks]
-        results = await asyncio.gather(*coros, return_exceptions=True)
+        while True:
+            free_slots = self.max_parallel - len(running_tasks)
+            if free_slots > 0:
+                ready = self._get_ready_tasks(wave_number, dispatched_ids, store)
+                for task in ready[:free_slots]:
+                    tid = task["id"]
+                    orig_wave = self._task_original_wave(task) or wave_number
 
-        dispatched = 0
-        failed = 0
-        for res in results:
-            if isinstance(res, Exception):
-                failed += 1
-                # Emit failure via bus for the first task (best-effort logging)
-                bus.emit("task.failed", tasks[results.index(res)]["id"], "zeus-agent", {"error": str(res)})
-            else:
-                dispatched += 1
+                    if orig_wave > wave_number:
+                        self._reschedule_task(task, wave_number, store, bus)
+
+                    dispatched_ids.add(tid)
+                    coro = self._run_and_capture(task, bus, store)
+                    aio_task = asyncio.create_task(coro)
+                    running_tasks.add(aio_task)
+                    dispatched_count += 1
+
+            if not running_tasks:
+                break
+
+            done, running_tasks = await asyncio.wait(
+                running_tasks, return_when=asyncio.FIRST_COMPLETED
+            )
+            for task in done:
+                tid, outcome = await task
+                if isinstance(outcome, Exception):
+                    failed_count += 1
+                    bus.emit("task.failed", tid, "zeus-agent", {"error": str(outcome)})
 
         bus.emit("wave.completed", "wave", "zeus-orchestrator", {"wave": wave_number})
 
         return {
             "wave": wave_number,
-            "total": len(tasks),
-            "dispatched": dispatched,
-            "failed": failed,
+            "total": dispatched_count,
+            "dispatched": dispatched_count,
+            "failed": failed_count,
         }
 
     def update_task_state(self, task_id: str, updates: dict) -> None:
@@ -239,7 +357,8 @@ class ZeusOrchestrator:
         data = self._load_task_json(store)
         tasks = data.get("tasks", [])
 
-        wave_tasks = [t for t in tasks if t.get("wave") == current_wave]
+        # Approval gate is based on original_wave so rescheduled tasks still count
+        wave_tasks = [t for t in tasks if self._task_original_wave(t) == current_wave]
         all_passed = all(t.get("passes", False) for t in wave_tasks)
 
         if not all_passed:
@@ -288,10 +407,12 @@ class ZeusOrchestrator:
                 sha_short = sha[:7] if sha else "N/A"
                 print(f"  ✅ {t['id']}: {t['title']} → {sha_short}")
 
-        wave_pending = [t for t in pending_tasks if t.get("wave") == current_wave]
+        wave_pending = [t for t in pending_tasks if self._task_effective_wave(t) == current_wave]
         print(f"\nPending in current wave ({current_wave}): {len(wave_pending)}")
         for t in wave_pending[:5]:
-            print(f"  ⏳ {t['id']}: {t['title']}")
+            orig = self._task_original_wave(t)
+            suffix = f" [原 Wave {orig}]" if orig and orig != current_wave else ""
+            print(f"  ⏳ {t['id']}: {t['title']}{suffix}")
         print()
 
 
