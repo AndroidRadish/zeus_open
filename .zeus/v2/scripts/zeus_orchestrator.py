@@ -455,11 +455,19 @@ class ZeusOrchestrator:
 
     async def dispatch_task(self, task: dict, bus: AgentBus, store: LocalStore) -> dict:
         task_id = task["id"]
-        agent_id = f"zeus-agent"
         wave = task.get("wave", 1)
+        agent_id = f"zeus-agent-{task_id}"
 
-        # Workspace path: .zeus/v2/agent-workspaces/{agent_id}-{task_id}/
-        workspace_rel = f".zeus/{self.version}/agent-workspaces/{agent_id}-{task_id}"
+        # Agent-specific bus for isolated logs
+        agent_bus = AgentBus(
+            version=self.version,
+            wave=wave,
+            store=store,
+            agent_id=agent_id,
+        )
+
+        # Workspace path: .zeus/v2/agent-workspaces/{agent_id}/
+        workspace_rel = f".zeus/{self.version}/agent-workspaces/{agent_id}"
         workspace_path = store._resolve(workspace_rel)
         prompt_path = workspace_path / "PROMPT.md"
 
@@ -482,7 +490,7 @@ class ZeusOrchestrator:
         await asyncio.to_thread(_do_copy)
 
         # Bootstrap identity/context files into workspace
-        await asyncio.to_thread(self._bootstrap_workspace, workspace_path, bus, store)
+        await asyncio.to_thread(self._bootstrap_workspace, workspace_path, agent_bus, store)
 
         # Write PROMPT.md
         prompt = self._build_prompt(task, store)
@@ -490,7 +498,7 @@ class ZeusOrchestrator:
 
         # Delegate to the platform-specific subagent dispatcher
         dispatcher = self._build_dispatcher(store)
-        return await dispatcher.run(task, workspace_path, prompt, bus)
+        return await dispatcher.run(task, workspace_path, prompt, agent_bus)
 
     async def _dispatch_with_semaphore(self, task: dict, bus: AgentBus, store: LocalStore) -> dict:
         async with self._semaphore:

@@ -338,3 +338,38 @@ def test_status_includes_current_phase(client):
     assert response.status_code == 200
     data = response.json()
     assert data["current_phase"] == "P-001"
+
+
+def test_mailbox_endpoint(client, tmp_path):
+    # Seed a mailbox message for agent-x
+    logs_dir = tmp_path / ".zeus" / "v2" / "agent-logs" / "mailbox"
+    logs_dir.mkdir(parents=True)
+    msg = {"ts": "2026-04-12T10:00:00Z", "from": "agent-a", "to": "agent-x", "message": "hello", "read": False}
+    with open(logs_dir / "agent-x.jsonl", "w", encoding="utf-8") as f:
+        f.write(json.dumps(msg) + "\n")
+
+    response = client.get("/mailbox/agent-x")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["agent_id"] == "agent-x"
+    assert len(data["messages"]) == 1
+    assert data["messages"][0]["message"] == "hello"
+    assert data["messages"][0]["read"] is False
+
+    # Mark read
+    response = client.get("/mailbox/agent-x?mark_read=true")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["messages"][0]["read"] is True
+
+    # Verify persistence
+    response = client.get("/mailbox/agent-x")
+    assert response.json()["messages"][0]["read"] is True
+
+
+def test_mailbox_endpoint_empty(client):
+    response = client.get("/mailbox/no-one")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["agent_id"] == "no-one"
+    assert data["messages"] == []

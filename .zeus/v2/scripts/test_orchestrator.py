@@ -657,3 +657,44 @@ async def test_run_global_respects_max_parallel(global_project):
         await orch.run_global()
 
     assert max_concurrent <= 2
+
+
+@pytest.mark.asyncio
+async def test_dispatch_task_creates_agent_specific_and_legacy_logs(orchestrator, temp_project):
+    """T-032: dispatch_task should write both agent-specific and legacy wave logs."""
+    store = LocalStore(base_dir=str(temp_project))
+    bus = AgentBus(version="v2", wave=1, store=store)
+    task = {
+        "id": "T-002",
+        "passes": False,
+        "story_id": "US-001",
+        "title": "Log test task",
+        "depends_on": [],
+        "wave": 1,
+        "type": "feat",
+    }
+
+    result = await orchestrator.dispatch_task(task, bus, store)
+    assert result["task_id"] == "T-002"
+
+    agent_id = "zeus-agent-T-002"
+    base = temp_project / ".zeus" / "v2" / "agent-logs"
+
+    # Legacy wave logs
+    assert (base / "wave-1-events.jsonl").exists()
+    assert (base / "wave-1-discussion.md").exists()
+
+    # Agent-specific logs
+    assert (base / agent_id / "reasoning.jsonl").exists()
+    assert (base / agent_id / "activity.md").exists()
+
+    # Verify agent reasoning content
+    agent_bus = AgentBus(version="v2", wave=1, store=store, agent_id=agent_id)
+    agent_events = agent_bus.get_agent_events()
+    assert any(e["type"] == "task.started" for e in agent_events)
+    assert any(e["type"] == "task.completed" for e in agent_events)
+
+    # Verify legacy content via original bus
+    legacy_events = bus.get_events()
+    assert any(e["type"] == "task.started" for e in legacy_events)
+    assert any(e["type"] == "task.completed" for e in legacy_events)

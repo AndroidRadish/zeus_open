@@ -383,6 +383,14 @@ def get_discussion(wave: int = Query(...), version: str = Query("v2")) -> Respon
     return Response(content=content, media_type="text/plain; charset=utf-8")
 
 
+@app.get("/mailbox/{agent_id}")
+def get_mailbox(agent_id: str, version: str = Query("v2"), mark_read: bool = Query(False)) -> dict[str, Any]:
+    from agent_bus import AgentBus
+    bus = AgentBus(version=version, wave=-1, store=store)
+    messages = bus.receive(agent_id, mark_read=mark_read)
+    return {"agent_id": agent_id, "messages": messages}
+
+
 @app.get("/graph/mermaid")
 def graph_mermaid(version: str = Query("v2")) -> Response:
     path = _resolve(_task_json_path(version))
