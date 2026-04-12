@@ -91,7 +91,7 @@
             "id": "US-008"
         },
         {
-            "passes": false,
+            "passes": true,
             "title": "Phase Layer — Delivery Batch Management for Wave Proliferation",
             "acceptance_criteria": [
                 "roadmap.json schema supports an optional phases array with title, summary, milestone_ids, and wave_range",
@@ -102,8 +102,20 @@
                 "Documentation explains how to define phases in roadmap.json"
             ],
             "id": "US-009"
+        },
+        {
+            "passes": false,
+            "title": "Global Orchestrator & Agent Collaboration",
+            "acceptance_criteria": [
+                "GlobalScheduler replaces wave-locked execution: tasks are dispatched by global dependency readiness while wave remains a planning/observation dimension",
+                "Failed tasks enter a quarantine zone without blocking unrelated downstream tasks",
+                "Agent Mailbox protocol enables point-to-point messaging between agents via agent_bus",
+                "Each dispatched agent gets its own ai-logs directory under .zeus/v2/agent-logs/{agent_id}/",
+                "Web UI adds Global Execution view, Agent Message Stream panel, and per-agent log browser",
+                "All existing tests pass; new tests cover global scheduling, mailbox delivery, and agent log isolation",
+                "Documentation updated in zeus-execute-v2.md"
+            ],
+            "id": "US-010"
         }
-    ]
-}
     ]
 }

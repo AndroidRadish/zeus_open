@@ -46,6 +46,42 @@
 
 ---
 
+## SHIP — 2026-04-12
+
+- **Event**: Complete M-009 — Phase Layer (Delivery Batch Management)
+- **Tasks completed**: T-026, T-027, T-028, T-029
+- **Status**: All v2 tests pass (53/53)
+- **Key deliverables**:
+  - `roadmap.json` now supports a `phases` array with title, summary, milestone_ids, and wave_range
+  - `GET /phases` endpoint returns phases with computed status, progress_percent, and nested milestones
+  - Web UI "Phases" tab displays summary-bearing phase cards with expandable milestone lists
+  - Dashboard wave selector upgraded to a phase-aware "Phase → Wave"联动 selector
+  - Header shows current phase badge (e.g. `P-002 智能与完善`)
+  - `task.json` meta tracks `current_phase` automatically from wave position
+  - Full test coverage for `/phases` and phase status calculation
+  - Documentation updated in `skills/zeus-execute-v2.md`
+- **Next milestone**: Backlog — Auto-heal (Step 2) remains deferred until further human decision
+
+---
+
+## PLAN — 2026-04-12 (Global Orchestrator & Agent Collaboration)
+
+- **Event**: Plan a new milestone that breaks wave execution locks while keeping wave as a planning/observation view, and enables real-time agent collaboration with per-agent traceability
+- **Objective**: 
+  - Introduce `GlobalScheduler` to dispatch tasks by global dependency readiness across wave boundaries
+  - Add a `quarantine` zone for failed tasks so they do not block unrelated downstream work
+  - Extend `agent_bus.py` with a Mailbox protocol for point-to-point agent messaging
+  - Restructure `agent-logs` from wave-centric to agent-centric directories
+  - Update Web UI with Global Execution, Agent Collaboration, and per-agent log browser views
+- **New Artifacts**:
+  - Spec: `.zeus/v2/specs/2026-04-12-global-orchestrator-agent-collaboration.md`
+  - Roadmap: M-010 added with T-030 ~ T-034
+  - PRD: US-010 added
+- **North star impact**: `multi_agent_efficiency` ↑↑↑, `developer_adoption_rate` ↑↑, `observability` ↑↑
+- **Status**: Awaiting execution after M-009 (Phase Layer) ships
+
+---
+
 ## PLAN — 2026-04-12 (Phase Layer)
 
 - **Event**: Brainstorm and plan a Phase layer above Milestone to solve wave-number inflation
