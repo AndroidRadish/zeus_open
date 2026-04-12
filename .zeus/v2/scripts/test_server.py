@@ -28,6 +28,22 @@ def client(tmp_path):
 
     roadmap_data = {
         "version": "v2",
+        "phases": [
+            {
+                "id": "P-001",
+                "title": "Foundation",
+                "milestone_ids": ["M-001"],
+                "wave_start": 1,
+                "wave_end": 1,
+            },
+            {
+                "id": "P-002",
+                "title": "Ship",
+                "milestone_ids": ["M-002"],
+                "wave_start": 2,
+                "wave_end": 2,
+            },
+        ],
         "milestones": [
             {
                 "id": "M-001",
@@ -293,3 +309,32 @@ def test_milestones_endpoint(client):
     assert m2["status"] == "completed"
     assert m2["progress_percent"] == 100
     assert len(m2["tasks"]) == 1
+
+
+def test_phases_endpoint(client):
+    response = client.get("/phases")
+    assert response.status_code == 200
+    data = response.json()
+    assert "phases" in data
+    assert len(data["phases"]) == 2
+
+    p1 = next(p for p in data["phases"] if p["id"] == "P-001")
+    assert p1["title"] == "Foundation"
+    assert p1["status"] == "in_progress"
+    assert p1["progress_percent"] == 50
+    assert len(p1["milestones"]) == 1
+    assert p1["milestones"][0]["id"] == "M-001"
+
+    p2 = next(p for p in data["phases"] if p["id"] == "P-002")
+    assert p2["title"] == "Ship"
+    assert p2["status"] == "completed"
+    assert p2["progress_percent"] == 100
+    assert len(p2["milestones"]) == 1
+    assert p2["milestones"][0]["id"] == "M-002"
+
+
+def test_status_includes_current_phase(client):
+    response = client.get("/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["current_phase"] == "P-001"

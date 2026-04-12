@@ -136,6 +136,12 @@
               </select>
             </div>
 
+            <!-- Phase Badge -->
+            <div v-if="status.current_phase" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full glass-panel border-cyan-500/20">
+              <span class="text-xs text-cyan-400">当前 Phase</span>
+              <span class="text-sm font-bold text-white">{{ currentPhaseTitle }}</span>
+            </div>
+
             <!-- Wave Badge -->
             <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full glass-panel">
               <span class="text-xs text-slate-400">当前 Wave</span>
@@ -289,12 +295,21 @@
             </h3>
             <div class="flex items-center gap-3">
               <div class="flex items-center gap-2">
+                <label class="text-xs text-slate-400">选择 Phase</label>
+                <select
+                  v-model="selectedPhaseId"
+                  class="appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 cursor-pointer hover:bg-white/10 transition-colors min-w-[8rem]"
+                >
+                  <option v-for="ph in phases" :key="ph.id" :value="ph.id">{{ ph.id }} {{ getLocalized(ph, 'title') }}</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
                 <label class="text-xs text-slate-400">选择 Wave</label>
                 <select
                   v-model="dashboardWave"
                   class="appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 cursor-pointer hover:bg-white/10 transition-colors min-w-[5rem]"
                 >
-                  <option v-for="n in maxWave" :key="n" :value="n">Wave {{ n }}</option>
+                  <option v-for="n in phaseWaves" :key="n" :value="n">Wave {{ n }}</option>
                 </select>
               </div>
               <span class="text-sm text-slate-400">{{ waveDoneCount }} / {{ waveTasks.length }} 任务</span>
@@ -359,6 +374,92 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Phases View -->
+      <div v-if="currentTab === 'phases'" class="space-y-6">
+        <div v-if="phases.length === 0" class="glass-panel rounded-2xl p-10 text-center">
+          <p class="text-slate-500">暂无阶段数据</p>
+        </div>
+        <div
+          v-for="ph in phases"
+          :key="ph.id"
+          class="glass-panel rounded-2xl overflow-hidden transition-all duration-300"
+        >
+          <!-- Phase Header -->
+          <div
+            class="px-6 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer hover:bg-white/[0.02]"
+            @click="togglePhase(ph.id)"
+          >
+            <div class="flex items-center gap-3">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
+                :class="phaseStatusClass(ph.status)"
+              >
+                {{ phaseStatusText(ph.status) }}
+              </span>
+              <h3 class="text-lg font-semibold text-white">{{ ph.id }} {{ getLocalized(ph, 'title') }}</h3>
+            </div>
+            <div class="flex items-center gap-4 flex-1 sm:justify-end">
+              <div class="text-right">
+                <div class="text-xs text-slate-400">{{ ph.milestones.length }} 个里程碑</div>
+                <div class="text-xs text-slate-500">Wave {{ ph.wave_start }} ~ {{ ph.wave_end || '?' }}</div>
+              </div>
+              <div class="flex-1 sm:max-w-[12rem] h-2 bg-white/5 rounded-full overflow-hidden">
+                <div
+                  class="h-full rounded-full transition-all duration-700"
+                  :class="ph.status === 'completed' ? 'bg-emerald-500' : 'bg-cyan-500'"
+                  :style="{ width: ph.progress_percent + '%' }"
+                ></div>
+              </div>
+              <span class="text-sm font-medium text-slate-300 w-10 text-right">{{ ph.progress_percent }}%</span>
+              <svg
+                class="w-5 h-5 text-slate-400 transition-transform duration-300"
+                :class="expandedPhases.has(ph.id) ? 'rotate-180' : ''"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Phase Summary -->
+          <div v-if="getLocalized(ph, 'summary')" class="px-6 py-3 bg-white/[0.01] border-t border-white/5">
+            <p class="text-sm text-slate-400">{{ getLocalized(ph, 'summary') }}</p>
+          </div>
+
+          <!-- Phase Milestones -->
+          <div v-show="expandedPhases.has(ph.id)" class="border-t border-white/5 px-6 py-4 space-y-4">
+            <div
+              v-for="ms in ph.milestones"
+              :key="ms.id"
+              class="rounded-xl bg-white/[0.02] border border-white/5 p-4"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border"
+                    :class="milestoneStatusClass(ms.status)"
+                  >
+                    {{ milestoneStatusText(ms.status) }}
+                  </span>
+                  <h4 class="text-sm font-semibold text-white">{{ ms.title }}</h4>
+                </div>
+                <span class="text-xs text-slate-400">{{ ms.progress_percent }}%</span>
+              </div>
+              <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div
+                  class="h-full rounded-full"
+                  :class="ms.status === 'completed' ? 'bg-emerald-500' : 'bg-cyan-500'"
+                  :style="{ width: ms.progress_percent + '%' }"
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -715,6 +816,9 @@
         const recentAgents = ref([]);
         const milestones = ref([]);
         const expandedMilestones = ref(new Set());
+        const phases = ref([]);
+        const expandedPhases = ref(new Set());
+        const selectedPhaseId = ref(null);
         const dashboardWave = ref(1);
         const discussionWave = ref(1);
         const discussionContent = ref('');
@@ -739,6 +843,7 @@
 
         const tabs = [
           { id: 'dashboard', label: '仪表盘', icon: ICONS.dashboard },
+          { id: 'phases', label: '阶段', icon: ICONS.milestones },
           { id: 'milestones', label: '里程碑', icon: ICONS.milestones },
           { id: 'agents', label: 'Agent 监控', icon: ICONS.agents },
           { id: 'discussion', label: '讨论日志', icon: ICONS.discussion },
@@ -746,6 +851,23 @@
         ];
 
         const currentWave = computed(() => status.value.current_wave || 0);
+        const currentPhaseTitle = computed(() => {
+          const pid = status.value.current_phase;
+          if (!pid) return '';
+          const ph = phases.value.find(p => p.id === pid);
+          if (!ph) return pid;
+          return getLocalized(ph, 'title') || ph.title || pid;
+        });
+        const phaseWaves = computed(() => {
+          if (!selectedPhaseId.value) return [];
+          const ph = phases.value.find(p => p.id === selectedPhaseId.value);
+          if (!ph) return [];
+          const start = ph.wave_start || 1;
+          const end = ph.wave_end || Math.max(currentWave.value, start);
+          const waves = [];
+          for (let w = start; w <= end; w++) waves.push(w);
+          return waves;
+        });
         const maxWave = computed(() => {
           return Math.max(currentWave.value, 4);
         });
@@ -873,6 +995,41 @@
             milestones.value = data.milestones || [];
           } catch (e) {
             milestones.value = [];
+          }
+        }
+
+        function phaseStatusText(status) {
+          if (status === 'completed') return '已完成';
+          if (status === 'in_progress') return '进行中';
+          return '待开始';
+        }
+
+        function phaseStatusClass(status) {
+          if (status === 'completed') return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20';
+          if (status === 'in_progress') return 'bg-amber-500/10 text-amber-300 border-amber-500/20';
+          return 'bg-slate-500/10 text-slate-300 border-slate-500/20';
+        }
+
+        function togglePhase(phId) {
+          const s = expandedPhases.value;
+          if (s.has(phId)) s.delete(phId);
+          else s.add(phId);
+        }
+
+        async function fetchPhases() {
+          try {
+            const data = await apiGet('/phases');
+            phases.value = data.phases || [];
+            // Auto-select current phase for dashboard wave selector if not set
+            if (!selectedPhaseId.value && status.value.current_phase) {
+              selectedPhaseId.value = status.value.current_phase;
+            }
+            // Fallback to first phase
+            if (!selectedPhaseId.value && phases.value.length) {
+              selectedPhaseId.value = phases.value[0].id;
+            }
+          } catch (e) {
+            phases.value = [];
           }
         }
 
@@ -1062,8 +1219,18 @@
             fetchStatus(),
             fetchAgents()
           ]);
-          dashboardWave.value = currentWave.value || 1;
+          await fetchPhases();
+          // Ensure dashboardWave belongs to selected phase
+          if (selectedPhaseId.value) {
+            const waves = phaseWaves.value;
+            if (waves.length && !waves.includes(dashboardWave.value)) {
+              dashboardWave.value = waves[0];
+            }
+          } else {
+            dashboardWave.value = currentWave.value || 1;
+          }
           await fetchWaveTasks();
+          if (currentTab.value === 'phases') await fetchPhases();
           if (currentTab.value === 'milestones') await fetchMilestones();
           if (currentTab.value === 'discussion') await loadDiscussion();
           if (currentTab.value === 'graph') await loadGraph();
@@ -1159,7 +1326,15 @@
           await fetchWaveTasks();
         });
 
+        watch(selectedPhaseId, () => {
+          const waves = phaseWaves.value;
+          if (waves.length) {
+            dashboardWave.value = waves[0];
+          }
+        });
+
         watch(currentTab, (tab) => {
+          if (tab === 'phases') fetchPhases();
           if (tab === 'milestones') fetchMilestones();
           if (tab === 'discussion') loadDiscussion();
           if (tab === 'graph') loadGraph();
@@ -1192,6 +1367,7 @@
           serverOnline,
           status,
           currentWave,
+          currentPhaseTitle,
           maxWave,
           projectDirName,
           waveTasks,
@@ -1205,6 +1381,10 @@
           recentAgents,
           milestones,
           expandedMilestones,
+          phases,
+          expandedPhases,
+          selectedPhaseId,
+          phaseWaves,
           discussionWave,
           discussionContent,
           graphError,
@@ -1233,6 +1413,10 @@
           milestoneStatusClass,
           toggleMilestone,
           fetchMilestones,
+          phaseStatusText,
+          phaseStatusClass,
+          togglePhase,
+          fetchPhases,
           showOpenProjectModal,
           closeOpenProjectModal,
           pasteFromClipboard,

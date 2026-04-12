@@ -3,7 +3,8 @@
     "current_wave": 5,
     "wave_approval_required": true,
     "max_parallel_agents": 3,
-    "scheduling_mode": "adaptive"
+    "scheduling_mode": "adaptive",
+    "current_phase": "P-002"
   },
   "tasks": [
     {
@@ -474,6 +475,82 @@
       "wave": 9,
       "original_wave": 9,
       "scheduled_wave": 9,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-030",
+      "passes": false,
+      "story_id": "US-010",
+      "title": "Implement GlobalScheduler with quarantine and wave-as-view semantics",
+      "description": "Refactor zeus_orchestrator.py to introduce GlobalScheduler. Maintain wave in task.json as planning/observation fields. Dispatch tasks by global dependency readiness. Failed tasks move to quarantine (task.json quarantine array or status field) and do not block unrelated downstream tasks.",
+      "depends_on": [],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 10,
+      "original_wave": 10,
+      "scheduled_wave": 10,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-031",
+      "passes": false,
+      "story_id": "US-010",
+      "title": "Implement Agent Mailbox protocol in agent_bus.py",
+      "description": "Extend agent_bus.py with send(to_agent_id, message) and receive(agent_id) APIs. Messages persisted as JSONL in .zeus/v2/agent-logs/mailbox/{to_agent_id}.jsonl. Support polling by agents in their workspace via a lightweight API or file watcher.",
+      "depends_on": [],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 10,
+      "original_wave": 10,
+      "scheduled_wave": 10,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-032",
+      "passes": false,
+      "story_id": "US-010",
+      "title": "Agent-level isolated ai-logs directory structure",
+      "description": "Change log layout from wave-centric to agent-centric: .zeus/v2/agent-logs/{agent_id}/activity.md and reasoning.jsonl. Update zeus_orchestrator.py dispatch logic and agent_bus event writers to write to agent-specific paths. Ensure backward compatibility for existing wave-logs.",
+      "depends_on": [],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 10,
+      "original_wave": 10,
+      "scheduled_wave": 10,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-033",
+      "passes": false,
+      "story_id": "US-010",
+      "title": "Web UI Global Execution, Agent Collaboration, and per-agent log browser",
+      "description": "Add Global Execution view (cross-wave running tasks). Add Agent Message Stream panel (real-time or polling mailbox display). Add per-agent log browser (select agent -> view activity.md / reasoning.jsonl). Update index.html and zeus_server.py with necessary endpoints.",
+      "depends_on": [
+        "T-030",
+        "T-031",
+        "T-032"
+      ],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 11,
+      "original_wave": 11,
+      "scheduled_wave": 11,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-034",
+      "passes": false,
+      "story_id": "US-010",
+      "title": "Integration tests, backward-compatibility validation, and documentation",
+      "description": "Write tests for GlobalScheduler quarantine behavior, mailbox delivery, and agent log isolation. Validate main track unaffected. Update zeus-execute-v2.md with global scheduling and agent collaboration guidelines.",
+      "depends_on": [
+        "T-033"
+      ],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 11,
+      "original_wave": 11,
+      "scheduled_wave": 11,
       "rescheduled_from": null
     }
   ]

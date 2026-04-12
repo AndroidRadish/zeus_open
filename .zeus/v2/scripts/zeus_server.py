@@ -137,6 +137,25 @@ def _discover_versions() -> list[dict[str, str]]:
     return versions
 
 
+def _read_roadmap_json(version: str) -> dict[str, Any]:
+    path = f".zeus/{version}/roadmap.json"
+    if store._resolve(path).exists():
+        return store.read_json(path)
+    return {"milestones": [], "phases": []}
+
+
+def _compute_phase_status(phase: dict, milestone_statuses: dict[str, str]) -> str:
+    ids = phase.get("milestone_ids", [])
+    if not ids:
+        return "pending"
+    statuses = [milestone_statuses.get(mid, "pending") for mid in ids]
+    if all(s == "completed" for s in statuses):
+        return "completed"
+    if any(s in ("completed", "in_progress") for s in statuses):
+        return "in_progress"
+    return "pending"
+
+
 # ----------------------------------------------------------------------
 # Endpoints
 # ----------------------------------------------------------------------
@@ -154,10 +173,22 @@ def get_status(version: str = Query("v2")) -> dict[str, Any]:
     config = store.read_json(f".zeus/{version}/config.json") if store._resolve(f".zeus/{version}/config.json").exists() else {}
     project_name = config.get("project", {}).get("name", "zeus-open")
 
+    # Determine current_phase from roadmap phases based on current_wave
+    current_phase = None
+    roadmap_data = _read_roadmap_json(version)
+    for ph in roadmap_data.get("phases", []):
+        ws = ph.get("wave_start")
+        we = ph.get("wave_end")
+        if ws is not None and current_wave >= ws:
+            if we is None or current_wave <= we:
+                current_phase = ph["id"]
+                break
+
     return {
         "version": version,
         "project_name": project_name,
         "current_wave": current_wave,
+        "current_phase": current_phase,
         "pending_tasks": pending,
         "completed_tasks": completed,
         "validation": _validate_task_json(data),
@@ -231,6 +262,61 @@ def get_milestones(version: str = Query("v2")) -> dict[str, Any]:
             "tasks": ms_tasks,
         })
     return {"milestones": result}
+
+
+@app.get("/phases")
+def get_phases(version: str = Query("v2")) -> dict[str, Any]:
+    roadmap_data = _read_roadmap_json(version)
+    task_data = _read_task_json(version)
+    tasks_by_id = {t["id"]: t for t in task_data.get("tasks", [])}
+
+    # Compute milestone statuses from task pass states
+    milestone_statuses: dict[str, str] = {}
+    milestone_progress: dict[str, int] = {}
+    milestones = roadmap_data.get("milestones", [])
+    for ms in milestones:
+        ms_tasks = [tasks_by_id[tid] for tid in ms.get("task_ids", []) if tid in tasks_by_id]
+        total = len(ms_tasks)
+        done = sum(1 for mt in ms_tasks if mt.get("passes"))
+        milestone_progress[ms["id"]] = round((done / total) * 100) if total else 0
+        if total == 0:
+            milestone_statuses[ms["id"]] = "pending"
+        elif done == total:
+            milestone_statuses[ms["id"]] = "completed"
+        else:
+            milestone_statuses[ms["id"]] = "in_progress"
+
+    # Build phase payload with nested milestones
+    phases = roadmap_data.get("phases", [])
+    result: list[dict[str, Any]] = []
+    for ph in phases:
+        ph_milestones: list[dict[str, Any]] = []
+        for mid in ph.get("milestone_ids", []):
+            ms = next((m for m in milestones if m["id"] == mid), None)
+            if ms:
+                ph_milestones.append({
+                    "id": ms["id"],
+                    "title": ms.get("title", ""),
+                    "status": milestone_statuses.get(mid, "pending"),
+                    "progress_percent": milestone_progress.get(mid, 0),
+                })
+        total = len(ph_milestones)
+        progress = round(sum(pm["progress_percent"] for pm in ph_milestones) / total) if total else 0
+        result.append({
+            "id": ph.get("id"),
+            "title": ph.get("title", ""),
+            "title_en": ph.get("title_en"),
+            "title_zh": ph.get("title_zh"),
+            "summary": ph.get("summary", ""),
+            "summary_en": ph.get("summary_en"),
+            "summary_zh": ph.get("summary_zh"),
+            "wave_start": ph.get("wave_start"),
+            "wave_end": ph.get("wave_end"),
+            "status": _compute_phase_status(ph, milestone_statuses),
+            "progress_percent": progress,
+            "milestones": ph_milestones,
+        })
+    return {"phases": result}
 
 
 @app.get("/agents")

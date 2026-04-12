@@ -128,6 +128,42 @@ Zeus v2 task metadata supports bilingual fields. In `task.json`, you can optiona
 - The Web UI language toggle (中 / EN) reads `title_{lang}` / `description_{lang}` first, then falls back to the base `title` / `description`.
 - The orchestrator prompt builder uses `title_zh` / `description_zh` when generating Chinese prompts.
 
+## Phase Layer
+
+For long-running projects, raw wave numbers become unreadable. Zeus v2 supports **Phases** — named delivery batches that group consecutive milestones and waves.
+
+Phases live in `roadmap.json` under the top-level `phases` array:
+
+```json
+{
+  "version": "v2",
+  "phases": [
+    {
+      "id": "P-001",
+      "title": "v2 Foundation",
+      "title_en": "v2 Foundation",
+      "title_zh": "v2 基础架构",
+      "summary": "Core storage, async orchestrator, FastAPI backend, Web dashboard",
+      "summary_en": "Core storage, async orchestrator, FastAPI backend, Web dashboard",
+      "summary_zh": "核心存储、异步调度器、FastAPI 后端、Web 仪表盘",
+      "milestone_ids": ["M-001", "M-002", "M-003"],
+      "wave_start": 1,
+      "wave_end": 4
+    }
+  ],
+  "milestones": [ ... ]
+}
+```
+
+**Web UI impact:**
+- **Phases tab**: shows phase cards with summaries, progress bars, and nested milestones.
+- **Dashboard wave selector**: becomes a "Phase → Wave"联动 selector, eliminating huge wave dropdowns.
+- **Header badge**: displays the current phase next to the current wave.
+
+**Backend impact:**
+- `GET /phases` returns phases with computed `status` and `progress_percent`.
+- `/status` includes `current_phase` based on `meta.current_wave` and phase `wave_start`/`wave_end`.
+
 ## Failure policy
 
 - Agent timeout >10 min marks task failed.
