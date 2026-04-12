@@ -9,7 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <script src="https://unpkg.com/vis-network@9.1.2/standalone/umd/vis-network.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -548,86 +547,6 @@
         </div>
       </div>
 
-      <!-- Agents View -->
-      <div v-if="currentTab === 'agents'" class="space-y-6">
-        <!-- Running -->
-        <div>
-          <h3 class="text-sm font-medium text-slate-400 mb-3">{{ lang === 'en' ? 'Running' : '运行中' }}</h3>
-          <div v-if="agents.length === 0" class="glass-panel rounded-2xl p-10 text-center">
-            <div class="mx-auto w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 mb-4">
-              <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M12 8v4l3 3"/>
-                <circle cx="12" cy="12" r="10"/>
-              </svg>
-            </div>
-            <h3 class="text-lg font-medium text-white">{{ lang === 'en' ? 'No Running Agents' : '暂无运行中的 Agent' }}</h3>
-            <p class="text-sm text-slate-500 mt-1">{{ lang === 'en' ? 'No agent is currently executing a task.' : '当前没有 Agent 正在执行任务。' }}</p>
-          </div>
-          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div
-              v-for="(agent, idx) in agents"
-              :key="agent.agent_id + agent.task_id"
-              class="glass-panel rounded-2xl p-5 glass-panel-hover transition-all duration-300"
-              :style="{ animationDelay: (idx * 50) + 'ms' }"
-            >
-              <div class="flex items-start justify-between">
-                <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/20 flex items-center justify-center text-cyan-300 font-bold text-sm">
-                    {{ agent.agent_id.slice(-1) || 'A' }}
-                  </div>
-                  <div>
-                    <div class="text-sm font-semibold text-white">{{ agent.agent_id }}</div>
-                    <div class="text-xs text-slate-500 font-mono mt-0.5">{{ agent.task_id }}</div>
-                  </div>
-                </div>
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-1.5 animate-pulse"></span>
-                  {{ lang === 'en' ? 'Running' : '运行中' }}
-                </span>
-              </div>
-              <div class="mt-4 pt-4 border-t border-white/5">
-                <div class="flex items-center justify-between text-sm">
-                  <span class="text-slate-500">{{ lang === 'en' ? 'Started At' : '启动时间' }}</span>
-                  <span class="text-slate-300 font-mono">{{ formatTime(agent.started_at) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent -->
-        <div v-if="recentAgents.length > 0">
-          <h3 class="text-sm font-medium text-slate-400 mb-3">{{ lang === 'en' ? 'Recent Activity' : '最近活动' }}</h3>
-          <div class="glass-panel rounded-2xl overflow-hidden">
-            <table class="min-w-full">
-              <thead class="bg-white/[0.02]">
-                <tr>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Agent</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{{ lang === 'en' ? 'Task' : '任务' }}</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{{ lang === 'en' ? 'Status' : '状态' }}</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{{ lang === 'en' ? 'Duration' : '耗时' }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-white/5">
-                <tr v-for="agent in recentAgents" :key="agent.task_id" class="hover:bg-white/[0.02] transition-colors">
-                  <td class="px-4 py-3 text-sm text-white">{{ agent.agent_id || '—' }}</td>
-                  <td class="px-4 py-3 text-sm text-slate-300 font-mono">{{ agent.task_id }}</td>
-                  <td class="px-4 py-3 text-sm">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                      :class="agent.status === 'completed' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'"
-                    >
-                      {{ agent.status === 'completed' ? (lang === 'en' ? 'Completed' : '已完成') : (lang === 'en' ? 'Failed' : '失败') }}
-                    </span>
-                  </td>
-                  <td class="px-4 py-3 text-sm text-slate-400 font-mono">{{ formatDuration(agent.started_at, agent.finished_at) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
       <!-- Global Execution View -->
       <div v-if="currentTab === 'global'" class="space-y-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -826,84 +745,6 @@
         </div>
       </div>
 
-      <!-- Discussion View -->
-      <div v-if="currentTab === 'discussion'" class="space-y-4">
-        <div class="glass-panel rounded-2xl p-4">
-          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-            <label class="text-sm font-medium text-slate-300">{{ lang === 'en' ? 'Select Wave' : '选择 Wave' }}</label>
-            <div class="flex items-center gap-2">
-              <select
-                v-model="discussionWave"
-                @change="loadDiscussion"
-                class="appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 min-w-[6rem]"
-              >
-                <option v-for="n in maxWave" :key="n" :value="n">Wave {{ n }}</option>
-              </select>
-              <button
-                @click="loadDiscussion"
-                class="px-4 py-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 text-sm font-medium transition-colors"
-              >
-                {{ lang === 'en' ? 'Load Log' : '加载日志' }}
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="glass-panel rounded-2xl p-6 min-h-[300px]">
-          <div v-if="discussionContent" class="prose prose-invert prose-sm max-w-none custom-scrollbar overflow-auto max-h-[70vh]">
-            <div v-html="renderMarkdown(discussionContent)"></div>
-          </div>
-          <div v-else class="flex flex-col items-center justify-center h-48 text-slate-500">
-            <svg class="w-10 h-10 mb-3 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" x2="8" y1="13" y2="13"/>
-              <line x1="16" x2="8" y1="17" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-            <p>{{ lang === 'en' ? `Wave ${discussionWave} has no discussion log` : `Wave ${discussionWave} 暂无讨论日志` }}</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Workflow Graph View -->
-      <div v-if="currentTab === 'graph'" class="space-y-4">
-        <div class="glass-panel rounded-2xl p-1">
-          <div v-if="graphError" class="text-center py-10 px-4">
-            <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 mb-4">
-              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
-                <line x1="12" x2="12" y1="8" y2="12"/>
-                <line x1="12" x2="12.01" y1="16" y2="16"/>
-              </svg>
-            </div>
-            <div class="text-rose-300 font-medium mb-2">图表渲染失败</div>
-            <div class="text-sm text-slate-500 mb-4">{{ graphError }}</div>
-          </div>
-          <div v-else-if="graphLoading" class="flex flex-col items-center justify-center py-20 text-slate-500">
-            <svg class="w-10 h-10 animate-spin-slow mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-            </svg>
-            <p>正在渲染依赖图...</p>
-          </div>
-          <div v-else ref="mermaidContainer" class="mermaid-container rounded-xl flex justify-center min-h-[500px] h-[70vh] py-4"></div>
-        </div>
-      </div>
-
-      <!-- Graph Node Tooltip -->
-      <div
-        ref="graphTooltip"
-        class="fixed z-[200] pointer-events-none transition-opacity duration-200"
-        :class="graphTooltipVisible ? 'opacity-100' : 'opacity-0'"
-      >
-        <div class="glass-panel rounded-xl px-4 py-3 border border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.35)] backdrop-blur-md max-w-xs">
-          <div class="text-sm font-semibold text-white mb-1">{{ graphTooltipTitle }}</div>
-          <div class="text-xs text-slate-300 leading-relaxed">{{ graphTooltipBody }}</div>
-          <div class="mt-2 flex items-center gap-2 text-xs">
-            <span class="px-1.5 py-0.5 rounded bg-white/10 text-cyan-300">Wave {{ graphTooltipWave }}</span>
-            <span class="px-1.5 py-0.5 rounded bg-white/10" :class="graphTooltipStatus === 'done' ? 'text-emerald-300' : (graphTooltipStatus === 'in_progress' ? 'text-cyan-300' : 'text-slate-300')">{{ graphTooltipStatusText }}</span>
-          </div>
-        </div>
-      </div>
     </main>
 
     <!-- Open Project Modal -->
@@ -993,9 +834,6 @@
     // Inline SVG icons for tabs
     const ICONS = {
       dashboard: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
-      agents: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-      discussion: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
-      graph: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
       milestones: '<path d="M12 2l7 19-7-4-7 4 7-19z"/>',
       global: '<circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/>',
       collaboration: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
@@ -1017,26 +855,12 @@
           validation: 'pass'
         });
         const waveTasks = ref([]);
-        const agents = ref([]);
-        const recentAgents = ref([]);
         const milestones = ref([]);
         const expandedMilestones = ref(new Set());
         const phases = ref([]);
         const expandedPhases = ref(new Set());
         const selectedPhaseId = ref(null);
         const dashboardWave = ref(1);
-        const discussionWave = ref(1);
-        const discussionContent = ref('');
-        const graphError = ref('');
-        const graphLoading = ref(false);
-        const mermaidContainer = ref(null);
-        const graphTooltip = ref(null);
-        const graphTooltipVisible = ref(false);
-        const graphTooltipTitle = ref('');
-        const graphTooltipBody = ref('');
-        const graphTooltipWave = ref(0);
-        const graphTooltipStatus = ref('');
-        const graphTooltipStatusText = ref('');
         const globalStatus = ref({ running: [], pending_by_wave: {}, quarantine: [] });
         const mailboxAgentId = ref('');
         const mailboxMessages = ref([]);
@@ -1059,9 +883,6 @@
           { id: 'logs', label: 'Agent 日志', icon: ICONS.logs },
           { id: 'phases', label: '阶段', icon: ICONS.milestones },
           { id: 'milestones', label: '里程碑', icon: ICONS.milestones },
-          { id: 'agents', label: 'Agent 监控', icon: ICONS.agents },
-          { id: 'discussion', label: '讨论日志', icon: ICONS.discussion },
-          { id: 'graph', label: '依赖图谱', icon: ICONS.graph },
         ];
 
         const currentWave = computed(() => status.value.current_wave || 0);
@@ -1081,9 +902,6 @@
           const waves = [];
           for (let w = start; w <= end; w++) waves.push(w);
           return waves;
-        });
-        const maxWave = computed(() => {
-          return Math.max(currentWave.value, 4);
         });
         const projectDirName = computed(() => {
           const dir = status.value.project_dir || '';
@@ -1127,7 +945,7 @@
         // Running agent task ids
         const runningTaskIds = computed(() => {
           const set = new Set();
-          agents.value.forEach(a => { if (a.task_id) set.add(a.task_id); });
+          (globalStatus.value.running || []).forEach(a => { if (a.task_id) set.add(a.task_id); });
           return set;
         });
 
@@ -1298,19 +1116,6 @@
           }
         }
 
-        async function fetchAgents() {
-          try {
-            const data = await apiGet('/agents');
-            agents.value = data.running || [];
-            recentAgents.value = data.recent || [];
-            serverOnline.value = true;
-          } catch (e) {
-            serverOnline.value = false;
-            agents.value = [];
-            recentAgents.value = [];
-          }
-        }
-
         async function fetchGlobalStatus() {
           try {
             const data = await apiGet('/global/status');
@@ -1354,142 +1159,11 @@
           }
         }
 
-        async function loadDiscussion() {
-          try {
-            discussionContent.value = await apiGet(`/discussion?wave=${discussionWave.value}`);
-          } catch (e) {
-            discussionContent.value = '';
-          }
-        }
-
-        function positionTooltip(x, y) {
-          if (!graphTooltip.value) return;
-          const tipRect = graphTooltip.value.getBoundingClientRect();
-          let left = x + 16;
-          let top = y + 16;
-          if (left + tipRect.width > window.innerWidth) left = x - tipRect.width - 16;
-          if (top + tipRect.height > window.innerHeight) top = y - tipRect.height - 16;
-          graphTooltip.value.style.left = left + 'px';
-          graphTooltip.value.style.top = top + 'px';
-        }
-
-        function statusToColor(status) {
-          if (status === 'done') return '#22c55e';
-          if (status === 'in_progress') return '#3b82f6';
-          if (status === 'failed') return '#ef4444';
-          return '#9ca3af';
-        }
-
-        async function loadGraph() {
-          graphLoading.value = true;
-          graphError.value = '';
-          try {
-            const data = await apiGet('/graph/echarts');
-            const rawNodes = data.nodes || [];
-            const rawLinks = data.links || [];
-            const taskMap = {};
-            rawNodes.forEach(n => { taskMap[n.id] = n; });
-
-            const nodes = rawNodes.map(n => ({
-              id: n.id,
-              label: n.id,
-              value: n.symbolSize ? Math.max(10, n.symbolSize) : 20,
-              color: {
-                background: statusToColor(n.status),
-                border: 'rgba(255,255,255,0.25)',
-                highlight: { background: '#22d3ee', border: '#06b6d4' },
-                hover: { background: '#22d3ee', border: '#06b6d4' }
-              },
-              font: { color: '#f8fafc', face: '"DM Sans","Noto Sans SC",sans-serif', size: 13, strokeWidth: 0 },
-              shadow: false,
-              title: '',
-              _task: n
-            }));
-
-            const edges = rawLinks.map(l => ({
-              from: l.source,
-              to: l.target,
-              color: { color: 'rgba(255,255,255,0.12)', highlight: '#22d3ee', hover: '#22d3ee' },
-              arrows: 'to',
-              width: 1.5,
-              smooth: { type: 'continuous' }
-            }));
-
-            graphLoading.value = false;
-            await nextTick();
-
-            if (mermaidContainer.value) {
-              if (visNetwork) {
-                visNetwork.destroy();
-                visNetwork = null;
-              }
-              mermaidContainer.value.innerHTML = '';
-              const dataSet = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
-              const options = {
-                nodes: {
-                  borderWidth: 2,
-                  shape: 'dot',
-                  scaling: { min: 10, max: 30 }
-                },
-                edges: {
-                  smooth: { type: 'continuous' }
-                },
-                physics: {
-                  stabilization: { iterations: 200 },
-                  barnesHut: {
-                    gravitationalConstant: -4000,
-                    centralGravity: 0.35,
-                    springLength: 120,
-                    springConstant: 0.06,
-                    damping: 0.09,
-                    avoidOverlap: 0.3
-                  }
-                },
-                interaction: {
-                  hover: true,
-                  tooltipDelay: 0,
-                  zoomView: true,
-                  dragView: true
-                },
-                layout: { randomSeed: 2 }
-              };
-              visNetwork = new vis.Network(mermaidContainer.value, dataSet, options);
-
-              visNetwork.on('hoverNode', (params) => {
-                const nodeId = params.node;
-                dataSet.nodes.update({ id: nodeId, shadow: { enabled: true, color: 'rgba(6,182,212,0.95)', size: 18, x: 0, y: 0 } });
-                const task = taskMap[nodeId];
-                if (!task) return;
-                graphTooltipTitle.value = task.title || nodeId;
-                graphTooltipBody.value = task.description || '暂无描述';
-                graphTooltipWave.value = task.wave || 0;
-                graphTooltipStatus.value = task.status || 'pending';
-                graphTooltipStatusText.value = task.status === 'done' ? '已完成' : (task.status === 'in_progress' ? '进行中' : '待执行');
-                graphTooltipVisible.value = true;
-                const domPos = visNetwork.canvasToDOM(visNetwork.getPositions([nodeId])[nodeId]);
-                nextTick(() => positionTooltip(domPos.x, domPos.y));
-              });
-
-              visNetwork.on('blurNode', (params) => {
-                const nodeId = params.node;
-                dataSet.nodes.update({ id: nodeId, shadow: false });
-                graphTooltipVisible.value = false;
-              });
-
-              visNetwork.on('dragStart', () => { graphTooltipVisible.value = false; });
-            }
-          } catch (e) {
-            graphLoading.value = false;
-            graphError.value = e.message || '图谱渲染失败';
-          }
-        }
-
         async function refreshAll() {
           loading.value = true;
           await fetchVersions();
           await Promise.all([
             fetchStatus(),
-            fetchAgents(),
             fetchGlobalStatus(),
             fetchAllAgentIds()
           ]);
@@ -1506,8 +1180,6 @@
           await fetchWaveTasks();
           if (currentTab.value === 'phases') await fetchPhases();
           if (currentTab.value === 'milestones') await fetchMilestones();
-          if (currentTab.value === 'discussion') await loadDiscussion();
-          if (currentTab.value === 'graph') await loadGraph();
           if (currentTab.value === 'global') await fetchGlobalStatus();
           if (currentTab.value === 'collaboration') await loadMailbox();
           if (currentTab.value === 'logs') await loadAgentLogs();
@@ -1537,22 +1209,6 @@
             return d.toLocaleString('zh-CN');
           } catch (e) {
             return ts;
-          }
-        }
-
-        function formatDuration(startedAt, finishedAt) {
-          if (!startedAt || !finishedAt) return '—';
-          try {
-            const start = new Date(startedAt).getTime();
-            const end = new Date(finishedAt).getTime();
-            const diff = Math.max(0, end - start);
-            const seconds = Math.floor(diff / 1000);
-            if (seconds < 60) return `${seconds}s`;
-            const minutes = Math.floor(seconds / 60);
-            const rem = seconds % 60;
-            return `${minutes}m ${rem}s`;
-          } catch (e) {
-            return '—';
           }
         }
 
@@ -1588,7 +1244,6 @@
           pollInterval = setInterval(() => {
             fetchStatus();
             fetchWaveTasks();
-            fetchAgents();
             fetchGlobalStatus();
             fetchAllAgentIds();
             if (currentTab.value === 'collaboration' && mailboxAgentId.value.trim()) {
@@ -1618,16 +1273,12 @@
         watch(currentTab, (tab) => {
           if (tab === 'phases') fetchPhases();
           if (tab === 'milestones') fetchMilestones();
-          if (tab === 'discussion') loadDiscussion();
-          if (tab === 'graph') loadGraph();
-          else graphTooltipVisible.value = false;
           if (tab === 'global') fetchGlobalStatus();
           if (tab === 'collaboration') loadMailbox();
           if (tab === 'logs') loadAgentLogs();
         });
 
         watch(currentVersion, async () => {
-          discussionWave.value = 1;
           await refreshAll();
         });
 
@@ -1635,7 +1286,6 @@
           await refreshAll();
           startPolling();
           dashboardWave.value = currentWave.value || 1;
-          discussionWave.value = currentWave.value || 1;
         });
 
         onUnmounted(() => {
@@ -1653,7 +1303,6 @@
           status,
           currentWave,
           currentPhaseTitle,
-          maxWave,
           projectDirName,
           waveTasks,
           pendingPercent,
@@ -1662,26 +1311,12 @@
           waveProgressPercent,
           hasRescheduledTasks,
           dashboardWave,
-          agents,
-          recentAgents,
           milestones,
           expandedMilestones,
           phases,
           expandedPhases,
           selectedPhaseId,
           phaseWaves,
-          discussionWave,
-          discussionContent,
-          graphError,
-          graphLoading,
-          mermaidContainer,
-          graphTooltip,
-          graphTooltipVisible,
-          graphTooltipTitle,
-          graphTooltipBody,
-          graphTooltipWave,
-          graphTooltipStatus,
-          graphTooltipStatusText,
           globalStatus,
           sortedPendingWaves,
           mailboxAgentId,
@@ -1698,7 +1333,6 @@
           openProjectError,
           openProjectLoading,
           refreshAll,
-          loadDiscussion,
           isTaskRunning,
           getStatusDotColor,
           getStatusLabel,
