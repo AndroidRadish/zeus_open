@@ -232,14 +232,14 @@
     },
     {
       "id": "T-018",
-      "passes": false,
+      "passes": true,
       "story_id": "US-006",
       "title": "Update Web UI Agent Monitor to show last_seen and simple activity indicators",
       "depends_on": [
         "T-016"
       ],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "d29f4aee79f1be2e49aa70ae34f90693822e2c12",
+      "log_path": ".zeus/v2/ai-logs/T-018.md",
       "wave": 7,
       "original_wave": 7,
       "scheduled_wave": 7,
@@ -247,15 +247,15 @@
     },
     {
       "id": "T-019",
-      "passes": false,
+      "passes": true,
       "story_id": "US-006",
       "title": "Update README and zeus-execute-v2.md with subagent setup instructions",
       "depends_on": [
         "T-017",
         "T-018"
       ],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "b318d04ac9a56d6cd05e39fadeb5141100684d23",
+      "log_path": ".zeus/v2/ai-logs/T-019.md",
       "wave": 7,
       "original_wave": 7,
       "scheduled_wave": 7,
