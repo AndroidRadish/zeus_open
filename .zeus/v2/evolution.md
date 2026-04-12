@@ -28,3 +28,18 @@
   - Roadmap: M-005 added with T-011 ~ T-014
   - PRD: US-005 added
 - **North star impact**: multi_agent_efficiency ↑↑, developer_adoption_rate ↑
+
+---
+
+## SHIP — 2026-04-12
+
+- **Event**: Complete M-005 — Adaptive Wave Rescheduling
+- **Tasks completed**: T-011, T-012, T-013, T-014
+- **Status**: All tests pass (35/35)
+- **Key deliverables**:
+  - `task.json` schema extended with `original_wave`, `scheduled_wave`, `rescheduled_from`
+  - `store.py` batch update helper (`update_json_fields`)
+  - `zeus_orchestrator.py` dynamic priority-queue scheduling loop with `lookahead_waves`
+  - Web UI rescheduled-task badges and wave-progress corrections
+  - Full test coverage for adaptive behavior, state consistency, and backward compatibility
+- **Next milestone**: Backlog — Auto-heal (Step 2) remains deferred until further human decision

@@ -41,7 +41,7 @@
             "id": "US-004"
         },
         {
-            "passes": false,
+            "passes": true,
             "title": "Adaptive Wave Rescheduling — maximize concurrency slot utilization",
             "acceptance_criteria": [
                 "task.json schema supports original_wave, scheduled_wave, and rescheduled_from",
