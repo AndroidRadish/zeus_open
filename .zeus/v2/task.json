@@ -521,7 +521,7 @@
     },
     {
       "id": "T-033",
-      "passes": false,
+      "passes": true,
       "story_id": "US-010",
       "title": "Web UI Global Execution, Agent Collaboration, and per-agent log browser",
       "description": "Add Global Execution view (cross-wave running tasks). Add Agent Message Stream panel (real-time or polling mailbox display). Add per-agent log browser (select agent -> view activity.md / reasoning.jsonl). Update index.html and zeus_server.py with necessary endpoints.",
@@ -530,8 +530,8 @@
         "T-031",
         "T-032"
       ],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "484c2a4e07010a705df3dfec16e726a782db8b5f",
+      "log_path": ".zeus/v2/ai-logs/T-033.md",
       "wave": 11,
       "original_wave": 11,
       "scheduled_wave": 11,
@@ -539,15 +539,15 @@
     },
     {
       "id": "T-034",
-      "passes": false,
+      "passes": true,
       "story_id": "US-010",
       "title": "Integration tests, backward-compatibility validation, and documentation",
       "description": "Write tests for GlobalScheduler quarantine behavior, mailbox delivery, and agent log isolation. Validate main track unaffected. Update zeus-execute-v2.md with global scheduling and agent collaboration guidelines.",
       "depends_on": [
         "T-033"
       ],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "484c2a4e07010a705df3dfec16e726a782db8b5f",
+      "log_path": ".zeus/v2/ai-logs/T-034.md",
       "wave": 11,
       "original_wave": 11,
       "scheduled_wave": 11,
