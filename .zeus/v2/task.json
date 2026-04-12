@@ -641,7 +641,8 @@
       "description_en": "Create SchedulerStateDB class with tables for meta, active_tasks, and mailbox. Provide save/load APIs. Add unit tests in test_scheduler_state.py.",
       "description_zh": "创建 SchedulerStateDB 类，包含 meta、active_tasks、mailbox 三张表。提供 save/load API。添加 test_scheduler_state.py 单元测试。",
       "status": "completed",
-      "log_path": ".zeus/v2/ai-logs/T-036-A.md"
+      "log_path": ".zeus/v2/ai-logs/T-036-A.md",
+      "commit_sha": "9cfd2ae"
     },
     {
       "id": "T-036-B",
@@ -695,7 +696,8 @@
       "description_en": "Update index.html to show a recovery banner when scheduler state was restored from SQLite. Refresh Global Execution view to display recovered running/pending/quarantine.",
       "description_zh": "更新 index.html，在从 SQLite 恢复调度器状态时显示恢复提示横幅。刷新 Global Execution 视图以展示恢复后的运行中/待执行/隔离区状态。",
       "status": "completed",
-      "log_path": ".zeus/v2/ai-logs/T-036-D.md"
+      "log_path": ".zeus/v2/ai-logs/T-036-D.md",
+      "commit_sha": "64ed3ba"
     },
     {
       "id": "T-036-E",
