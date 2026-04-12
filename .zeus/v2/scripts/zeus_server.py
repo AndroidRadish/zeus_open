@@ -391,6 +391,79 @@ def get_mailbox(agent_id: str, version: str = Query("v2"), mark_read: bool = Que
     return {"agent_id": agent_id, "messages": messages}
 
 
+@app.get("/global/status")
+def get_global_status(version: str = Query("v2")) -> dict[str, Any]:
+    data = _read_task_json(version)
+    tasks = data.get("tasks", [])
+    quarantine = data.get("quarantine", [])
+
+    # Running agents from latest wave events
+    current_wave = data.get("meta", {}).get("current_wave", 1)
+    events = _load_events(current_wave, version)
+    running_map: dict[str, dict[str, Any]] = {}
+    for evt in events:
+        tid = evt.get("task_id")
+        if evt.get("type") == "task.started":
+            running_map[tid] = {"agent_id": evt.get("agent_id", ""), "started_at": evt.get("ts", "")}
+        elif evt.get("type") in ("task.completed", "task.failed", "task.quarantined"):
+            running_map.pop(tid, None)
+
+    pending = [t for t in tasks if not t.get("passes", False)]
+    pending_by_wave: dict[int, list[dict[str, Any]]] = {}
+    for t in pending:
+        w = t.get("wave", 1)
+        pending_by_wave.setdefault(w, []).append({
+            "id": t["id"],
+            "title": t.get("title", ""),
+            "wave": w,
+            "depends_on": t.get("depends_on", []),
+        })
+
+    running = []
+    for tid, info in running_map.items():
+        task = next((t for t in tasks if t["id"] == tid), None)
+        running.append({
+            "task_id": tid,
+            "agent_id": info["agent_id"],
+            "started_at": info["started_at"],
+            "wave": task.get("wave", 1) if task else 1,
+        })
+
+    return {
+        "running": running,
+        "pending_by_wave": pending_by_wave,
+        "quarantine": quarantine,
+    }
+
+
+@app.get("/agents/{agent_id}/logs")
+def get_agent_logs(agent_id: str, version: str = Query("v2")) -> dict[str, Any]:
+    base = store._resolve(f".zeus/{version}/agent-logs/{agent_id}")
+    activity_path = base / "activity.md"
+    reasoning_path = base / "reasoning.jsonl"
+
+    activity = ""
+    if activity_path.exists():
+        activity = activity_path.read_text(encoding="utf-8")
+
+    reasoning: list[dict[str, Any]] = []
+    if reasoning_path.exists():
+        for line in reasoning_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                reasoning.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+
+    return {
+        "agent_id": agent_id,
+        "activity": activity,
+        "reasoning": reasoning,
+    }
+
+
 @app.get("/graph/mermaid")
 def graph_mermaid(version: str = Query("v2")) -> Response:
     path = _resolve(_task_json_path(version))

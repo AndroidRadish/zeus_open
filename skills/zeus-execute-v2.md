@@ -17,6 +17,9 @@ python .zeus/v2/scripts/zeus_orchestrator.py --status
 # Dispatch current wave
 python .zeus/v2/scripts/zeus_orchestrator.py --wave 1
 
+# Global scheduler (cross-wave, dependency-ready dispatch)
+python .zeus/v2/scripts/zeus_orchestrator.py --run-global
+
 # Approve next wave
 python .zeus/v2/scripts/zeus_orchestrator.py --approve-next
 ```
@@ -163,6 +166,54 @@ Phases live in `roadmap.json` under the top-level `phases` array:
 **Backend impact:**
 - `GET /phases` returns phases with computed `status` and `progress_percent`.
 - `/status` includes `current_phase` based on `meta.current_wave` and phase `wave_start`/`wave_end`.
+
+## Global Scheduler
+
+In addition to wave-by-wave dispatch, v2 supports a **global scheduler** that treats wave numbers as planning/observation fields only. Tasks are dispatched as soon as their dependencies are satisfied, across all waves.
+
+```bash
+python .zeus/v2/scripts/zeus_orchestrator.py --run-global
+```
+
+**Key behaviors:**
+- Failed tasks are moved to `task.json["quarantine"]`.
+- Quarantined tasks block their downstream dependents, but do **not** block unrelated tasks.
+- The Web UI **Global Execution** tab shows running tasks, pending tasks grouped by wave, and the quarantine panel in real time.
+
+## Agent Mailbox
+
+Agents can communicate asynchronously via a lightweight mailbox backed by JSONL files.
+
+**Persistence:** `.zeus/v2/agent-logs/mailbox/{to_agent_id}.jsonl`
+
+**API:**
+- `GET /mailbox/{agent_id}` — retrieve unread/read messages.
+- `GET /mailbox/{agent_id}?mark_read=true` — retrieve and mark messages as read.
+
+**Python usage (`agent_bus.py`):**
+```python
+bus.send("zeus-agent-T-002", "Need help with tests")
+inbox = bus.receive("zeus-agent-T-002", mark_read=True)
+```
+
+The Web UI **Agent Collaboration** tab provides a live (polling) message stream.
+
+## Agent-level Isolated Logs
+
+Every dispatched agent now has its own isolated log directory:
+
+```
+.zeus/v2/agent-logs/{agent_id}/
+  activity.md       # Human-readable Markdown log
+  reasoning.jsonl   # Machine-readable event stream
+```
+
+**Backward compatibility:** Legacy aggregated `wave-{n}-events.jsonl` and `wave-{n}-discussion.md` are still written so existing tools and tests continue to work.
+
+**API:**
+- `GET /agents/{agent_id}/logs` — returns `{activity, reasoning}`.
+
+The Web UI **Agent Logs** tab lets you select an agent and browse both views side-by-side.
 
 ## Failure policy
 

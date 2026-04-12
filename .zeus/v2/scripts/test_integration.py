@@ -278,3 +278,183 @@ def test_api_smoke_full_lifecycle(tmp_path: Path) -> None:
         server.should_exit = True
         srv_thread.join(timeout=5)
         zs.store = original_store
+
+
+# ---------------------------------------------------------------------------
+# 3. API global status, mailbox, and agent logs
+# ---------------------------------------------------------------------------
+def test_api_global_status_mailbox_and_agent_logs(tmp_path: Path) -> None:
+    """Exercise /global/status, /mailbox/{agent_id}, and /agents/{agent_id}/logs."""
+    zeus_dir = tmp_path / ".zeus" / "v2"
+    zeus_dir.mkdir(parents=True, exist_ok=True)
+
+    task_data = {
+        "meta": {"current_wave": 1, "max_parallel_agents": 2},
+        "tasks": [
+            {"id": "T-001", "title": "Task 1", "passes": False, "depends_on": [], "wave": 1},
+            {"id": "T-002", "title": "Task 2", "passes": False, "depends_on": [], "wave": 2},
+        ],
+        "quarantine": [
+            {"task_id": "T-003", "reason": "simulated", "quarantined_at": "2026-04-12T10:00:00Z"},
+        ],
+    }
+    (zeus_dir / "task.json").write_text(json.dumps(task_data), encoding="utf-8")
+    (zeus_dir / "config.json").write_text(json.dumps({"project": {"name": "api-test"}}), encoding="utf-8")
+
+    # Seed events so T-001 appears running
+    logs_dir = tmp_path / ".zeus" / "v2" / "agent-logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    started_event = {
+        "ts": "2026-04-12T10:00:00Z",
+        "type": "task.started",
+        "wave": 1,
+        "task_id": "T-001",
+        "agent_id": "zeus-agent-T-001",
+        "payload": {},
+    }
+    with open(logs_dir / "wave-1-events.jsonl", "w", encoding="utf-8") as f:
+        f.write(json.dumps(started_event) + "\n")
+
+    # Seed agent-specific logs
+    agent_dir = logs_dir / "zeus-agent-T-001"
+    agent_dir.mkdir(parents=True, exist_ok=True)
+    (agent_dir / "activity.md").write_text("# Activity\n\nHello\n", encoding="utf-8")
+    reasoning_event = {"ts": "2026-04-12T10:00:00Z", "type": "task.started", "task_id": "T-001", "agent_id": "zeus-agent-T-001", "payload": {}}
+    (agent_dir / "reasoning.jsonl").write_text(json.dumps(reasoning_event) + "\n", encoding="utf-8")
+
+    # Seed mailbox
+    mailbox_dir = logs_dir / "mailbox"
+    mailbox_dir.mkdir(parents=True, exist_ok=True)
+    msg = {"ts": "2026-04-12T10:05:00Z", "from": "agent-a", "to": "zeus-agent-T-001", "message": "ping", "read": False}
+    with open(mailbox_dir / "zeus-agent-T-001.jsonl", "w", encoding="utf-8") as f:
+        f.write(json.dumps(msg) + "\n")
+
+    test_store = LocalStore(base_dir=str(tmp_path))
+    original_store = zs.store
+    zs.store = test_store
+
+    port = _free_port()
+    host = "127.0.0.1"
+    base_url = f"http://{host}:{port}"
+
+    config = uvicorn.Config(zs.app, host=host, port=port, log_level="warning")
+    server = uvicorn.Server(config)
+    srv_thread = threading.Thread(target=server.run, daemon=True)
+    srv_thread.start()
+
+    try:
+        for _ in range(50):
+            try:
+                requests.get(f"{base_url}/status", timeout=0.1)
+                break
+            except Exception:
+                time.sleep(0.1)
+        else:
+            pytest.fail("Uvicorn server did not start in time")
+
+        # GET /global/status
+        r = requests.get(f"{base_url}/global/status")
+        assert r.status_code == 200
+        gs = r.json()
+        assert any(x["task_id"] == "T-001" for x in gs["running"])
+        assert gs["pending_by_wave"]["1"][0]["id"] == "T-001"
+        assert gs["pending_by_wave"]["2"][0]["id"] == "T-002"
+        assert gs["quarantine"][0]["task_id"] == "T-003"
+
+        # GET /mailbox
+        r = requests.get(f"{base_url}/mailbox/zeus-agent-T-001")
+        assert r.status_code == 200
+        mb = r.json()
+        assert mb["messages"][0]["message"] == "ping"
+
+        # GET /agents/{agent_id}/logs
+        r = requests.get(f"{base_url}/agents/zeus-agent-T-001/logs")
+        assert r.status_code == 200
+        logs = r.json()
+        assert "Hello" in logs["activity"]
+        assert logs["reasoning"][0]["type"] == "task.started"
+
+    finally:
+        server.should_exit = True
+        srv_thread.join(timeout=5)
+        zs.store = original_store
+
+
+# ---------------------------------------------------------------------------
+# 4. Backward-compatibility: main track unaffected
+# ---------------------------------------------------------------------------
+def test_main_track_unaffected(tmp_path: Path) -> None:
+    """Verify that v2 activity does not break the legacy main track task.json."""
+    # Simulate a main track
+    main_dir = tmp_path / ".zeus" / "main"
+    main_dir.mkdir(parents=True, exist_ok=True)
+    main_task = {
+        "meta": {"current_wave": 1},
+        "tasks": [
+            {"id": "M-001", "title": "Legacy task", "passes": False, "depends_on": [], "wave": 1},
+        ],
+    }
+    (main_dir / "task.json").write_text(json.dumps(main_task), encoding="utf-8")
+
+    store = LocalStore(base_dir=str(tmp_path))
+    data = store.read_json(".zeus/main/task.json")
+    assert data["meta"]["current_wave"] == 1
+    assert data["tasks"][0]["id"] == "M-001"
+    # Ensure no v2-only keys leaked in
+    assert "quarantine" not in data or data.get("quarantine") == []
+
+
+# ---------------------------------------------------------------------------
+# 5. run_global end-to-end
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_run_global_end_to_end(tmp_path: Path) -> None:
+    """Run_global should dispatch cross-wave tasks based purely on dependency readiness."""
+    from unittest.mock import patch
+    import subagent_dispatcher as sd
+
+    zeus_dir = tmp_path / ".zeus" / "v2"
+    zeus_dir.mkdir(parents=True, exist_ok=True)
+
+    task_data = {
+        "meta": {"current_wave": 1, "max_parallel_agents": 2},
+        "tasks": [
+            {"id": "T-001", "title": "Task 1", "passes": False, "depends_on": [], "wave": 1},
+            {"id": "T-002", "title": "Task 2", "passes": False, "depends_on": ["T-001"], "wave": 2},
+            {"id": "T-003", "title": "Task 3", "passes": False, "depends_on": [], "wave": 2},
+        ],
+    }
+    (zeus_dir / "task.json").write_text(json.dumps(task_data), encoding="utf-8")
+    (zeus_dir / "config.json").write_text(
+        json.dumps({"project": {"name": "global-test"}, "subagent": {"dispatcher": "mock"}}),
+        encoding="utf-8",
+    )
+    src_dir = tmp_path / "src"
+    src_dir.mkdir(exist_ok=True)
+    (src_dir / "main.py").write_text("# dummy\n", encoding="utf-8")
+
+    orch = ZeusOrchestrator(version="v2", project_root=str(tmp_path), max_parallel=2)
+
+    original_mock_run = sd.MockSubagentDispatcher.run
+
+    async def patched_mock_run(self, task, workspace, prompt, bus):
+        result = await original_mock_run(self, task, workspace, prompt, bus)
+        orch.update_task_state(task["id"], {"passes": True, "commit_sha": "abc123"})
+        return result
+
+    with patch.object(sd.MockSubagentDispatcher, "run", patched_mock_run):
+        summary = await orch.run_global()
+
+    assert summary["mode"] == "global"
+    assert summary["dispatched"] == 3
+    assert summary["failed"] == 0
+
+    store = orch._store()
+    final = store.read_json(".zeus/v2/task.json")
+    for t in final["tasks"]:
+        assert t["passes"] is True
+
+    # Agent-specific logs exist
+    base = tmp_path / ".zeus" / "v2" / "agent-logs"
+    assert (base / "zeus-agent-T-001" / "reasoning.jsonl").exists()
+    assert (base / "zeus-agent-T-001" / "activity.md").exists()
