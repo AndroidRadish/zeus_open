@@ -408,7 +408,7 @@
             </div>
             <div class="flex items-center gap-4 flex-1 sm:justify-end">
               <div class="text-right">
-                <div class="text-xs text-slate-400">{{ ph.milestones.length }} 个里程碑</div>
+                <div class="text-xs text-slate-400">{{ ph.milestones.length }} {{ lang === 'en' ? 'Milestones' : '个里程碑' }}</div>
                 <div class="text-xs text-slate-500">Wave {{ ph.wave_start }} ~ {{ ph.wave_end || '?' }}</div>
               </div>
               <div class="flex-1 sm:max-w-[12rem] h-2 bg-white/5 rounded-full overflow-hidden">
@@ -452,7 +452,7 @@
                   >
                     {{ milestoneStatusText(ms.status) }}
                   </span>
-                  <h4 class="text-sm font-semibold text-white">{{ ms.title }}</h4>
+                  <h4 class="text-sm font-semibold text-white">{{ getLocalized(ms, 'title') }}</h4>
                 </div>
                 <span class="text-xs text-slate-400">{{ ms.progress_percent }}%</span>
               </div>
@@ -490,8 +490,8 @@
               >
                 {{ milestoneStatusText(ms.status) }}
               </span>
-              <h3 class="text-base font-semibold text-white">{{ ms.title }}</h3>
-              <span class="text-xs text-slate-500">{{ ms.tasks.length }} 个任务</span>
+              <h3 class="text-base font-semibold text-white">{{ getLocalized(ms, 'title') }}</h3>
+              <span class="text-xs text-slate-500">{{ ms.tasks.length }} {{ lang === 'en' ? 'Tasks' : '个任务' }}</span>
             </div>
             <div class="flex items-center gap-4 flex-1 sm:justify-end">
               <div class="flex-1 sm:max-w-[12rem] h-2 bg-white/5 rounded-full overflow-hidden">
@@ -536,7 +536,7 @@
                         class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                         :class="task.passes ? 'bg-emerald-500/10 text-emerald-300' : 'bg-slate-500/10 text-slate-300'"
                       >
-                        {{ task.passes ? '已完成' : '待执行' }}
+                        {{ task.passes ? (lang === 'en' ? 'Completed' : '已完成') : (lang === 'en' ? 'Pending' : '待执行') }}
                       </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400 font-mono">{{ task.wave }}</td>
@@ -552,7 +552,7 @@
       <div v-if="currentTab === 'agents'" class="space-y-6">
         <!-- Running -->
         <div>
-          <h3 class="text-sm font-medium text-slate-400 mb-3">运行中</h3>
+          <h3 class="text-sm font-medium text-slate-400 mb-3">{{ lang === 'en' ? 'Running' : '运行中' }}</h3>
           <div v-if="agents.length === 0" class="glass-panel rounded-2xl p-10 text-center">
             <div class="mx-auto w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 mb-4">
               <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -560,8 +560,8 @@
                 <circle cx="12" cy="12" r="10"/>
               </svg>
             </div>
-            <h3 class="text-lg font-medium text-white">暂无运行中的 Agent</h3>
-            <p class="text-sm text-slate-500 mt-1">当前没有 Agent 正在执行任务。</p>
+            <h3 class="text-lg font-medium text-white">{{ lang === 'en' ? 'No Running Agents' : '暂无运行中的 Agent' }}</h3>
+            <p class="text-sm text-slate-500 mt-1">{{ lang === 'en' ? 'No agent is currently executing a task.' : '当前没有 Agent 正在执行任务。' }}</p>
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div
@@ -582,12 +582,12 @@
                 </div>
                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
                   <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-1.5 animate-pulse"></span>
-                  运行中
+                  {{ lang === 'en' ? 'Running' : '运行中' }}
                 </span>
               </div>
               <div class="mt-4 pt-4 border-t border-white/5">
                 <div class="flex items-center justify-between text-sm">
-                  <span class="text-slate-500">启动时间</span>
+                  <span class="text-slate-500">{{ lang === 'en' ? 'Started At' : '启动时间' }}</span>
                   <span class="text-slate-300 font-mono">{{ formatTime(agent.started_at) }}</span>
                 </div>
               </div>
@@ -597,15 +597,15 @@
 
         <!-- Recent -->
         <div v-if="recentAgents.length > 0">
-          <h3 class="text-sm font-medium text-slate-400 mb-3">最近活动</h3>
+          <h3 class="text-sm font-medium text-slate-400 mb-3">{{ lang === 'en' ? 'Recent Activity' : '最近活动' }}</h3>
           <div class="glass-panel rounded-2xl overflow-hidden">
             <table class="min-w-full">
               <thead class="bg-white/[0.02]">
                 <tr>
                   <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Agent</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">任务</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">状态</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">耗时</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{{ lang === 'en' ? 'Task' : '任务' }}</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{{ lang === 'en' ? 'Status' : '状态' }}</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">{{ lang === 'en' ? 'Duration' : '耗时' }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
@@ -617,7 +617,7 @@
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                       :class="agent.status === 'completed' ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'"
                     >
-                      {{ agent.status === 'completed' ? '已完成' : '失败' }}
+                      {{ agent.status === 'completed' ? (lang === 'en' ? 'Completed' : '已完成') : (lang === 'en' ? 'Failed' : '失败') }}
                     </span>
                   </td>
                   <td class="px-4 py-3 text-sm text-slate-400 font-mono">{{ formatDuration(agent.started_at, agent.finished_at) }}</td>
@@ -639,10 +639,10 @@
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-500 status-dot text-cyan-500"></span>
                 </span>
-                全局运行中
+                {{ lang === 'en' ? 'Global Running' : '全局运行中' }}
               </h3>
               <div v-if="globalStatus.running.length === 0" class="text-center py-10 text-slate-500">
-                <p>当前没有跨 wave 运行中的任务</p>
+                <p>{{ lang === 'en' ? 'No cross-wave tasks are currently running.' : '当前没有跨 wave 运行中的任务' }}</p>
               </div>
               <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div
@@ -662,9 +662,9 @@
 
             <!-- Pending Tasks -->
             <div class="glass-panel rounded-2xl p-5">
-              <h3 class="text-base font-semibold text-white mb-4">待执行任务</h3>
+              <h3 class="text-base font-semibold text-white mb-4">{{ lang === 'en' ? 'Pending Tasks' : '待执行任务' }}</h3>
               <div v-if="Object.keys(globalStatus.pending_by_wave || {}).length === 0" class="text-center py-10 text-slate-500">
-                <p>所有任务已完成</p>
+                <p>{{ lang === 'en' ? 'All tasks are completed.' : '所有任务已完成' }}</p>
               </div>
               <div v-else class="space-y-4">
                 <div v-for="w in sortedPendingWaves" :key="w">
@@ -677,7 +677,7 @@
                     >
                       <div class="font-bold text-white font-mono">{{ t.id }}</div>
                       <div v-if="t.depends_on && t.depends_on.length" class="text-[10px] text-slate-500 mt-1">
-                        依赖: {{ t.depends_on.join(', ') }}
+                        {{ lang === 'en' ? 'Deps' : '依赖' }}: {{ t.depends_on.join(', ') }}
                       </div>
                     </div>
                   </div>
@@ -695,10 +695,10 @@
                   <line x1="12" x2="12" y1="9" y2="13"/>
                   <line x1="12" x2="12.01" y1="17" y2="17"/>
                 </svg>
-                隔离区
+                {{ lang === 'en' ? 'Quarantine' : '隔离区' }}
               </h3>
               <div v-if="(globalStatus.quarantine || []).length === 0" class="text-center py-10 text-slate-500">
-                <p>暂无隔离任务</p>
+                <p>{{ lang === 'en' ? 'No quarantined tasks.' : '暂无隔离任务' }}</p>
               </div>
               <div v-else class="space-y-3">
                 <div
@@ -708,7 +708,7 @@
                 >
                   <div class="flex items-center justify-between">
                     <div class="text-sm font-bold text-white font-mono">{{ q.task_id }}</div>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">隔离</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-300 border border-rose-500/20">{{ lang === 'en' ? 'Quarantine' : '隔离' }}</span>
                   </div>
                   <div class="mt-1 text-xs text-rose-300">{{ q.reason }}</div>
                   <div class="mt-1 text-[10px] text-slate-500 font-mono">{{ formatTime(q.quarantined_at) }}</div>
@@ -723,31 +723,31 @@
       <div v-if="currentTab === 'collaboration'" class="space-y-4">
         <div class="glass-panel rounded-2xl p-5">
           <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-            <label class="text-sm font-medium text-slate-300">目标 Agent</label>
+            <label class="text-sm font-medium text-slate-300">{{ lang === 'en' ? 'Target Agent' : '目标 Agent' }}</label>
             <div class="flex items-center gap-2">
               <input
                 v-model="mailboxAgentId"
                 type="text"
-                placeholder="例如 zeus-agent-T-001"
+                :placeholder="lang === 'en' ? 'e.g. zeus-agent-T-001' : '例如 zeus-agent-T-001'"
                 class="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 min-w-[12rem]"
               />
               <button
                 @click="loadMailbox"
                 class="px-4 py-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 text-sm font-medium transition-colors"
               >
-                加载消息
+                {{ lang === 'en' ? 'Load Messages' : '加载消息' }}
               </button>
               <button
                 @click="markMailboxRead"
                 class="px-4 py-2 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/20 text-sm font-medium transition-colors"
               >
-                标记已读
+                {{ lang === 'en' ? 'Mark Read' : '标记已读' }}
               </button>
             </div>
           </div>
           <div class="space-y-3 max-h-[60vh] overflow-auto custom-scrollbar pr-2">
             <div v-if="mailboxMessages.length === 0" class="text-center py-10 text-slate-500">
-              <p>暂无消息</p>
+              <p>{{ lang === 'en' ? 'No messages' : '暂无消息' }}</p>
             </div>
             <div
               v-for="m in mailboxMessages"
@@ -758,7 +758,7 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-semibold text-white">{{ m.from }}</span>
-                  <span v-if="!m.read" class="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">未读</span>
+                  <span v-if="!m.read" class="text-[10px] px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">{{ lang === 'en' ? 'Unread' : '未读' }}</span>
                 </div>
                 <span class="text-xs text-slate-500 font-mono">{{ formatTime(m.ts) }}</span>
               </div>
@@ -772,20 +772,20 @@
       <div v-if="currentTab === 'logs'" class="space-y-4">
         <div class="glass-panel rounded-2xl p-5">
           <div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-            <label class="text-sm font-medium text-slate-300">选择 Agent</label>
+            <label class="text-sm font-medium text-slate-300">{{ lang === 'en' ? 'Select Agent' : '选择 Agent' }}</label>
             <div class="flex items-center gap-2">
               <select
                 v-model="selectedLogAgentId"
                 class="appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 min-w-[12rem]"
               >
-                <option value="">— 请选择 —</option>
+                <option value="">{{ lang === 'en' ? '— Please select —' : '— 请选择 —' }}</option>
                 <option v-for="a in allAgentIds" :key="a" :value="a">{{ a }}</option>
               </select>
               <button
                 @click="loadAgentLogs"
                 class="px-4 py-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 text-sm font-medium transition-colors"
               >
-                加载日志
+                {{ lang === 'en' ? 'Load Logs' : '加载日志' }}
               </button>
             </div>
           </div>
@@ -794,7 +794,7 @@
             <div class="glass-panel rounded-xl p-4">
               <h4 class="text-sm font-semibold text-white mb-2">Activity (Markdown)</h4>
               <div v-if="agentLogs.activity" class="prose prose-invert prose-sm max-w-none custom-scrollbar overflow-auto max-h-[40vh]" v-html="renderMarkdown(agentLogs.activity)"></div>
-              <div v-else class="text-sm text-slate-500">暂无 Activity 日志</div>
+              <div v-else class="text-sm text-slate-500">{{ lang === 'en' ? 'No Activity logs' : '暂无 Activity 日志' }}</div>
             </div>
             <!-- Reasoning -->
             <div class="glass-panel rounded-xl p-4">
@@ -813,7 +813,7 @@
                   <div class="text-slate-300">{{ JSON.stringify(evt.payload) }}</div>
                 </div>
               </div>
-              <div v-else class="text-sm text-slate-500">暂无 Reasoning 日志</div>
+              <div v-else class="text-sm text-slate-500">{{ lang === 'en' ? 'No Reasoning logs' : '暂无 Reasoning 日志' }}</div>
             </div>
           </div>
         </div>
@@ -823,7 +823,7 @@
       <div v-if="currentTab === 'discussion'" class="space-y-4">
         <div class="glass-panel rounded-2xl p-4">
           <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-            <label class="text-sm font-medium text-slate-300">选择 Wave</label>
+            <label class="text-sm font-medium text-slate-300">{{ lang === 'en' ? 'Select Wave' : '选择 Wave' }}</label>
             <div class="flex items-center gap-2">
               <select
                 v-model="discussionWave"
@@ -836,7 +836,7 @@
                 @click="loadDiscussion"
                 class="px-4 py-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/20 text-sm font-medium transition-colors"
               >
-                加载日志
+                {{ lang === 'en' ? 'Load Log' : '加载日志' }}
               </button>
             </div>
           </div>
@@ -853,7 +853,7 @@
               <line x1="16" x2="8" y1="17" y2="17"/>
               <polyline points="10 9 9 9 8 9"/>
             </svg>
-            <p>Wave {{ discussionWave }} 暂无讨论日志</p>
+            <p>{{ lang === 'en' ? `Wave ${discussionWave} has no discussion log` : `Wave ${discussionWave} 暂无讨论日志` }}</p>
           </div>
         </div>
       </div>
