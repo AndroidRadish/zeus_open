@@ -47,6 +47,42 @@ Supported `dispatcher` values:
 
 **Note for Claude users:** The `claude` CLI must be installed and authenticated separately.
 
+## Subagent Workspace Bootstrap
+
+Before dispatching a task, the orchestrator automatically copies identity and context files from the project root into the isolated agent workspace. This ensures every subagent starts with the same continuity context as the main session.
+
+**Default files copied:**
+- `AGENTS.md`
+- `USER.md`
+- `IDENTITY.md`
+- `SOUL.md`
+
+If a file does not exist in the project root, it is skipped silently.
+
+### Customizing the bootstrap file list
+
+You can override the default list in `.zeus/v2/config.json`:
+
+```json
+{
+  "subagent": {
+    "dispatcher": "auto",
+    "timeout_seconds": 600,
+    "bootstrap": {
+      "files": [
+        "AGENTS.md",
+        "USER.md",
+        "IDENTITY.md",
+        "SOUL.md",
+        "MEMORY.md"
+      ]
+    }
+  }
+}
+```
+
+When `subagent.bootstrap.files` is present, it **replaces** the default list entirely.
+
 ## How to run (Dashboard)
 
 ```bash
