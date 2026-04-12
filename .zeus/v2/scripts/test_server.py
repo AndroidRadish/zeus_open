@@ -529,3 +529,58 @@ def test_run_global_endpoint_conflict(client):
     finally:
         zs._active_global_runs.clear()
         zs._active_global_runs.update(original)
+
+
+def test_global_recovery_endpoint_no_db(client):
+    response = client.get("/global/recovery")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["recovered"] is False
+    assert data["active_tasks_count"] == 0
+
+
+def test_global_recovery_endpoint_with_db(client, tmp_path):
+    from scheduler_state import SchedulerStateDB
+    db_path = tmp_path / ".zeus" / "v2" / "scheduler_state.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db = SchedulerStateDB(str(db_path))
+    db.save(
+        meta={"recovered_at": "2026-04-13T01:00:00Z"},
+        active_tasks=[
+            {"task_id": "T-002", "agent_id": "coder-0", "status": "running", "started_at": "2026-04-13T00:00:00Z", "wave": 1}
+        ],
+    )
+
+    response = client.get("/global/recovery")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["recovered"] is True
+    assert data["active_tasks_count"] == 1
+    assert data["recovered_at"] == "2026-04-13T01:00:00Z"
+
+
+def test_global_status_includes_recovered_tasks(client, tmp_path):
+    from scheduler_state import SchedulerStateDB
+    db_path = tmp_path / ".zeus" / "v2" / "scheduler_state.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    db = SchedulerStateDB(str(db_path))
+    db.save(
+        meta={},
+        active_tasks=[
+            {"task_id": "T-RECOVERED", "agent_id": "agent-1", "status": "running", "started_at": "2026-04-13T00:00:00Z", "wave": 1}
+        ],
+    )
+    # Ensure T-RECOVERED is also in task.json so it maps correctly
+    task_path = tmp_path / ".zeus" / "v2" / "task.json"
+    task_data = json.loads(task_path.read_text(encoding="utf-8"))
+    task_data["tasks"].append({"id": "T-RECOVERED", "title": "Recovered", "passes": False, "status": "running", "depends_on": [], "wave": 2})
+    task_path.write_text(json.dumps(task_data), encoding="utf-8")
+
+    response = client.get("/global/status")
+    assert response.status_code == 200
+    data = response.json()
+    ids = {r["task_id"] for r in data["running"]}
+    assert "T-RECOVERED" in ids
+    # Verify wave mapping from task.json
+    recovered = next(r for r in data["running"] if r["task_id"] == "T-RECOVERED")
+    assert recovered["wave"] == 2

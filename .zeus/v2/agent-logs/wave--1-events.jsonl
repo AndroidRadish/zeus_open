@@ -1,2 +1,5 @@
 {"ts": "2026-04-12T16:17:49Z", "type": "task.quarantined", "wave": -1, "task_id": "T-036", "agent_id": "zeus-orchestrator", "payload": {"reason": "dispatcher_failed", "workspace": ".zeus\\v2\\agent-workspaces\\zeus-agent-T-036"}}
 {"ts": "2026-04-12T16:17:49Z", "type": "global.completed", "wave": -1, "task_id": "global", "agent_id": "zeus-orchestrator", "payload": {}}
+{"ts": "2026-04-12T17:13:41Z", "type": "task.quarantined", "wave": -1, "task_id": "T-036-D", "agent_id": "zeus-orchestrator", "payload": {"reason": "dispatcher_failed", "workspace": "D:\\SchoolDoc\\TrueProject\\zeus-open\\.zeus\\v2\\agent-workspaces\\zeus-agent-T-036-D"}}
+{"ts": "2026-04-12T17:15:32Z", "type": "task.quarantined", "wave": -1, "task_id": "T-036-A", "agent_id": "zeus-orchestrator", "payload": {"reason": "dispatcher_failed", "workspace": "D:\\SchoolDoc\\TrueProject\\zeus-open\\.zeus\\v2\\agent-workspaces\\zeus-agent-T-036-A"}}
+{"ts": "2026-04-12T17:15:32Z", "type": "global.completed", "wave": -1, "task_id": "global", "agent_id": "zeus-orchestrator", "payload": {}}

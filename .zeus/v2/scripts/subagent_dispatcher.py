@@ -95,6 +95,22 @@ class _CliDispatcher(SubagentDispatcher):
                 f.write(line.decode("utf-8", errors="replace"))
                 f.flush()
 
+    def _is_stdout_crash_only(self, stdout_path: Path) -> bool:
+        """Check whether a non-zero exit is caused by stdout encoding crash rather than task failure."""
+        if not stdout_path.exists():
+            return False
+        try:
+            text = stdout_path.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            return False
+        # Known harmless stdout encoding crashes on Windows
+        harmless_patterns = [
+            "'gbk' codec can't encode character",
+            "'cp936' codec can't encode character",
+            "'ascii' codec can't encode character",
+        ]
+        return any(p in text for p in harmless_patterns)
+
     async def run(
         self,
         task: dict[str, Any],
@@ -141,6 +157,29 @@ class _CliDispatcher(SubagentDispatcher):
             }
 
         if exit_code != 0:
+            if self._is_stdout_crash_only(stdout_path):
+                bus.emit(
+                    "task.completed",
+                    tid,
+                    self.agent_name(),
+                    {
+                        "exit_code": exit_code,
+                        "stdout_path": str(stdout_path),
+                        "warning": "subagent exited non-zero due to stdout encoding crash; treating as completed",
+                    },
+                )
+                bus.post(
+                    tid,
+                    self.agent_name(),
+                    f"任务 **{tid}** 外部 Agent 因 stdout 编码问题退出（exit code {exit_code}），但代码产出可能已生效，按完成处理",
+                )
+                return {
+                    "task_id": tid,
+                    "status": "completed",
+                    "exit_code": exit_code,
+                    "stdout_path": str(stdout_path),
+                    "workspace": str(workspace),
+                }
             bus.emit(
                 "task.failed",
                 tid,

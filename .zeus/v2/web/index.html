@@ -206,6 +206,31 @@
       </div>
     </div>
 
+    <!-- Recovery Banner -->
+    <div v-if="recovery.recovered" class="bg-amber-500/10 border-b border-amber-500/20 px-4 py-3">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-3 text-amber-300 text-sm">
+        <div class="flex items-center gap-3">
+          <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+          <span>
+            {{ lang === 'en' ? 'Scheduler state recovered from SQLite.' : '已从 SQLite 恢复调度器状态。' }}
+            <span v-if="recovery.active_tasks_count > 0">
+              {{ lang === 'en' ? `Recovered ${recovery.active_tasks_count} active task(s).` : `恢复 ${recovery.active_tasks_count} 个活动任务。` }}
+            </span>
+            <span v-if="recovery.recovered_at" class="text-amber-200/70 text-xs ml-1">({{ formatTime(recovery.recovered_at) }})</span>
+          </span>
+        </div>
+        <button @click="dismissRecovery" class="text-amber-300 hover:text-amber-100 transition-colors">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
     <!-- Tab Navigation -->
     <div class="border-b border-white/5">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -921,6 +946,7 @@
         const selectedPhaseId = ref(null);
         const dashboardWave = ref(1);
         const globalStatus = ref({ running: [], pending_by_wave: {}, quarantine: [] });
+        const recovery = ref({ recovered: false, recovered_at: null, active_tasks_count: 0 });
         const mailboxAgentId = ref('');
         const mailboxMessages = ref([]);
         const selectedLogAgentId = ref('');
@@ -1184,6 +1210,19 @@
           }
         }
 
+        async function fetchRecovery() {
+          try {
+            const data = await apiGet('/global/recovery');
+            recovery.value = data;
+          } catch (e) {
+            recovery.value = { recovered: false, recovered_at: null, active_tasks_count: 0 };
+          }
+        }
+
+        function dismissRecovery() {
+          recovery.value.recovered = false;
+        }
+
         async function loadMailbox() {
           if (!mailboxAgentId.value.trim()) {
             mailboxMessages.value = [];
@@ -1265,7 +1304,8 @@
           await Promise.all([
             fetchStatus(),
             fetchGlobalStatus(),
-            fetchAllAgentIds()
+            fetchAllAgentIds(),
+            fetchRecovery()
           ]);
           await fetchPhases();
           // Ensure dashboardWave belongs to selected phase
@@ -1346,6 +1386,7 @@
             fetchWaveTasks();
             fetchGlobalStatus();
             fetchAllAgentIds();
+            fetchRecovery();
             if (currentTab.value === 'collaboration' && mailboxAgentId.value.trim()) {
               loadMailbox();
             }
@@ -1418,6 +1459,7 @@
           selectedPhaseId,
           phaseWaves,
           globalStatus,
+          recovery,
           sortedPendingWaves,
           mailboxAgentId,
           mailboxMessages,
@@ -1442,6 +1484,7 @@
           formatTime,
           renderMarkdown,
           getLocalized,
+          dismissRecovery,
           milestoneStatusText,
           milestoneStatusClass,
           toggleMilestone,

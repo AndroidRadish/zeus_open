@@ -37,3 +37,5 @@
 
 完成后，请在 Kimi Code 主会话中报告执行结果。
  --work-dir D:\SchoolDoc\TrueProject\zeus-open\.zeus\v2\agent-workspaces\zeus-agent-T-036-A --output-format text`
+## 17:15:32 — kimi-cli (T-036-A)
+任务 **T-036-A** 外部 Agent 返回非零退出码 `1`

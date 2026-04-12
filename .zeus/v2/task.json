@@ -1,1 +1,735 @@
-{"meta": {"current_wave": 12, "wave_approval_required": true, "max_parallel_agents": 3, "scheduling_mode": "adaptive", "current_phase": "P-003"}, "tasks": [{"id": "T-001", "passes": true, "story_id": "US-001", "title": "Implement store.py with AbstractStore and LocalStore (file lock included)", "depends_on": [], "commit_sha": "3d29816b2073b7aa194147b8d428d1812d920db9", "log_path": ".zeus/v2/ai-logs/2026-04-10T15-30-00-wave1.md", "wave": 1, "title_en": "Implement store.py with AbstractStore and LocalStore (file lock included)", "title_zh": "实现 store.py（含文件锁的抽象存储与本地存储）", "status": "completed"}, {"id": "T-002", "passes": true, "story_id": "US-001", "title": "Implement agent_bus.py with JSONL event writer and Markdown discussion formatter", "depends_on": [], "commit_sha": "3d29816b2073b7aa194147b8d428d1812d920db9", "log_path": ".zeus/v2/ai-logs/2026-04-10T15-30-00-wave1.md", "wave": 1, "title_en": "Implement agent_bus.py with JSONL event writer and Markdown discussion formatter", "title_zh": "实现 agent_bus.py（JSONL 事件写入与 Markdown 讨论格式化）", "status": "completed"}, {"id": "T-003", "passes": true, "story_id": "US-001", "title": "Implement workflow_graph.py with Mermaid and Graphviz generators", "depends_on": [], "commit_sha": "3d29816b2073b7aa194147b8d428d1812d920db9", "log_path": ".zeus/v2/ai-logs/2026-04-10T15-30-00-wave1.md", "wave": 1, "title_en": "Implement workflow_graph.py with Mermaid and Graphviz generators", "title_zh": "实现 workflow_graph.py（Mermaid 与 Graphviz 生成器）", "status": "completed"}, {"id": "T-004", "passes": true, "story_id": "US-002", "title": "Implement zeus_orchestrator.py with async dispatch, wave logic, and task.json batch updates", "depends_on": ["T-001", "T-002"], "commit_sha": "33d50a8c6a5294e6bc9a262af1afba176efe8910", "log_path": ".zeus/v2/ai-logs/2026-04-10T16-00-00-wave2.md", "wave": 2, "title_en": "Implement zeus_orchestrator.py with async dispatch, wave logic, and task.json batch updates", "title_zh": "实现 zeus_orchestrator.py（异步调度、Wave 逻辑与 task.json 批量更新）", "status": "completed"}, {"id": "T-005", "passes": true, "story_id": "US-002", "title": "Implement zeus_server.py FastAPI backend with /status /events /discussion /graph endpoints", "depends_on": ["T-001", "T-003"], "commit_sha": "33d50a8c6a5294e6bc9a262af1afba176efe8910", "log_path": ".zeus/v2/ai-logs/2026-04-10T16-00-00-wave2.md", "wave": 2, "title_en": "Implement zeus_server.py FastAPI backend with /status /events /discussion /graph endpoints", "title_zh": "实现 zeus_server.py（FastAPI 后端 /status /events /discussion /graph 端点）", "status": "completed"}, {"id": "T-006", "passes": true, "story_id": "US-003", "title": "Implement zero-build Web UI dashboard and remove deprecated PyQt GUI", "depends_on": ["T-004", "T-005"], "commit_sha": "409533c2fcf18d5f1e8a178b10493298781b0d6a", "log_path": ".zeus/v2/ai-logs/2026-04-10T16-01-50-wave3.md", "wave": 3, "title_en": "Implement zero-build Web UI dashboard and remove deprecated PyQt GUI", "title_zh": "实现零构建 Web UI 仪表盘并移除废弃的 PyQt GUI", "status": "completed"}, {"id": "T-007", "passes": true, "story_id": "US-003", "title": "Implement zero-build Web frontend (index.html) for dashboard and graph display", "depends_on": ["T-005"], "commit_sha": "409533c2fcf18d5f1e8a178b10493298781b0d6a", "log_path": ".zeus/v2/ai-logs/2026-04-10T16-01-50-wave3.md", "wave": 3, "title_en": "Implement zero-build Web frontend (index.html) for dashboard and graph display", "title_zh": "实现零构建 Web 前端（index.html）用于仪表盘与图表展示", "status": "completed"}, {"id": "T-008", "passes": true, "story_id": "US-004", "title": "Write integration tests for end-to-end 2-wave execution and API smoke tests", "depends_on": ["T-004", "T-005", "T-006"], "commit_sha": "b11870f660ddf9d6a106627c82d71ea8dddde8a0", "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md", "wave": 4, "title_en": "Write integration tests for end-to-end 2-wave execution and API smoke tests", "title_zh": "编写端到端 2-Wave 执行与 API 冒烟测试的集成测试", "status": "completed"}, {"id": "T-009", "passes": true, "story_id": "US-004", "title": "Write v2 documentation (zeus-execute-v2.md) and update README with GUI/Web instructions", "depends_on": ["T-006", "T-007"], "commit_sha": "b11870f660ddf9d6a106627c82d71ea8dddde8a0", "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md", "wave": 4, "title_en": "Write v2 documentation (zeus-execute-v2.md) and update README with GUI/Web instructions", "title_zh": "编写 v2 文档（zeus-execute-v2.md）并用 GUI/Web 说明更新 README", "status": "completed"}, {"id": "T-010", "passes": true, "story_id": "US-004", "title": "Run backward-compatibility validation and final v2 ship checklist", "depends_on": ["T-008", "T-009"], "commit_sha": "b11870f660ddf9d6a106627c82d71ea8dddde8a0", "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md", "wave": 4, "title_en": "Run backward-compatibility validation and final v2 ship checklist", "title_zh": "运行向后兼容性验证与最终 v2 发布清单", "status": "completed"}, {"id": "T-011", "passes": true, "story_id": "US-005", "title": "Extend task.json schema and store.py with original_wave/scheduled_wave/rescheduled_from fields", "depends_on": [], "commit_sha": "3ed575958377fa2d1dbd254115d8b78f577f79e8", "log_path": ".zeus/v2/ai-logs/T-011.md", "wave": 5, "original_wave": 5, "scheduled_wave": 5, "rescheduled_from": null, "title_en": "Extend task.json schema and store.py with original_wave/scheduled_wave/rescheduled_from fields", "title_zh": "扩展 task.json schema 与 store.py，支持 original_wave/scheduled_wave/rescheduled_from 字段", "status": "completed"}, {"id": "T-012", "passes": true, "story_id": "US-005", "title": "Refactor zeus_orchestrator.py scheduling loop to priority-queue + adaptive slot filling", "depends_on": ["T-011"], "commit_sha": "6330369b624bedd56fae89142f6bf2fb39d48bb6", "log_path": ".zeus/v2/ai-logs/T-012.md", "wave": 6, "original_wave": 6, "scheduled_wave": 6, "rescheduled_from": null, "title_en": "Refactor zeus_orchestrator.py scheduling loop to priority-queue + adaptive slot filling", "title_zh": "重构 zeus_orchestrator.py 调度循环为优先队列 + 自适应槽位填充", "status": "completed"}, {"id": "T-013", "passes": true, "story_id": "US-005", "title": "Update Web UI dashboard to display rescheduled task badges and corrected wave progress", "depends_on": ["T-012"], "commit_sha": "9f28d0cd2a2f448ae159b8b307b3f6004e03eaf7", "log_path": ".zeus/v2/ai-logs/T-013.md", "wave": 7, "original_wave": 7, "scheduled_wave": 7, "rescheduled_from": null, "title_en": "Update Web UI dashboard to display rescheduled task badges and corrected wave progress", "title_zh": "更新 Web UI 仪表盘以显示重新调度任务标识与修正的 Wave 进度", "status": "completed"}, {"id": "T-014", "passes": true, "story_id": "US-005", "title": "Add unit and integration tests for adaptive rescheduling and state consistency", "depends_on": ["T-012", "T-013"], "commit_sha": "3c4ec903b8531b0bc09e36fadeb5141100684d23", "log_path": ".zeus/v2/ai-logs/T-014.md", "wave": 7, "original_wave": 7, "scheduled_wave": 7, "rescheduled_from": null, "title_en": "Add unit and integration tests for adaptive rescheduling and state consistency", "title_zh": "为自适应重新调度与状态一致性添加单元和集成测试", "status": "completed"}, {"id": "T-015", "passes": true, "story_id": "US-006", "title": "Create subagent_dispatcher.py with ABC + Mock + Kimi + Claude + Auto implementations", "depends_on": [], "commit_sha": "a0c996b8fc9a09a976efc5828513133efc04afd0", "log_path": ".zeus/v2/ai-logs/T-015.md", "wave": 5, "original_wave": 5, "scheduled_wave": 5, "rescheduled_from": null, "title_en": "Create subagent_dispatcher.py with ABC + Mock + Kimi + Claude + Auto implementations", "title_zh": "创建 subagent_dispatcher.py（ABC + Mock + Kimi + Claude + Auto 实现）", "status": "completed"}, {"id": "T-016", "passes": true, "story_id": "US-006", "title": "Refactor zeus_orchestrator.py to delegate execution to dispatcher and add config parsing", "depends_on": ["T-015"], "commit_sha": "9386d0a0ca2a9024d9fe887b768fc12a3edfe587", "log_path": ".zeus/v2/ai-logs/T-016.md", "wave": 6, "original_wave": 6, "scheduled_wave": 6, "rescheduled_from": null, "title_en": "Refactor zeus_orchestrator.py to delegate execution to dispatcher and add config parsing", "title_zh": "重构 zeus_orchestrator.py，将执行委托给调度器并添加配置解析", "status": "completed"}, {"id": "T-017", "passes": true, "story_id": "US-006", "title": "Add unit tests for dispatcher command construction, auto-selection, and timeout", "depends_on": ["T-015", "T-016"], "commit_sha": "a0c996b8fc9a09a976efc5828513133efc04afd0", "log_path": ".zeus/v2/ai-logs/T-017.md", "wave": 6, "original_wave": 6, "scheduled_wave": 6, "rescheduled_from": null, "title_en": "Add unit tests for dispatcher command construction, auto-selection, and timeout", "title_zh": "为调度器命令构造、自动选择和超时行为添加单元测试", "status": "completed"}, {"id": "T-018", "passes": true, "story_id": "US-006", "title": "Update Web UI Agent Monitor to show last_seen and simple activity indicators", "depends_on": ["T-016"], "commit_sha": "d29f4aee79f1be2e49aa70ae34f90693822e2c12", "log_path": ".zeus/v2/ai-logs/T-018.md", "wave": 7, "original_wave": 7, "scheduled_wave": 7, "rescheduled_from": null, "title_en": "Update Web UI Agent Monitor to show last_seen and simple activity indicators", "title_zh": "更新 Web UI Agent Monitor，显示 last_seen 与简单活动指示器", "status": "completed"}, {"id": "T-019", "passes": true, "story_id": "US-006", "title": "Update README and zeus-execute-v2.md with subagent setup instructions", "depends_on": ["T-017", "T-018"], "commit_sha": "b318d04ac9a56d6cd05e39fadeb5141100684d23", "log_path": ".zeus/v2/ai-logs/T-019.md", "wave": 7, "original_wave": 7, "scheduled_wave": 7, "rescheduled_from": null, "title_en": "Update README and zeus-execute-v2.md with subagent setup instructions", "title_zh": "用子代理设置说明更新 README 和 zeus-execute-v2.md", "status": "completed"}, {"id": "T-020", "passes": true, "story_id": "US-007", "title": "Implement ZeusOrchestrator._bootstrap_workspace to auto-inject identity files into agent workspaces", "description": "Add _bootstrap_workspace method that copies AGENTS.md, USER.md, IDENTITY.md, and SOUL.md from project_root into the agent workspace. Support config.json override via subagent.bootstrap.files. Emit task.bootstrapped event.", "depends_on": [], "commit_sha": "98a0ee9", "log_path": ".zeus/v2/ai-logs/T-020.md", "wave": 8, "original_wave": 8, "scheduled_wave": 8, "rescheduled_from": null, "title_en": "Implement ZeusOrchestrator._bootstrap_workspace to auto-inject identity files into agent workspaces", "title_zh": "实现 ZeusOrchestrator._bootstrap_workspace，自动注入身份文件到代理工作区", "description_en": "Add _bootstrap_workspace method that copies AGENTS.md, USER.md, IDENTITY.md, and SOUL.md from project_root into the agent workspace. Support config.json override via subagent.bootstrap.files. Emit task.bootstrapped event.", "description_zh": "添加 _bootstrap_workspace 方法，将 AGENTS.md、USER.md、IDENTITY.md 和 SOUL.md 从项目根目录复制到代理工作区。支持通过 config.json 的 subagent.bootstrap.files 进行覆盖。发射 task.bootstrapped 事件。", "status": "completed"}, {"id": "T-021", "passes": true, "story_id": "US-007", "title": "Add unit tests for workspace bootstrap default behavior and config override", "description": "Verify that existing identity files are copied, missing files are skipped, and config override changes the file list.", "depends_on": ["T-020"], "commit_sha": "98a0ee9", "log_path": ".zeus/v2/ai-logs/T-021.md", "wave": 8, "original_wave": 8, "scheduled_wave": 8, "rescheduled_from": null, "title_en": "Add unit tests for workspace bootstrap default behavior and config override", "title_zh": "为工作区引导默认行为和配置覆盖添加单元测试", "description_en": "Verify that existing identity files are copied, missing files are skipped, and config override changes the file list.", "description_zh": "验证现有身份文件是否被复制、缺失文件是否被跳过，以及配置覆盖是否改变文件列表。", "status": "completed"}, {"id": "T-022", "passes": true, "story_id": "US-007", "title": "Update zeus-execute-v2.md with workspace bootstrap documentation", "description": "Document the automatic identity file injection and the optional subagent.bootstrap.files configuration.", "depends_on": ["T-020"], "commit_sha": "3e98331", "log_path": ".zeus/v2/ai-logs/T-022.md", "wave": 8, "original_wave": 8, "scheduled_wave": 8, "rescheduled_from": null, "title_en": "Update zeus-execute-v2.md with workspace bootstrap documentation", "title_zh": "在 zeus-execute-v2.md 中更新工作区引导文档", "description_en": "Document the automatic identity file injection and the optional subagent.bootstrap.files configuration.", "description_zh": "记录自动身份文件注入和可选的 subagent.bootstrap.files 配置。", "status": "completed"}, {"id": "T-023", "passes": true, "story_id": "US-008", "title": "Add /milestones endpoint and Milestones tab to Web UI", "description": "Implement GET /milestones in zeus_server.py that reads roadmap.json and task.json to return milestone progress. Add a new Milestones tab in index.html showing milestone cards with expandable task lists and per-milestone progress bars.", "depends_on": [], "commit_sha": "b5dd912", "log_path": ".zeus/v2/ai-logs/T-023.md", "wave": 8, "original_wave": 8, "scheduled_wave": 8, "rescheduled_from": null, "title_en": "Add /milestones endpoint and Milestones tab to Web UI", "title_zh": "添加 /milestones 端点并在 Web UI 中新增 Milestones 标签页", "description_en": "Implement GET /milestones in zeus_server.py that reads roadmap.json and task.json to return milestone progress. Add a new Milestones tab in index.html showing milestone cards with expandable task lists and per-milestone progress bars.", "description_zh": "在 zeus_server.py 中实现 GET /milestones，读取 roadmap.json 和 task.json 返回里程碑进度。在 index.html 中添加新的 Milestones 标签页，展示里程碑卡片、可展开任务列表和每个里程碑的进度条。", "status": "completed"}, {"id": "T-024", "passes": true, "story_id": "US-008", "title": "Extend task schema and Web UI with multi-language support (EN/ZH)", "description": "Add optional title_en, title_zh, description_en, description_zh to task.schema.json. Update zeus_server.py endpoints to return these fields. Add a language toggle in the Web UI header and a getLocalized helper so task titles/descriptions switch instantly with fallback.", "depends_on": [], "commit_sha": "b5dd912", "log_path": ".zeus/v2/ai-logs/T-024.md", "wave": 8, "original_wave": 8, "scheduled_wave": 8, "rescheduled_from": null, "title_en": "Extend task schema and Web UI with multi-language support (EN/ZH)", "title_zh": "扩展任务模式与 Web UI 多语言支持（英/中）", "description_en": "Add optional title_en, title_zh, description_en, description_zh to task.schema.json. Update zeus_server.py endpoints to return these fields. Add a language toggle in the Web UI header and a getLocalized helper so task titles/descriptions switch instantly with fallback.", "description_zh": "为 task.schema.json 添加可选的 title_en、title_zh、description_en、description_zh。更新 zeus_server.py 端点以返回这些字段。在 Web UI 标题栏中添加语言切换按钮和 getLocalized 辅助函数，使任务标题/描述能够即时切换并优雅回退。", "status": "completed"}, {"id": "T-025", "passes": true, "story_id": "US-008", "title": "Seed i18n data for all v2 tasks and update documentation", "description": "Populate title_en/title_zh/description_en/description_zh for all existing v2 tasks. Update zeus-execute-v2.md with i18n guidelines.", "depends_on": ["T-024"], "commit_sha": "b5dd912", "log_path": ".zeus/v2/ai-logs/T-025.md", "wave": 8, "original_wave": 8, "scheduled_wave": 8, "rescheduled_from": null, "title_en": "Seed i18n data for all v2 tasks and update documentation", "title_zh": "为所有 v2 任务填充 i18n 数据并更新文档", "description_en": "Populate title_en/title_zh/description_en/description_zh for all existing v2 tasks. Update zeus-execute-v2.md with i18n guidelines.", "description_zh": "为所有现有 v2 任务填充 title_en/title_zh/description_en/description_zh。更新 zeus-execute-v2.md 中的 i18n 指南。", "status": "completed"}, {"id": "T-026", "passes": true, "story_id": "US-009", "title": "Extend roadmap.json schema and add GET /phases endpoint", "description": "Add phases array to roadmap.json with title, summary, milestone_ids, wave_range. Implement GET /phases in zeus_server.py that computes status and progress_percent per phase.", "depends_on": [], "commit_sha": "f7422ae", "log_path": ".zeus/v2/ai-logs/T-026.md", "wave": 9, "original_wave": 9, "scheduled_wave": 9, "rescheduled_from": null, "status": "completed"}, {"id": "T-027", "passes": true, "story_id": "US-009", "title": "Update Web UI with Phases tab, phase badge, and phase-aware wave selector", "description": "Add Phases tab to index.html showing phase cards with summaries and nested milestones. Add current phase badge in header. Make dashboard wave selector filter by selected phase.", "depends_on": ["T-026"], "commit_sha": "f7422ae", "log_path": ".zeus/v2/ai-logs/T-027.md", "wave": 9, "original_wave": 9, "scheduled_wave": 9, "rescheduled_from": null, "status": "completed"}, {"id": "T-028", "passes": true, "story_id": "US-009", "title": "Seed P-001/P-002 for existing v2 data and update task.json meta with current_phase", "description": "Populate phases in roadmap.json mapping M-001~M-004 to P-001 and M-005~M-008 to P-002. Update task.json meta to include current_phase.", "depends_on": ["T-026"], "commit_sha": "f7422ae", "log_path": ".zeus/v2/ai-logs/T-028.md", "wave": 9, "original_wave": 9, "scheduled_wave": 9, "rescheduled_from": null, "status": "completed"}, {"id": "T-029", "passes": true, "story_id": "US-009", "title": "Add tests for /phases and phase status rules; update documentation", "description": "Write unit/integration tests for GET /phases and phase status/progress calculation. Update zeus-execute-v2.md with phase layer guidelines.", "depends_on": ["T-027", "T-028"], "commit_sha": "f7422ae", "log_path": ".zeus/v2/ai-logs/T-029.md", "wave": 9, "original_wave": 9, "scheduled_wave": 9, "rescheduled_from": null, "status": "completed"}, {"id": "T-030", "passes": true, "story_id": "US-010", "title": "Implement GlobalScheduler with quarantine and wave-as-view semantics", "description": "Refactor zeus_orchestrator.py to introduce GlobalScheduler. Maintain wave in task.json as planning/observation fields. Dispatch tasks by global dependency readiness. Failed tasks move to quarantine (task.json quarantine array or status field) and do not block unrelated downstream tasks.", "depends_on": [], "commit_sha": "09ebbb2", "log_path": ".zeus/v2/ai-logs/T-030.md", "wave": 10, "original_wave": 10, "scheduled_wave": 10, "rescheduled_from": null, "status": "completed"}, {"id": "T-031", "passes": true, "story_id": "US-010", "title": "Implement Agent Mailbox protocol in agent_bus.py", "description": "Extend agent_bus.py with send(to_agent_id, message) and receive(agent_id) APIs. Messages persisted as JSONL in .zeus/v2/agent-logs/mailbox/{to_agent_id}.jsonl. Support polling by agents in their workspace via a lightweight API or file watcher.", "depends_on": [], "commit_sha": "1b02a1d6d6e59104d7416e891b103d0f92deb1a6", "log_path": ".zeus/v2/ai-logs/T-031.md", "wave": 10, "original_wave": 10, "scheduled_wave": 10, "rescheduled_from": null, "status": "completed"}, {"id": "T-032", "passes": true, "story_id": "US-010", "title": "Agent-level isolated ai-logs directory structure", "description": "Change log layout from wave-centric to agent-centric: .zeus/v2/agent-logs/{agent_id}/activity.md and reasoning.jsonl. Update zeus_orchestrator.py dispatch logic and agent_bus event writers to write to agent-specific paths. Ensure backward compatibility for existing wave-logs.", "depends_on": [], "commit_sha": "1b02a1d6d6e59104d7416e891b103d0f92deb1a6", "log_path": ".zeus/v2/ai-logs/T-032.md", "wave": 10, "original_wave": 10, "scheduled_wave": 10, "rescheduled_from": null, "status": "completed"}, {"id": "T-033", "passes": true, "story_id": "US-010", "title": "Web UI Global Execution, Agent Collaboration, and per-agent log browser", "description": "Add Global Execution view (cross-wave running tasks). Add Agent Message Stream panel (real-time or polling mailbox display). Add per-agent log browser (select agent -> view activity.md / reasoning.jsonl). Update index.html and zeus_server.py with necessary endpoints.", "depends_on": ["T-030", "T-031", "T-032"], "commit_sha": "484c2a4e07010a705df3dfec16e726a782db8b5f", "log_path": ".zeus/v2/ai-logs/T-033.md", "wave": 11, "original_wave": 11, "scheduled_wave": 11, "rescheduled_from": null, "status": "completed"}, {"id": "T-034", "passes": true, "story_id": "US-010", "title": "Integration tests, backward-compatibility validation, and documentation", "description": "Write tests for GlobalScheduler quarantine behavior, mailbox delivery, and agent log isolation. Validate main track unaffected. Update zeus-execute-v2.md with global scheduling and agent collaboration guidelines.", "depends_on": ["T-033"], "commit_sha": "484c2a4e07010a705df3dfec16e726a782db8b5f", "log_path": ".zeus/v2/ai-logs/T-034.md", "wave": 11, "original_wave": 11, "scheduled_wave": 11, "rescheduled_from": null, "status": "completed"}, {"id": "T-035", "passes": true, "story_id": "US-011", "title": "Implement task lifecycle controls (retry, cancel, pause) in API and Web UI", "description": "Add POST endpoints for /tasks/{task_id}/retry, /cancel, /pause. Introduce task status model (pending|running|paused|completed|failed|cancelled). Add action buttons in Global Execution view. Write integration tests.", "depends_on": [], "wave": 12, "original_wave": 12, "scheduled_wave": 12, "rescheduled_from": null, "title_en": "Implement task lifecycle controls (retry, cancel, pause) in API and Web UI", "title_zh": "在 API 和 Web UI 中实现任务生命周期控制（重试、取消、暂停）", "description_en": "Add POST endpoints for /tasks/{task_id}/retry, /cancel, /pause. Introduce task status model (pending|running|paused|completed|failed|cancelled). Add action buttons in Global Execution view. Write integration tests.", "description_zh": "添加 POST 端点支持任务重试、取消、暂停。引入当前任务状态模型（pending|running|paused|completed|failed|cancelled）。在全局执行页面添加操作按钮。编写集成测试。", "status": "completed", "commit_sha": "4438fcf90d1d283d25ccdea7ff01a1abebd56939", "log_path": ".zeus/v2/ai-logs/T-035.md"}, {"id": "T-037", "passes": false, "story_id": "US-011", "title": "Create Dockerfile and one-click start scripts for v2 backend deployment", "description": "Provide a Dockerfile that packages the v2 backend. Add start.sh (Linux/macOS) and start.ps1 (Windows) one-click scripts. Update README with deployment instructions. Verify local Docker build.", "depends_on": ["T-036"], "wave": 12, "original_wave": 12, "scheduled_wave": 12, "rescheduled_from": null, "title_en": "Create Dockerfile and one-click start scripts for v2 backend deployment", "title_zh": "为 v2 后端部署创建 Dockerfile 和一键启动脚本", "description_en": "Provide a Dockerfile that packages the v2 backend. Add start.sh (Linux/macOS) and start.ps1 (Windows) one-click scripts. Update README with deployment instructions. Verify local Docker build.", "description_zh": "提供打包 v2 后端的 Dockerfile。添加 start.sh 和 start.ps1 一键启动脚本。更新 README 部署说明。验证本地 Docker 构建。", "status": "pending"}, {"id": "T-036-A", "passes": false, "story_id": "US-011", "title": "Implement SQLite persistence core (scheduler_state.py)", "description": "Create SchedulerStateDB class with tables for meta, active_tasks, and mailbox. Provide save/load APIs. Add unit tests in test_scheduler_state.py.", "depends_on": [], "wave": 12, "original_wave": 12, "scheduled_wave": 12, "rescheduled_from": null, "title_en": "Implement SQLite persistence core (scheduler_state.py)", "title_zh": "实现 SQLite 持久化核心（scheduler_state.py）", "description_en": "Create SchedulerStateDB class with tables for meta, active_tasks, and mailbox. Provide save/load APIs. Add unit tests in test_scheduler_state.py.", "description_zh": "创建 SchedulerStateDB 类，包含 meta、active_tasks、mailbox 三张表。提供 save/load API。添加 test_scheduler_state.py 单元测试。", "status": "running"}, {"id": "T-036-B", "passes": false, "story_id": "US-011", "title": "Add graceful shutdown and SIGTERM handlers", "description": "Register SIGTERM/SIGINT handlers in zeus_server.py and add stop_global_scheduler() in zeus_orchestrator.py. Persist scheduler state to SQLite on shutdown.", "depends_on": ["T-036-A"], "wave": 12, "original_wave": 12, "scheduled_wave": 12, "rescheduled_from": null, "title_en": "Add graceful shutdown and SIGTERM handlers", "title_zh": "添加优雅关闭和 SIGTERM 处理器", "description_en": "Register SIGTERM/SIGINT handlers in zeus_server.py and add stop_global_scheduler() in zeus_orchestrator.py. Persist scheduler state to SQLite on shutdown.", "description_zh": "在 zeus_server.py 中注册 SIGTERM/SIGINT 处理器，在 zeus_orchestrator.py 中添加 stop_global_scheduler()。关闭时将调度器状态持久化到 SQLite。"}, {"id": "T-036-C", "passes": false, "story_id": "US-011", "title": "Implement state resume on startup in orchestrator and server", "description": "On server startup, detect scheduler_active from SQLite. Add resume_from_state() in zeus_orchestrator.py to recover or reset active tasks. Ensure /global/status reflects recovered state.", "depends_on": ["T-036-A"], "wave": 12, "original_wave": 12, "scheduled_wave": 12, "rescheduled_from": null, "title_en": "Implement state resume on startup in orchestrator and server", "title_zh": "在调度器和服务端实现启动时状态恢复", "description_en": "On server startup, detect scheduler_active from SQLite. Add resume_from_state() in zeus_orchestrator.py to recover or reset active tasks. Ensure /global/status reflects recovered state.", "description_zh": "服务器启动时检测 SQLite 中的 scheduler_active。在 zeus_orchestrator.py 中添加 resume_from_state() 恢复或重置活跃任务。确保 /global/status 正确反映恢复后的状态。"}, {"id": "T-036-D", "passes": false, "story_id": "US-011", "title": "Add Web UI recovery banner and refreshed global status after resume", "description": "Update index.html to show a recovery banner when scheduler state was restored from SQLite. Refresh Global Execution view to display recovered running/pending/quarantine.", "depends_on": [], "wave": 12, "original_wave": 12, "scheduled_wave": 12, "rescheduled_from": null, "title_en": "Add Web UI recovery banner and refreshed global status after resume", "title_zh": "添加 Web UI 恢复提示横幅和刷新后的全局状态展示", "description_en": "Update index.html to show a recovery banner when scheduler state was restored from SQLite. Refresh Global Execution view to display recovered running/pending/quarantine.", "description_zh": "更新 index.html，在从 SQLite 恢复调度器状态时显示恢复提示横幅。刷新 Global Execution 视图以展示恢复后的运行中/待执行/隔离区状态。", "status": "failed"}, {"id": "T-036-E", "passes": false, "story_id": "US-011", "title": "Write integration tests for shutdown-resume cycle and update docs", "description": "Add tests in test_server.py covering shutdown -> restart -> state recovery. Update zeus-execute-v2.md and claude-progress.md.", "depends_on": ["T-036-B", "T-036-C", "T-036-D"], "wave": 12, "original_wave": 12, "scheduled_wave": 12, "rescheduled_from": null, "title_en": "Write integration tests for shutdown-resume cycle and update docs", "title_zh": "编写关闭-恢复周期的集成测试并更新文档", "description_en": "Add tests in test_server.py covering shutdown -> restart -> state recovery. Update zeus-execute-v2.md and claude-progress.md.", "description_zh": "在 test_server.py 中添加覆盖关闭->重启->状态恢复的测试。更新 zeus-execute-v2.md 和 claude-progress.md。"}], "quarantine": [{"task_id": "T-036-D", "reason": "dispatcher_failed", "quarantined_at": "2026-04-12T17:13:41Z", "workspace": "D:\\SchoolDoc\\TrueProject\\zeus-open\\.zeus\\v2\\agent-workspaces\\zeus-agent-T-036-D"}]}
+{
+  "meta": {
+    "current_wave": 12,
+    "wave_approval_required": true,
+    "max_parallel_agents": 3,
+    "scheduling_mode": "adaptive",
+    "current_phase": "P-003"
+  },
+  "tasks": [
+    {
+      "id": "T-001",
+      "passes": true,
+      "story_id": "US-001",
+      "title": "Implement store.py with AbstractStore and LocalStore (file lock included)",
+      "depends_on": [],
+      "commit_sha": "3d29816b2073b7aa194147b8d428d1812d920db9",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T15-30-00-wave1.md",
+      "wave": 1,
+      "title_en": "Implement store.py with AbstractStore and LocalStore (file lock included)",
+      "title_zh": "实现 store.py（含文件锁的抽象存储与本地存储）",
+      "status": "completed"
+    },
+    {
+      "id": "T-002",
+      "passes": true,
+      "story_id": "US-001",
+      "title": "Implement agent_bus.py with JSONL event writer and Markdown discussion formatter",
+      "depends_on": [],
+      "commit_sha": "3d29816b2073b7aa194147b8d428d1812d920db9",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T15-30-00-wave1.md",
+      "wave": 1,
+      "title_en": "Implement agent_bus.py with JSONL event writer and Markdown discussion formatter",
+      "title_zh": "实现 agent_bus.py（JSONL 事件写入与 Markdown 讨论格式化）",
+      "status": "completed"
+    },
+    {
+      "id": "T-003",
+      "passes": true,
+      "story_id": "US-001",
+      "title": "Implement workflow_graph.py with Mermaid and Graphviz generators",
+      "depends_on": [],
+      "commit_sha": "3d29816b2073b7aa194147b8d428d1812d920db9",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T15-30-00-wave1.md",
+      "wave": 1,
+      "title_en": "Implement workflow_graph.py with Mermaid and Graphviz generators",
+      "title_zh": "实现 workflow_graph.py（Mermaid 与 Graphviz 生成器）",
+      "status": "completed"
+    },
+    {
+      "id": "T-004",
+      "passes": true,
+      "story_id": "US-002",
+      "title": "Implement zeus_orchestrator.py with async dispatch, wave logic, and task.json batch updates",
+      "depends_on": [
+        "T-001",
+        "T-002"
+      ],
+      "commit_sha": "33d50a8c6a5294e6bc9a262af1afba176efe8910",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T16-00-00-wave2.md",
+      "wave": 2,
+      "title_en": "Implement zeus_orchestrator.py with async dispatch, wave logic, and task.json batch updates",
+      "title_zh": "实现 zeus_orchestrator.py（异步调度、Wave 逻辑与 task.json 批量更新）",
+      "status": "completed"
+    },
+    {
+      "id": "T-005",
+      "passes": true,
+      "story_id": "US-002",
+      "title": "Implement zeus_server.py FastAPI backend with /status /events /discussion /graph endpoints",
+      "depends_on": [
+        "T-001",
+        "T-003"
+      ],
+      "commit_sha": "33d50a8c6a5294e6bc9a262af1afba176efe8910",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T16-00-00-wave2.md",
+      "wave": 2,
+      "title_en": "Implement zeus_server.py FastAPI backend with /status /events /discussion /graph endpoints",
+      "title_zh": "实现 zeus_server.py（FastAPI 后端 /status /events /discussion /graph 端点）",
+      "status": "completed"
+    },
+    {
+      "id": "T-006",
+      "passes": true,
+      "story_id": "US-003",
+      "title": "Implement zero-build Web UI dashboard and remove deprecated PyQt GUI",
+      "depends_on": [
+        "T-004",
+        "T-005"
+      ],
+      "commit_sha": "409533c2fcf18d5f1e8a178b10493298781b0d6a",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T16-01-50-wave3.md",
+      "wave": 3,
+      "title_en": "Implement zero-build Web UI dashboard and remove deprecated PyQt GUI",
+      "title_zh": "实现零构建 Web UI 仪表盘并移除废弃的 PyQt GUI",
+      "status": "completed"
+    },
+    {
+      "id": "T-007",
+      "passes": true,
+      "story_id": "US-003",
+      "title": "Implement zero-build Web frontend (index.html) for dashboard and graph display",
+      "depends_on": [
+        "T-005"
+      ],
+      "commit_sha": "409533c2fcf18d5f1e8a178b10493298781b0d6a",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T16-01-50-wave3.md",
+      "wave": 3,
+      "title_en": "Implement zero-build Web frontend (index.html) for dashboard and graph display",
+      "title_zh": "实现零构建 Web 前端（index.html）用于仪表盘与图表展示",
+      "status": "completed"
+    },
+    {
+      "id": "T-008",
+      "passes": true,
+      "story_id": "US-004",
+      "title": "Write integration tests for end-to-end 2-wave execution and API smoke tests",
+      "depends_on": [
+        "T-004",
+        "T-005",
+        "T-006"
+      ],
+      "commit_sha": "b11870f660ddf9d6a106627c82d71ea8dddde8a0",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md",
+      "wave": 4,
+      "title_en": "Write integration tests for end-to-end 2-wave execution and API smoke tests",
+      "title_zh": "编写端到端 2-Wave 执行与 API 冒烟测试的集成测试",
+      "status": "completed"
+    },
+    {
+      "id": "T-009",
+      "passes": true,
+      "story_id": "US-004",
+      "title": "Write v2 documentation (zeus-execute-v2.md) and update README with GUI/Web instructions",
+      "depends_on": [
+        "T-006",
+        "T-007"
+      ],
+      "commit_sha": "b11870f660ddf9d6a106627c82d71ea8dddde8a0",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md",
+      "wave": 4,
+      "title_en": "Write v2 documentation (zeus-execute-v2.md) and update README with GUI/Web instructions",
+      "title_zh": "编写 v2 文档（zeus-execute-v2.md）并用 GUI/Web 说明更新 README",
+      "status": "completed"
+    },
+    {
+      "id": "T-010",
+      "passes": true,
+      "story_id": "US-004",
+      "title": "Run backward-compatibility validation and final v2 ship checklist",
+      "depends_on": [
+        "T-008",
+        "T-009"
+      ],
+      "commit_sha": "b11870f660ddf9d6a106627c82d71ea8dddde8a0",
+      "log_path": ".zeus/v2/ai-logs/2026-04-10T16-12-17-wave4.md",
+      "wave": 4,
+      "title_en": "Run backward-compatibility validation and final v2 ship checklist",
+      "title_zh": "运行向后兼容性验证与最终 v2 发布清单",
+      "status": "completed"
+    },
+    {
+      "id": "T-011",
+      "passes": true,
+      "story_id": "US-005",
+      "title": "Extend task.json schema and store.py with original_wave/scheduled_wave/rescheduled_from fields",
+      "depends_on": [],
+      "commit_sha": "3ed575958377fa2d1dbd254115d8b78f577f79e8",
+      "log_path": ".zeus/v2/ai-logs/T-011.md",
+      "wave": 5,
+      "original_wave": 5,
+      "scheduled_wave": 5,
+      "rescheduled_from": null,
+      "title_en": "Extend task.json schema and store.py with original_wave/scheduled_wave/rescheduled_from fields",
+      "title_zh": "扩展 task.json schema 与 store.py，支持 original_wave/scheduled_wave/rescheduled_from 字段",
+      "status": "completed"
+    },
+    {
+      "id": "T-012",
+      "passes": true,
+      "story_id": "US-005",
+      "title": "Refactor zeus_orchestrator.py scheduling loop to priority-queue + adaptive slot filling",
+      "depends_on": [
+        "T-011"
+      ],
+      "commit_sha": "6330369b624bedd56fae89142f6bf2fb39d48bb6",
+      "log_path": ".zeus/v2/ai-logs/T-012.md",
+      "wave": 6,
+      "original_wave": 6,
+      "scheduled_wave": 6,
+      "rescheduled_from": null,
+      "title_en": "Refactor zeus_orchestrator.py scheduling loop to priority-queue + adaptive slot filling",
+      "title_zh": "重构 zeus_orchestrator.py 调度循环为优先队列 + 自适应槽位填充",
+      "status": "completed"
+    },
+    {
+      "id": "T-013",
+      "passes": true,
+      "story_id": "US-005",
+      "title": "Update Web UI dashboard to display rescheduled task badges and corrected wave progress",
+      "depends_on": [
+        "T-012"
+      ],
+      "commit_sha": "9f28d0cd2a2f448ae159b8b307b3f6004e03eaf7",
+      "log_path": ".zeus/v2/ai-logs/T-013.md",
+      "wave": 7,
+      "original_wave": 7,
+      "scheduled_wave": 7,
+      "rescheduled_from": null,
+      "title_en": "Update Web UI dashboard to display rescheduled task badges and corrected wave progress",
+      "title_zh": "更新 Web UI 仪表盘以显示重新调度任务标识与修正的 Wave 进度",
+      "status": "completed"
+    },
+    {
+      "id": "T-014",
+      "passes": true,
+      "story_id": "US-005",
+      "title": "Add unit and integration tests for adaptive rescheduling and state consistency",
+      "depends_on": [
+        "T-012",
+        "T-013"
+      ],
+      "commit_sha": "3c4ec903b8531b0bc09e36fadeb5141100684d23",
+      "log_path": ".zeus/v2/ai-logs/T-014.md",
+      "wave": 7,
+      "original_wave": 7,
+      "scheduled_wave": 7,
+      "rescheduled_from": null,
+      "title_en": "Add unit and integration tests for adaptive rescheduling and state consistency",
+      "title_zh": "为自适应重新调度与状态一致性添加单元和集成测试",
+      "status": "completed"
+    },
+    {
+      "id": "T-015",
+      "passes": true,
+      "story_id": "US-006",
+      "title": "Create subagent_dispatcher.py with ABC + Mock + Kimi + Claude + Auto implementations",
+      "depends_on": [],
+      "commit_sha": "a0c996b8fc9a09a976efc5828513133efc04afd0",
+      "log_path": ".zeus/v2/ai-logs/T-015.md",
+      "wave": 5,
+      "original_wave": 5,
+      "scheduled_wave": 5,
+      "rescheduled_from": null,
+      "title_en": "Create subagent_dispatcher.py with ABC + Mock + Kimi + Claude + Auto implementations",
+      "title_zh": "创建 subagent_dispatcher.py（ABC + Mock + Kimi + Claude + Auto 实现）",
+      "status": "completed"
+    },
+    {
+      "id": "T-016",
+      "passes": true,
+      "story_id": "US-006",
+      "title": "Refactor zeus_orchestrator.py to delegate execution to dispatcher and add config parsing",
+      "depends_on": [
+        "T-015"
+      ],
+      "commit_sha": "9386d0a0ca2a9024d9fe887b768fc12a3edfe587",
+      "log_path": ".zeus/v2/ai-logs/T-016.md",
+      "wave": 6,
+      "original_wave": 6,
+      "scheduled_wave": 6,
+      "rescheduled_from": null,
+      "title_en": "Refactor zeus_orchestrator.py to delegate execution to dispatcher and add config parsing",
+      "title_zh": "重构 zeus_orchestrator.py，将执行委托给调度器并添加配置解析",
+      "status": "completed"
+    },
+    {
+      "id": "T-017",
+      "passes": true,
+      "story_id": "US-006",
+      "title": "Add unit tests for dispatcher command construction, auto-selection, and timeout",
+      "depends_on": [
+        "T-015",
+        "T-016"
+      ],
+      "commit_sha": "a0c996b8fc9a09a976efc5828513133efc04afd0",
+      "log_path": ".zeus/v2/ai-logs/T-017.md",
+      "wave": 6,
+      "original_wave": 6,
+      "scheduled_wave": 6,
+      "rescheduled_from": null,
+      "title_en": "Add unit tests for dispatcher command construction, auto-selection, and timeout",
+      "title_zh": "为调度器命令构造、自动选择和超时行为添加单元测试",
+      "status": "completed"
+    },
+    {
+      "id": "T-018",
+      "passes": true,
+      "story_id": "US-006",
+      "title": "Update Web UI Agent Monitor to show last_seen and simple activity indicators",
+      "depends_on": [
+        "T-016"
+      ],
+      "commit_sha": "d29f4aee79f1be2e49aa70ae34f90693822e2c12",
+      "log_path": ".zeus/v2/ai-logs/T-018.md",
+      "wave": 7,
+      "original_wave": 7,
+      "scheduled_wave": 7,
+      "rescheduled_from": null,
+      "title_en": "Update Web UI Agent Monitor to show last_seen and simple activity indicators",
+      "title_zh": "更新 Web UI Agent Monitor，显示 last_seen 与简单活动指示器",
+      "status": "completed"
+    },
+    {
+      "id": "T-019",
+      "passes": true,
+      "story_id": "US-006",
+      "title": "Update README and zeus-execute-v2.md with subagent setup instructions",
+      "depends_on": [
+        "T-017",
+        "T-018"
+      ],
+      "commit_sha": "b318d04ac9a56d6cd05e39fadeb5141100684d23",
+      "log_path": ".zeus/v2/ai-logs/T-019.md",
+      "wave": 7,
+      "original_wave": 7,
+      "scheduled_wave": 7,
+      "rescheduled_from": null,
+      "title_en": "Update README and zeus-execute-v2.md with subagent setup instructions",
+      "title_zh": "用子代理设置说明更新 README 和 zeus-execute-v2.md",
+      "status": "completed"
+    },
+    {
+      "id": "T-020",
+      "passes": true,
+      "story_id": "US-007",
+      "title": "Implement ZeusOrchestrator._bootstrap_workspace to auto-inject identity files into agent workspaces",
+      "description": "Add _bootstrap_workspace method that copies AGENTS.md, USER.md, IDENTITY.md, and SOUL.md from project_root into the agent workspace. Support config.json override via subagent.bootstrap.files. Emit task.bootstrapped event.",
+      "depends_on": [],
+      "commit_sha": "98a0ee9",
+      "log_path": ".zeus/v2/ai-logs/T-020.md",
+      "wave": 8,
+      "original_wave": 8,
+      "scheduled_wave": 8,
+      "rescheduled_from": null,
+      "title_en": "Implement ZeusOrchestrator._bootstrap_workspace to auto-inject identity files into agent workspaces",
+      "title_zh": "实现 ZeusOrchestrator._bootstrap_workspace，自动注入身份文件到代理工作区",
+      "description_en": "Add _bootstrap_workspace method that copies AGENTS.md, USER.md, IDENTITY.md, and SOUL.md from project_root into the agent workspace. Support config.json override via subagent.bootstrap.files. Emit task.bootstrapped event.",
+      "description_zh": "添加 _bootstrap_workspace 方法，将 AGENTS.md、USER.md、IDENTITY.md 和 SOUL.md 从项目根目录复制到代理工作区。支持通过 config.json 的 subagent.bootstrap.files 进行覆盖。发射 task.bootstrapped 事件。",
+      "status": "completed"
+    },
+    {
+      "id": "T-021",
+      "passes": true,
+      "story_id": "US-007",
+      "title": "Add unit tests for workspace bootstrap default behavior and config override",
+      "description": "Verify that existing identity files are copied, missing files are skipped, and config override changes the file list.",
+      "depends_on": [
+        "T-020"
+      ],
+      "commit_sha": "98a0ee9",
+      "log_path": ".zeus/v2/ai-logs/T-021.md",
+      "wave": 8,
+      "original_wave": 8,
+      "scheduled_wave": 8,
+      "rescheduled_from": null,
+      "title_en": "Add unit tests for workspace bootstrap default behavior and config override",
+      "title_zh": "为工作区引导默认行为和配置覆盖添加单元测试",
+      "description_en": "Verify that existing identity files are copied, missing files are skipped, and config override changes the file list.",
+      "description_zh": "验证现有身份文件是否被复制、缺失文件是否被跳过，以及配置覆盖是否改变文件列表。",
+      "status": "completed"
+    },
+    {
+      "id": "T-022",
+      "passes": true,
+      "story_id": "US-007",
+      "title": "Update zeus-execute-v2.md with workspace bootstrap documentation",
+      "description": "Document the automatic identity file injection and the optional subagent.bootstrap.files configuration.",
+      "depends_on": [
+        "T-020"
+      ],
+      "commit_sha": "3e98331",
+      "log_path": ".zeus/v2/ai-logs/T-022.md",
+      "wave": 8,
+      "original_wave": 8,
+      "scheduled_wave": 8,
+      "rescheduled_from": null,
+      "title_en": "Update zeus-execute-v2.md with workspace bootstrap documentation",
+      "title_zh": "在 zeus-execute-v2.md 中更新工作区引导文档",
+      "description_en": "Document the automatic identity file injection and the optional subagent.bootstrap.files configuration.",
+      "description_zh": "记录自动身份文件注入和可选的 subagent.bootstrap.files 配置。",
+      "status": "completed"
+    },
+    {
+      "id": "T-023",
+      "passes": true,
+      "story_id": "US-008",
+      "title": "Add /milestones endpoint and Milestones tab to Web UI",
+      "description": "Implement GET /milestones in zeus_server.py that reads roadmap.json and task.json to return milestone progress. Add a new Milestones tab in index.html showing milestone cards with expandable task lists and per-milestone progress bars.",
+      "depends_on": [],
+      "commit_sha": "b5dd912",
+      "log_path": ".zeus/v2/ai-logs/T-023.md",
+      "wave": 8,
+      "original_wave": 8,
+      "scheduled_wave": 8,
+      "rescheduled_from": null,
+      "title_en": "Add /milestones endpoint and Milestones tab to Web UI",
+      "title_zh": "添加 /milestones 端点并在 Web UI 中新增 Milestones 标签页",
+      "description_en": "Implement GET /milestones in zeus_server.py that reads roadmap.json and task.json to return milestone progress. Add a new Milestones tab in index.html showing milestone cards with expandable task lists and per-milestone progress bars.",
+      "description_zh": "在 zeus_server.py 中实现 GET /milestones，读取 roadmap.json 和 task.json 返回里程碑进度。在 index.html 中添加新的 Milestones 标签页，展示里程碑卡片、可展开任务列表和每个里程碑的进度条。",
+      "status": "completed"
+    },
+    {
+      "id": "T-024",
+      "passes": true,
+      "story_id": "US-008",
+      "title": "Extend task schema and Web UI with multi-language support (EN/ZH)",
+      "description": "Add optional title_en, title_zh, description_en, description_zh to task.schema.json. Update zeus_server.py endpoints to return these fields. Add a language toggle in the Web UI header and a getLocalized helper so task titles/descriptions switch instantly with fallback.",
+      "depends_on": [],
+      "commit_sha": "b5dd912",
+      "log_path": ".zeus/v2/ai-logs/T-024.md",
+      "wave": 8,
+      "original_wave": 8,
+      "scheduled_wave": 8,
+      "rescheduled_from": null,
+      "title_en": "Extend task schema and Web UI with multi-language support (EN/ZH)",
+      "title_zh": "扩展任务模式与 Web UI 多语言支持（英/中）",
+      "description_en": "Add optional title_en, title_zh, description_en, description_zh to task.schema.json. Update zeus_server.py endpoints to return these fields. Add a language toggle in the Web UI header and a getLocalized helper so task titles/descriptions switch instantly with fallback.",
+      "description_zh": "为 task.schema.json 添加可选的 title_en、title_zh、description_en、description_zh。更新 zeus_server.py 端点以返回这些字段。在 Web UI 标题栏中添加语言切换按钮和 getLocalized 辅助函数，使任务标题/描述能够即时切换并优雅回退。",
+      "status": "completed"
+    },
+    {
+      "id": "T-025",
+      "passes": true,
+      "story_id": "US-008",
+      "title": "Seed i18n data for all v2 tasks and update documentation",
+      "description": "Populate title_en/title_zh/description_en/description_zh for all existing v2 tasks. Update zeus-execute-v2.md with i18n guidelines.",
+      "depends_on": [
+        "T-024"
+      ],
+      "commit_sha": "b5dd912",
+      "log_path": ".zeus/v2/ai-logs/T-025.md",
+      "wave": 8,
+      "original_wave": 8,
+      "scheduled_wave": 8,
+      "rescheduled_from": null,
+      "title_en": "Seed i18n data for all v2 tasks and update documentation",
+      "title_zh": "为所有 v2 任务填充 i18n 数据并更新文档",
+      "description_en": "Populate title_en/title_zh/description_en/description_zh for all existing v2 tasks. Update zeus-execute-v2.md with i18n guidelines.",
+      "description_zh": "为所有现有 v2 任务填充 title_en/title_zh/description_en/description_zh。更新 zeus-execute-v2.md 中的 i18n 指南。",
+      "status": "completed"
+    },
+    {
+      "id": "T-026",
+      "passes": true,
+      "story_id": "US-009",
+      "title": "Extend roadmap.json schema and add GET /phases endpoint",
+      "description": "Add phases array to roadmap.json with title, summary, milestone_ids, wave_range. Implement GET /phases in zeus_server.py that computes status and progress_percent per phase.",
+      "depends_on": [],
+      "commit_sha": "f7422ae",
+      "log_path": ".zeus/v2/ai-logs/T-026.md",
+      "wave": 9,
+      "original_wave": 9,
+      "scheduled_wave": 9,
+      "rescheduled_from": null,
+      "status": "completed"
+    },
+    {
+      "id": "T-027",
+      "passes": true,
+      "story_id": "US-009",
+      "title": "Update Web UI with Phases tab, phase badge, and phase-aware wave selector",
+      "description": "Add Phases tab to index.html showing phase cards with summaries and nested milestones. Add current phase badge in header. Make dashboard wave selector filter by selected phase.",
+      "depends_on": [
+        "T-026"
+      ],
+      "commit_sha": "f7422ae",
+      "log_path": ".zeus/v2/ai-logs/T-027.md",
+      "wave": 9,
+      "original_wave": 9,
+      "scheduled_wave": 9,
+      "rescheduled_from": null,
+      "status": "completed"
+    },
+    {
+      "id": "T-028",
+      "passes": true,
+      "story_id": "US-009",
+      "title": "Seed P-001/P-002 for existing v2 data and update task.json meta with current_phase",
+      "description": "Populate phases in roadmap.json mapping M-001~M-004 to P-001 and M-005~M-008 to P-002. Update task.json meta to include current_phase.",
+      "depends_on": [
+        "T-026"
+      ],
+      "commit_sha": "f7422ae",
+      "log_path": ".zeus/v2/ai-logs/T-028.md",
+      "wave": 9,
+      "original_wave": 9,
+      "scheduled_wave": 9,
+      "rescheduled_from": null,
+      "status": "completed"
+    },
+    {
+      "id": "T-029",
+      "passes": true,
+      "story_id": "US-009",
+      "title": "Add tests for /phases and phase status rules; update documentation",
+      "description": "Write unit/integration tests for GET /phases and phase status/progress calculation. Update zeus-execute-v2.md with phase layer guidelines.",
+      "depends_on": [
+        "T-027",
+        "T-028"
+      ],
+      "commit_sha": "f7422ae",
+      "log_path": ".zeus/v2/ai-logs/T-029.md",
+      "wave": 9,
+      "original_wave": 9,
+      "scheduled_wave": 9,
+      "rescheduled_from": null,
+      "status": "completed"
+    },
+    {
+      "id": "T-030",
+      "passes": true,
+      "story_id": "US-010",
+      "title": "Implement GlobalScheduler with quarantine and wave-as-view semantics",
+      "description": "Refactor zeus_orchestrator.py to introduce GlobalScheduler. Maintain wave in task.json as planning/observation fields. Dispatch tasks by global dependency readiness. Failed tasks move to quarantine (task.json quarantine array or status field) and do not block unrelated downstream tasks.",
+      "depends_on": [],
+      "commit_sha": "09ebbb2",
+      "log_path": ".zeus/v2/ai-logs/T-030.md",
+      "wave": 10,
+      "original_wave": 10,
+      "scheduled_wave": 10,
+      "rescheduled_from": null,
+      "status": "completed"
+    },
+    {
+      "id": "T-031",
+      "passes": true,
+      "story_id": "US-010",
+      "title": "Implement Agent Mailbox protocol in agent_bus.py",
+      "description": "Extend agent_bus.py with send(to_agent_id, message) and receive(agent_id) APIs. Messages persisted as JSONL in .zeus/v2/agent-logs/mailbox/{to_agent_id}.jsonl. Support polling by agents in their workspace via a lightweight API or file watcher.",
+      "depends_on": [],
+      "commit_sha": "1b02a1d6d6e59104d7416e891b103d0f92deb1a6",
+      "log_path": ".zeus/v2/ai-logs/T-031.md",
+      "wave": 10,
+      "original_wave": 10,
+      "scheduled_wave": 10,
+      "rescheduled_from": null,
+      "status": "completed"
+    },
+    {
+      "id": "T-032",
+      "passes": true,
+      "story_id": "US-010",
+      "title": "Agent-level isolated ai-logs directory structure",
+      "description": "Change log layout from wave-centric to agent-centric: .zeus/v2/agent-logs/{agent_id}/activity.md and reasoning.jsonl. Update zeus_orchestrator.py dispatch logic and agent_bus event writers to write to agent-specific paths. Ensure backward compatibility for existing wave-logs.",
+      "depends_on": [],
+      "commit_sha": "1b02a1d6d6e59104d7416e891b103d0f92deb1a6",
+      "log_path": ".zeus/v2/ai-logs/T-032.md",
+      "wave": 10,
+      "original_wave": 10,
+      "scheduled_wave": 10,
+      "rescheduled_from": null,
+      "status": "completed"
+    },
+    {
+      "id": "T-033",
+      "passes": true,
+      "story_id": "US-010",
+      "title": "Web UI Global Execution, Agent Collaboration, and per-agent log browser",
+      "description": "Add Global Execution view (cross-wave running tasks). Add Agent Message Stream panel (real-time or polling mailbox display). Add per-agent log browser (select agent -> view activity.md / reasoning.jsonl). Update index.html and zeus_server.py with necessary endpoints.",
+      "depends_on": [
+        "T-030",
+        "T-031",
+        "T-032"
+      ],
+      "commit_sha": "484c2a4e07010a705df3dfec16e726a782db8b5f",
+      "log_path": ".zeus/v2/ai-logs/T-033.md",
+      "wave": 11,
+      "original_wave": 11,
+      "scheduled_wave": 11,
+      "rescheduled_from": null,
+      "status": "completed"
+    },
+    {
+      "id": "T-034",
+      "passes": true,
+      "story_id": "US-010",
+      "title": "Integration tests, backward-compatibility validation, and documentation",
+      "description": "Write tests for GlobalScheduler quarantine behavior, mailbox delivery, and agent log isolation. Validate main track unaffected. Update zeus-execute-v2.md with global scheduling and agent collaboration guidelines.",
+      "depends_on": [
+        "T-033"
+      ],
+      "commit_sha": "484c2a4e07010a705df3dfec16e726a782db8b5f",
+      "log_path": ".zeus/v2/ai-logs/T-034.md",
+      "wave": 11,
+      "original_wave": 11,
+      "scheduled_wave": 11,
+      "rescheduled_from": null,
+      "status": "completed"
+    },
+    {
+      "id": "T-035",
+      "passes": true,
+      "story_id": "US-011",
+      "title": "Implement task lifecycle controls (retry, cancel, pause) in API and Web UI",
+      "description": "Add POST endpoints for /tasks/{task_id}/retry, /cancel, /pause. Introduce task status model (pending|running|paused|completed|failed|cancelled). Add action buttons in Global Execution view. Write integration tests.",
+      "depends_on": [],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Implement task lifecycle controls (retry, cancel, pause) in API and Web UI",
+      "title_zh": "在 API 和 Web UI 中实现任务生命周期控制（重试、取消、暂停）",
+      "description_en": "Add POST endpoints for /tasks/{task_id}/retry, /cancel, /pause. Introduce task status model (pending|running|paused|completed|failed|cancelled). Add action buttons in Global Execution view. Write integration tests.",
+      "description_zh": "添加 POST 端点支持任务重试、取消、暂停。引入当前任务状态模型（pending|running|paused|completed|failed|cancelled）。在全局执行页面添加操作按钮。编写集成测试。",
+      "status": "completed",
+      "commit_sha": "4438fcf90d1d283d25ccdea7ff01a1abebd56939",
+      "log_path": ".zeus/v2/ai-logs/T-035.md"
+    },
+    {
+      "id": "T-037",
+      "passes": false,
+      "story_id": "US-011",
+      "title": "Create Dockerfile and one-click start scripts for v2 backend deployment",
+      "description": "Provide a Dockerfile that packages the v2 backend. Add start.sh (Linux/macOS) and start.ps1 (Windows) one-click scripts. Update README with deployment instructions. Verify local Docker build.",
+      "depends_on": [
+        "T-036"
+      ],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Create Dockerfile and one-click start scripts for v2 backend deployment",
+      "title_zh": "为 v2 后端部署创建 Dockerfile 和一键启动脚本",
+      "description_en": "Provide a Dockerfile that packages the v2 backend. Add start.sh (Linux/macOS) and start.ps1 (Windows) one-click scripts. Update README with deployment instructions. Verify local Docker build.",
+      "description_zh": "提供打包 v2 后端的 Dockerfile。添加 start.sh 和 start.ps1 一键启动脚本。更新 README 部署说明。验证本地 Docker 构建。",
+      "status": "pending"
+    },
+    {
+      "id": "T-036-A",
+      "passes": true,
+      "story_id": "US-011",
+      "title": "Implement SQLite persistence core (scheduler_state.py)",
+      "description": "Create SchedulerStateDB class with tables for meta, active_tasks, and mailbox. Provide save/load APIs. Add unit tests in test_scheduler_state.py.",
+      "depends_on": [],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Implement SQLite persistence core (scheduler_state.py)",
+      "title_zh": "实现 SQLite 持久化核心（scheduler_state.py）",
+      "description_en": "Create SchedulerStateDB class with tables for meta, active_tasks, and mailbox. Provide save/load APIs. Add unit tests in test_scheduler_state.py.",
+      "description_zh": "创建 SchedulerStateDB 类，包含 meta、active_tasks、mailbox 三张表。提供 save/load API。添加 test_scheduler_state.py 单元测试。",
+      "status": "completed",
+      "log_path": ".zeus/v2/ai-logs/T-036-A.md"
+    },
+    {
+      "id": "T-036-B",
+      "passes": false,
+      "story_id": "US-011",
+      "title": "Add graceful shutdown and SIGTERM handlers",
+      "description": "Register SIGTERM/SIGINT handlers in zeus_server.py and add stop_global_scheduler() in zeus_orchestrator.py. Persist scheduler state to SQLite on shutdown.",
+      "depends_on": [
+        "T-036-A"
+      ],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Add graceful shutdown and SIGTERM handlers",
+      "title_zh": "添加优雅关闭和 SIGTERM 处理器",
+      "description_en": "Register SIGTERM/SIGINT handlers in zeus_server.py and add stop_global_scheduler() in zeus_orchestrator.py. Persist scheduler state to SQLite on shutdown.",
+      "description_zh": "在 zeus_server.py 中注册 SIGTERM/SIGINT 处理器，在 zeus_orchestrator.py 中添加 stop_global_scheduler()。关闭时将调度器状态持久化到 SQLite。"
+    },
+    {
+      "id": "T-036-C",
+      "passes": false,
+      "story_id": "US-011",
+      "title": "Implement state resume on startup in orchestrator and server",
+      "description": "On server startup, detect scheduler_active from SQLite. Add resume_from_state() in zeus_orchestrator.py to recover or reset active tasks. Ensure /global/status reflects recovered state.",
+      "depends_on": [
+        "T-036-A"
+      ],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Implement state resume on startup in orchestrator and server",
+      "title_zh": "在调度器和服务端实现启动时状态恢复",
+      "description_en": "On server startup, detect scheduler_active from SQLite. Add resume_from_state() in zeus_orchestrator.py to recover or reset active tasks. Ensure /global/status reflects recovered state.",
+      "description_zh": "服务器启动时检测 SQLite 中的 scheduler_active。在 zeus_orchestrator.py 中添加 resume_from_state() 恢复或重置活跃任务。确保 /global/status 正确反映恢复后的状态。"
+    },
+    {
+      "id": "T-036-D",
+      "passes": true,
+      "story_id": "US-011",
+      "title": "Add Web UI recovery banner and refreshed global status after resume",
+      "description": "Update index.html to show a recovery banner when scheduler state was restored from SQLite. Refresh Global Execution view to display recovered running/pending/quarantine.",
+      "depends_on": [],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Add Web UI recovery banner and refreshed global status after resume",
+      "title_zh": "添加 Web UI 恢复提示横幅和刷新后的全局状态展示",
+      "description_en": "Update index.html to show a recovery banner when scheduler state was restored from SQLite. Refresh Global Execution view to display recovered running/pending/quarantine.",
+      "description_zh": "更新 index.html，在从 SQLite 恢复调度器状态时显示恢复提示横幅。刷新 Global Execution 视图以展示恢复后的运行中/待执行/隔离区状态。",
+      "status": "completed",
+      "log_path": ".zeus/v2/ai-logs/T-036-D.md"
+    },
+    {
+      "id": "T-036-E",
+      "passes": false,
+      "story_id": "US-011",
+      "title": "Write integration tests for shutdown-resume cycle and update docs",
+      "description": "Add tests in test_server.py covering shutdown -> restart -> state recovery. Update zeus-execute-v2.md and claude-progress.md.",
+      "depends_on": [
+        "T-036-B",
+        "T-036-C",
+        "T-036-D"
+      ],
+      "wave": 12,
+      "original_wave": 12,
+      "scheduled_wave": 12,
+      "rescheduled_from": null,
+      "title_en": "Write integration tests for shutdown-resume cycle and update docs",
+      "title_zh": "编写关闭-恢复周期的集成测试并更新文档",
+      "description_en": "Add tests in test_server.py covering shutdown -> restart -> state recovery. Update zeus-execute-v2.md and claude-progress.md.",
+      "description_zh": "在 test_server.py 中添加覆盖关闭->重启->状态恢复的测试。更新 zeus-execute-v2.md 和 claude-progress.md。"
+    }
+  ],
+  "quarantine": [
+    {
+      "task_id": "T-036-D",
+      "reason": "dispatcher_failed",
+      "quarantined_at": "2026-04-12T17:13:41Z",
+      "workspace": "D:\\SchoolDoc\\TrueProject\\zeus-open\\.zeus\\v2\\agent-workspaces\\zeus-agent-T-036-D"
+    },
+    {
+      "task_id": "T-036-A",
+      "reason": "dispatcher_failed",
+      "quarantined_at": "2026-04-12T17:15:32Z",
+      "workspace": "D:\\SchoolDoc\\TrueProject\\zeus-open\\.zeus\\v2\\agent-workspaces\\zeus-agent-T-036-A"
+    }
+  ]
+}

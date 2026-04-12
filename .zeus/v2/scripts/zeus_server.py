@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
+from scheduler_state import SchedulerStateDB
 from store import LocalStore
 from workflow_graph import WorkflowGraph
 from zeus_orchestrator import ZeusOrchestrator
@@ -51,6 +52,10 @@ def _task_json_path(version: str) -> str:
 
 def _agent_logs_dir(version: str) -> str:
     return f".zeus/{version}/agent-logs"
+
+
+def _scheduler_db_path(version: str) -> str:
+    return str(store._resolve(f".zeus/{version}/scheduler_state.db"))
 
 
 def _resolve(path: str) -> str:
@@ -461,6 +466,25 @@ def get_global_status(version: str = Query("v2")) -> dict[str, Any]:
             "wave": task.get("wave", 1) if task else 1,
         })
 
+    # Merge any active tasks recovered from SQLite scheduler state
+    db_path = _scheduler_db_path(version)
+    if os.path.exists(db_path):
+        try:
+            db = SchedulerStateDB(db_path)
+            snapshot = db.load()
+            for at in snapshot.get("active_tasks", []):
+                tid = at.get("task_id")
+                if tid and not any(r["task_id"] == tid for r in running):
+                    task = next((t for t in tasks if t["id"] == tid), None)
+                    running.append({
+                        "task_id": tid,
+                        "agent_id": at.get("agent_id", ""),
+                        "started_at": at.get("started_at", ""),
+                        "wave": at.get("wave", 1) if task is None else task.get("wave", 1),
+                    })
+        except Exception:
+            pass  # SQLite may be locked or corrupt; fall back to event-only view
+
     status_map = {t["id"]: t.get("status", "pending") for t in tasks}
     for r in running:
         r["status"] = status_map.get(r["task_id"], "running")
@@ -470,6 +494,30 @@ def get_global_status(version: str = Query("v2")) -> dict[str, Any]:
         "quarantine": quarantine,
         "scheduler_active": version in _active_global_runs,
         "status_map": status_map,
+    }
+
+
+@app.get("/global/recovery")
+def get_global_recovery(version: str = Query("v2")) -> dict[str, Any]:
+    db_path = _scheduler_db_path(version)
+    recovered = False
+    recovered_at = None
+    active_tasks_count = 0
+    if os.path.exists(db_path):
+        try:
+            db = SchedulerStateDB(db_path)
+            snapshot = db.load()
+            active_tasks = snapshot.get("active_tasks", [])
+            active_tasks_count = len(active_tasks)
+            if active_tasks_count > 0:
+                recovered = True
+                recovered_at = db.get_meta("recovered_at")
+        except Exception:
+            pass
+    return {
+        "recovered": recovered,
+        "recovered_at": recovered_at,
+        "active_tasks_count": active_tasks_count,
     }
 
 
