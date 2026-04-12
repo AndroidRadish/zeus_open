@@ -553,7 +553,8 @@
           <h2 class="text-lg font-semibold text-white">{{ lang === 'en' ? 'Global Execution' : '全局执行' }}</h2>
           <button
             @click="runGlobalScheduler"
-            :disabled="globalRunLoading"
+            :disabled="globalRunLoading || Object.keys(globalStatus.pending_by_wave || {}).length === 0"
+            :title="Object.keys(globalStatus.pending_by_wave || {}).length === 0 ? (lang === 'en' ? 'All tasks are completed' : '所有任务已完成') : ''"
             class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-700 disabled:text-slate-400 text-white text-sm font-medium transition-colors flex items-center gap-2"
           >
             <svg v-if="globalRunLoading" class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -563,7 +564,7 @@
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
             </span>
-            {{ lang === 'en' ? 'Run Global' : '一键全局运行' }}
+            {{ globalRunLoading ? (lang === 'en' ? 'Running...' : '运行中...') : (Object.keys(globalStatus.pending_by_wave || {}).length === 0 ? (lang === 'en' ? 'No Tasks' : '无任务可运行') : (lang === 'en' ? 'Run Global' : '一键全局运行')) }}
           </button>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
