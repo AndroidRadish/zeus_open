@@ -157,14 +157,14 @@
     },
     {
       "id": "T-013",
-      "passes": false,
+      "passes": true,
       "story_id": "US-005",
       "title": "Update Web UI dashboard to display rescheduled task badges and corrected wave progress",
       "depends_on": [
         "T-012"
       ],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "9f28d0cd2a2f448ae159b8b307b3f6004e03eaf7",
+      "log_path": ".zeus/v2/ai-logs/T-013.md",
       "wave": 7,
       "original_wave": 7,
       "scheduled_wave": 7,
@@ -172,15 +172,15 @@
     },
     {
       "id": "T-014",
-      "passes": false,
+      "passes": true,
       "story_id": "US-005",
       "title": "Add unit and integration tests for adaptive rescheduling and state consistency",
       "depends_on": [
         "T-012",
         "T-013"
       ],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "3c4ec903b8531b0bc09e36fadeb5141100684d23",
+      "log_path": ".zeus/v2/ai-logs/T-014.md",
       "wave": 7,
       "original_wave": 7,
       "scheduled_wave": 7,
