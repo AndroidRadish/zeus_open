@@ -60,9 +60,29 @@ python .zeus/scripts/zeus_runner.py
 python .zeus/scripts/zeus_runner.py --plan
 ```
 
+#### v2 并行模式与 Web 控制台
+
+如需并行波次执行和可视化控制台，启动 v2 后端并打开零构建 Web UI：
+
+```bash
+# 启动服务（可指定项目目录）
+python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
+
+# 打开控制台
+# http://localhost:8234/web
+```
+
 Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档，直接在 AI 会话中引用即可（例如："请按照 skills/zeus-init.md 初始化本项目"）。
 
 更多映射关系参见 [docs/open-agent-mapping.md](docs/open-agent-mapping.md)。
+
+## v2 新特性
+
+- **零构建 Web 控制台** — Vue 3 + Tailwind CSS，暗色工业风玻璃拟态界面，完整中文适配。
+- **交互式依赖图谱** — 基于 Vis-Network.js，支持拖拽、缩放、悬停提示。
+- **无 Graphviz 的 SVG 回退** — 当系统未安装 `dot` 时，`workflow_graph.py` 以纯 Python 渲染 SVG 依赖图。
+- **多版本切换** — 在 Web UI 中直接切换 `main`、`v2` 及未来版本。
+- **项目选择器** — 无需重启服务，即可在控制台中打开并管理其他本地 Zeus 项目。
 
 ## 工作流
 
@@ -124,6 +144,7 @@ Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档
     collect_metrics.py
   hooks/
     commit-msg
+    commit-msg.ps1
 
 .claude/
   skills/zeus-*/SKILL.md
@@ -133,6 +154,25 @@ assets/
   zeus-workflow.en.svg
   zeus-workflow.zh-CN.svg
 ```
+
+## v2 控制台
+
+Zeus v2 由 `zeus_server.py`（FastAPI）驱动零构建 Web UI：
+
+- **仪表盘** — 实时 wave 进度、待完成/已完成统计、任务校验状态。
+- **Agent 监控** — 展示当前运行中的 agent 及其分配任务。
+- **讨论日志** — 按 wave 查看 markdown 讨论日志，支持轻量渲染。
+- **依赖图谱** — 基于 Vis-Network 的交互式图谱，按状态着色；未安装 Graphviz 时自动回退到纯 Python SVG 渲染。
+- **版本切换** — 自动发现 `.zeus/{version}/task.json` 下的所有版本。
+- **打开项目** — 通过 UI 动态切换其他 Zeus 项目目录，无需重启服务。
+
+启动服务：
+
+```bash
+python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
+```
+
+然后访问 `http://localhost:8234/web`。
 
 ## 老项目接入（Brownfield）
 
@@ -234,6 +274,7 @@ chore(zeus): initialize v2 evolution
 - 若执行阶段卡住，检查 `python .zeus/scripts/zeus_runner.py --status` 是否能正常运行。
 - 若任务更新失败，先校验 `.zeus/*/task.json` 的 JSON 格式。
 - 若 commit hook 异常，重新复制 `.zeus/hooks/commit-msg` 到 `.git/hooks/`。
+- Windows 环境下若 bash hook 执行失败，可改用 `.zeus/hooks/commit-msg.ps1`（详见 `docs/init-harness.md`）。
 
 ## 贡献指南
 

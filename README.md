@@ -59,18 +59,29 @@ python .zeus/scripts/zeus_runner.py
 python .zeus/scripts/zeus_runner.py --plan
 ```
 
-#### v2 Parallel Mode (Optional)
+#### v2 Parallel Mode with Web Dashboard
 
-For parallel wave execution and a visual dashboard, use the v2 backend:
+For parallel wave execution and a visual dashboard, start the v2 backend and open the zero-build Web UI:
 
 ```bash
-python .zeus/v2/scripts/zeus_server.py --port 8234
-# Then open http://localhost:8234/web
+# Start server (optionally point to a project directory)
+python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
+
+# Open dashboard
+# http://localhost:8234/web
 ```
 
 The `skills/` folder contains markdown playbooks for each workflow stage. Reference them directly in your AI session (e.g. "Please follow skills/zeus-init.md to initialize this project").
 
 See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specific agent mappings.
+
+## What's New in v2
+
+- **Zero-build Web Dashboard** — Vue 3 + Tailwind CSS, dark industrial glassmorphism UI, fully in Chinese.
+- **Interactive Workflow Graph** — powered by Vis-Network.js with drag, zoom, and hover tooltips.
+- **Graphviz-free SVG Fallback** — `workflow_graph.py` renders dependency diagrams in pure Python when `dot` is unavailable.
+- **Multi-version Switching** — switch between `main`, `v2`, and future versions directly in the Web UI.
+- **Project Picker** — open and manage other local Zeus projects from the dashboard without restarting the server.
 
 ## Workflow
 
@@ -130,14 +141,37 @@ Chinese workflow diagram:
     zeus_runner.py
     generate_tests.py
     collect_metrics.py
+  hooks/
+    commit-msg
+    commit-msg.ps1
+
+.claude/
+  skills/zeus-*/SKILL.md
+  agents/*.md
+
+assets/
+  zeus-workflow.en.svg
+  zeus-workflow.zh-CN.svg
+```
 
 ## v2 Dashboard
 
-Zeus v2 provides a visual dashboard on top of the same FastAPI backend (`zeus_server.py`):
+Zeus v2 provides a zero-build Web UI served by `zeus_server.py` (FastAPI):
 
-- **PyQt desktop app** — run `python .zeus/v2/scripts/zeus_gui.py --api-base http://localhost:8234` for daily use.
-- **Zero-build Web UI** — visit `http://localhost:8234/web` after starting the backend.
-- Both UIs consume the same backend API on port 8234.
+- **Dashboard** — real-time wave progress, pending/completed stats, and task validation status.
+- **Agent Monitor** — shows currently running agents and their assigned tasks.
+- **Discussion Log** — per-wave markdown discussion logs with lightweight rendering.
+- **Dependency Graph** — interactive Vis-Network graph with color-coded task status; falls back to a pure-Python SVG renderer when Graphviz is not installed.
+- **Version Switcher** — automatically discovers all `.zeus/{version}/task.json` folders.
+- **Open Project** — switch to another Zeus project directory on the fly via the UI.
+
+Start the server:
+
+```bash
+python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
+```
+
+Then visit `http://localhost:8234/web`.
 
 ## Brownfield Adoption
 
@@ -159,17 +193,6 @@ For existing repositories, run this path:
 ```
 
 This keeps Zeus backward-compatible for greenfield projects while adding safe brownfield onboarding.
-  hooks/
-    commit-msg
-
-.claude/
-  skills/zeus-*/SKILL.md
-  agents/*.md
-
-assets/
-  zeus-workflow.en.svg
-  zeus-workflow.zh-CN.svg
-```
 
 ## Agent Model
 
@@ -250,6 +273,7 @@ chore(zeus): initialize v2 evolution
 - If execution stalls, verify `python .zeus/scripts/zeus_runner.py --status` works.
 - If task updates fail, check JSON validity in `.zeus/*/task.json`.
 - If commit hook fails, re-copy `.zeus/hooks/commit-msg` into `.git/hooks/`.
+- On Windows, if the bash hook fails, use `.zeus/hooks/commit-msg.ps1` instead (see `docs/init-harness.md`).
 
 ## Contributing
 
