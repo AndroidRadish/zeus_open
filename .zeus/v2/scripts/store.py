@@ -30,6 +30,26 @@ class AbstractStore(abc.ABC):
         """返回一个上下文管理器，用于对指定路径进行文件级锁定。"""
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def update_json_fields(
+        self,
+        path: str,
+        *,
+        list_key: str,
+        id_field: str,
+        updates: list[dict],
+    ) -> None:
+        """
+        原子更新 JSON 文件中某个列表里的多个对象字段。
+
+        参数：
+            path: JSON 文件路径
+            list_key: 顶层列表字段名（如 "tasks"）
+            id_field: 列表项中用于匹配的唯一标识字段名（如 "id"）
+            updates: 每个元素是一个 dict，必须包含 id_field 以及要更新的字段
+        """
+        raise NotImplementedError
+
 
 class LocalStore(AbstractStore):
     """基于本地文件系统的默认存储实现，支持跨进程/跨线程文件锁与原子写。"""
@@ -50,7 +70,7 @@ class LocalStore(AbstractStore):
 
     def read_json(self, path: str) -> dict:
         target = self._resolve(path)
-        with open(target, "r", encoding="utf-8") as f:
+        with open(target, "r", encoding="utf-8-sig") as f:
             return json.load(f)
 
     def write_json(self, path: str, data: dict) -> None:
@@ -84,6 +104,35 @@ class LocalStore(AbstractStore):
         # filelock.FileLock 本身已实现 __enter__ / __exit__，可直接作为上下文管理器返回
         return FileLock(lock_path, timeout=-1)
 
+    def update_json_fields(
+        self,
+        path: str,
+        *,
+        list_key: str,
+        id_field: str,
+        updates: list[dict],
+    ) -> None:
+        target = self._resolve(path)
+        with self.lock(path):
+            data = self.read_json(path)
+            items = data.get(list_key, [])
+            if not isinstance(items, list):
+                raise ValueError(f"Expected '{list_key}' to be a list in {path}")
+
+            # 构建索引加速查找
+            index_map = {item.get(id_field): idx for idx, item in enumerate(items) if id_field in item}
+
+            for upd in updates:
+                key_val = upd.get(id_field)
+                if key_val is None:
+                    continue
+                idx = index_map.get(key_val)
+                if idx is None:
+                    continue
+                items[idx].update(upd)
+
+            self.write_json(path, data)
+
 
 class TencentCosStore(AbstractStore):
     """腾讯云 COS 存储实现（预留骨架）。"""
@@ -100,6 +149,16 @@ class TencentCosStore(AbstractStore):
     def lock(self, path: str):
         raise NotImplementedError("TencentCosStore.lock is not implemented")
 
+    def update_json_fields(
+        self,
+        path: str,
+        *,
+        list_key: str,
+        id_field: str,
+        updates: list[dict],
+    ) -> None:
+        raise NotImplementedError("TencentCosStore.update_json_fields is not implemented")
+
 
 class RedisStore(AbstractStore):
     """Redis 存储实现（预留骨架）。"""
@@ -115,3 +174,13 @@ class RedisStore(AbstractStore):
 
     def lock(self, path: str):
         raise NotImplementedError("RedisStore.lock is not implemented")
+
+    def update_json_fields(
+        self,
+        path: str,
+        *,
+        list_key: str,
+        id_field: str,
+        updates: list[dict],
+    ) -> None:
+        raise NotImplementedError("RedisStore.update_json_fields is not implemented")

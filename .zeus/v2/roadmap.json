@@ -1,59 +1,74 @@
-﻿{
-    "version":  "v2",
-    "milestones":  [
-                       {
-                           "id":  "M-001",
-                           "task_ids":  [
-                                            "T-001",
-                                            "T-002",
-                                            "T-003"
-                                        ],
-                           "spec_ref":  ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
-                           "story_ids":  [
-                                             "US-001"
-                                         ],
-                           "title":  "v2 Infrastructure",
-                           "status":  "planned"
-                       },
-                       {
-                           "id":  "M-002",
-                           "task_ids":  [
-                                            "T-004",
-                                            "T-005"
-                                        ],
-                           "spec_ref":  ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
-                           "story_ids":  [
-                                             "US-002"
-                                         ],
-                           "title":  "v2 Core Engine",
-                           "status":  "planned"
-                       },
-                       {
-                           "id":  "M-003",
-                           "task_ids":  [
-                                            "T-006",
-                                            "T-007"
-                                        ],
-                           "spec_ref":  ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
-                           "story_ids":  [
-                                             "US-003"
-                                         ],
-                           "title":  "v2 Dual Frontend",
-                           "status":  "planned"
-                       },
-                       {
-                           "id":  "M-004",
-                           "task_ids":  [
-                                            "T-008",
-                                            "T-009",
-                                            "T-010"
-                                        ],
-                           "spec_ref":  ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
-                           "story_ids":  [
-                                             "US-004"
-                                         ],
-                           "title":  "v2 Integration \u0026 Ship",
-                           "status":  "planned"
-                       }
-                   ]
+{
+    "version": "v2",
+    "milestones": [
+        {
+            "id": "M-001",
+            "task_ids": [
+                "T-001",
+                "T-002",
+                "T-003"
+            ],
+            "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
+            "story_ids": [
+                "US-001"
+            ],
+            "title": "v2 Infrastructure",
+            "status": "completed"
+        },
+        {
+            "id": "M-002",
+            "task_ids": [
+                "T-004",
+                "T-005"
+            ],
+            "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
+            "story_ids": [
+                "US-002"
+            ],
+            "title": "v2 Core Engine",
+            "status": "completed"
+        },
+        {
+            "id": "M-003",
+            "task_ids": [
+                "T-006",
+                "T-007"
+            ],
+            "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
+            "story_ids": [
+                "US-003"
+            ],
+            "title": "v2 Dual Frontend",
+            "status": "completed"
+        },
+        {
+            "id": "M-004",
+            "task_ids": [
+                "T-008",
+                "T-009",
+                "T-010"
+            ],
+            "spec_ref": ".zeus/v2/specs/2026-04-10-multi-agent-v2-design.md",
+            "story_ids": [
+                "US-004"
+            ],
+            "title": "v2 Integration & Ship",
+            "status": "completed"
+        },
+        {
+            "id": "M-005",
+            "task_ids": [
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014"
+            ],
+            "spec_ref": ".zeus/v2/specs/2026-04-12-adaptive-wave-rescheduling.md",
+            "story_ids": [
+                "US-005"
+            ],
+            "title": "v2 Orchestrator Enhancements — Adaptive Wave Rescheduling",
+            "status": "planned"
+        }
+    ]
 }

@@ -52,7 +52,22 @@
           },
           "wave": {
             "type": ["integer", "null"],
-            "description": "执行波次编号，由 zeus-execute 自动计算",
+            "description": "执行波次编号（运行时等于 scheduled_wave），由 zeus-execute 自动计算",
+            "default": null
+          },
+          "original_wave": {
+            "type": ["integer", "null"],
+            "description": "任务在 plan 阶段被分配的原始波次，不可变",
+            "default": null
+          },
+          "scheduled_wave": {
+            "type": ["integer", "null"],
+            "description": "运行时动态调度的波次，由 orchestrator 根据并发槽位情况调整",
+            "default": null
+          },
+          "rescheduled_from": {
+            "type": ["integer", "null"],
+            "description": "若任务被提前调度，记录之前的 scheduled_wave，用于审计",
             "default": null
           },
           "created_at":  { "type": "string", "format": "date-time" },

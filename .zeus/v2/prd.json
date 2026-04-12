@@ -2,7 +2,7 @@
     "version": "v2",
     "stories": [
         {
-            "passes": false,
+            "passes": true,
             "title": "Build v2 infrastructure: storage abstraction, agent bus, and workflow graph generator",
             "acceptance_criteria": [
                 "store.py provides AbstractStore with LocalStore implementation and file-lock support",
@@ -12,7 +12,7 @@
             "id": "US-001"
         },
         {
-            "passes": false,
+            "passes": true,
             "title": "Build v2 core engine: async orchestrator and FastAPI backend",
             "acceptance_criteria": [
                 "zeus_orchestrator.py dispatches 3+ tasks concurrently within a wave without corrupting task.json",
@@ -22,7 +22,7 @@
             "id": "US-002"
         },
         {
-            "passes": false,
+            "passes": true,
             "title": "Deliver zero-build Web UI dashboard",
             "acceptance_criteria": [
                 "Web frontend (index.html) renders dashboard and graph without npm/build tools",
@@ -39,6 +39,18 @@
                 "v2 documentation (zeus-execute-v2.md) and README updates are complete"
             ],
             "id": "US-004"
+        },
+        {
+            "passes": false,
+            "title": "Adaptive Wave Rescheduling — maximize concurrency slot utilization",
+            "acceptance_criteria": [
+                "task.json schema supports original_wave, scheduled_wave, and rescheduled_from",
+                "zeus_orchestrator.py uses a priority queue and fills empty slots from future waves when current wave tasks block",
+                "Agent Bus emits task.rescheduled events for every dynamic move",
+                "Web UI correctly displays rescheduled tasks and updated wave progress",
+                "Tests confirm backward compatibility and state consistency under concurrent updates"
+            ],
+            "id": "US-005"
         }
     ]
 }
