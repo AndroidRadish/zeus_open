@@ -1,6 +1,6 @@
 {
   "meta": {
-    "current_wave": 5,
+    "current_wave": 11,
     "wave_approval_required": true,
     "max_parallel_agents": 3,
     "scheduling_mode": "adaptive",

@@ -360,6 +360,7 @@ def test_api_global_status_mailbox_and_agent_logs(tmp_path: Path) -> None:
         assert gs["pending_by_wave"]["1"][0]["id"] == "T-001"
         assert gs["pending_by_wave"]["2"][0]["id"] == "T-002"
         assert gs["quarantine"][0]["task_id"] == "T-003"
+        assert "scheduler_active" in gs
 
         # GET /mailbox
         r = requests.get(f"{base_url}/mailbox/zeus-agent-T-001")

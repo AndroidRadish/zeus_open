@@ -438,6 +438,7 @@ def get_global_status(version: str = Query("v2")) -> dict[str, Any]:
         "running": running,
         "pending_by_wave": pending_by_wave,
         "quarantine": quarantine,
+        "scheduler_active": version in _active_global_runs,
     }
 
 
