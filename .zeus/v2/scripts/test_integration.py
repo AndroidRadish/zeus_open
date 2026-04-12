@@ -72,6 +72,7 @@ def _write_minimal_project(root: Path) -> None:
     config_data = {
         "project": {"name": "Integration Test Project"},
         "metrics": {"north_star": "integration-coverage"},
+        "subagent": {"dispatcher": "mock"},
     }
     (zeus_dir / "config.json").write_text(json.dumps(config_data), encoding="utf-8")
 
@@ -201,6 +202,8 @@ def test_api_smoke_full_lifecycle(tmp_path: Path) -> None:
         assert status["pending_tasks"] == 3
         assert status["completed_tasks"] == 0
         assert status["validation"] == "pass"
+        assert "project_dir" in status
+        assert str(tmp_path) in status["project_dir"]
 
         # GET /wave/1
         r = requests.get(f"{base_url}/wave/1")
@@ -249,13 +252,10 @@ def test_api_smoke_full_lifecycle(tmp_path: Path) -> None:
         assert r.status_code == 200
         assert "flowchart TD" in r.text
 
-        # GET /graph/svg — tolerate 503 when Graphviz is missing
+        # GET /graph/svg — falls back to native Python renderer when Graphviz is missing
         r = requests.get(f"{base_url}/graph/svg")
-        if shutil.which("dot"):
-            assert r.status_code == 200
-            assert "svg" in r.text.lower()
-        else:
-            assert r.status_code == 503
+        assert r.status_code == 200
+        assert "svg" in r.text.lower()
 
         # POST /wave/1/approve (need all wave-1 tasks passed)
         task_path = tmp_path / ".zeus" / "v2" / "task.json"

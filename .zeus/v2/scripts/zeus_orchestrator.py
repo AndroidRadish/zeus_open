@@ -18,6 +18,7 @@ from typing import Any
 
 from agent_bus import AgentBus
 from store import LocalStore
+from subagent_dispatcher import build_dispatcher
 
 
 def _fix_windows_stdio():
@@ -245,6 +246,11 @@ class ZeusOrchestrator:
         except Exception as exc:
             return task["id"], exc
 
+    def _build_dispatcher(self, store: LocalStore):
+        """Factory for the subagent dispatcher based on project config."""
+        config = self._load_config_json(store)
+        return build_dispatcher(config)
+
     async def dispatch_task(self, task: dict, bus: AgentBus, store: LocalStore) -> dict:
         task_id = task["id"]
         agent_id = f"zeus-agent"
@@ -254,10 +260,6 @@ class ZeusOrchestrator:
         workspace_rel = f".zeus/{self.version}/agent-workspaces/{agent_id}-{task_id}"
         workspace_path = store._resolve(workspace_rel)
         prompt_path = workspace_path / "PROMPT.md"
-
-        # Emit start event and discussion log
-        bus.emit("task.started", task_id, agent_id, {"message": f"Dispatching {task_id}"})
-        bus.post(task_id, agent_id, f"开始执行任务 **{task_id}**。正在准备隔离工作区并生成 PROMPT.md。")
 
         # Ensure clean workspace
         if workspace_path.exists():
@@ -281,16 +283,9 @@ class ZeusOrchestrator:
         prompt = self._build_prompt(task, store)
         await asyncio.to_thread(prompt_path.write_text, prompt, "utf-8")
 
-        # Emit completion event and discussion log
-        bus.emit("task.completed", task_id, agent_id, {"workspace": str(workspace_path)})
-        bus.post(task_id, agent_id, f"任务 **{task_id}** 工作区准备完成，Prompt 已写入 `{prompt_path.name}`。")
-
-        return {
-            "task_id": task_id,
-            "status": "dispatched",
-            "workspace": str(workspace_path),
-            "prompt_path": str(prompt_path),
-        }
+        # Delegate to the platform-specific subagent dispatcher
+        dispatcher = self._build_dispatcher(store)
+        return await dispatcher.run(task, workspace_path, prompt, bus)
 
     async def _dispatch_with_semaphore(self, task: dict, bus: AgentBus, store: LocalStore) -> dict:
         async with self._semaphore:
@@ -334,6 +329,9 @@ class ZeusOrchestrator:
                     failed_count += 1
                     bus.emit("task.failed", tid, "zeus-agent", {"error": str(outcome)})
                     bus.post(tid, "zeus-agent", f"任务 **{tid}** 执行失败：{outcome}")
+                elif isinstance(outcome, dict) and outcome.get("status") == "failed":
+                    failed_count += 1
+                    # Dispatcher already emitted task.failed inside its run() method
 
         bus.emit("wave.completed", "wave", "zeus-orchestrator", {"wave": wave_number})
 

@@ -58,6 +58,7 @@ def temp_project():
         config_data = {
             "project": {"name": "Test Project"},
             "metrics": {"north_star": "test-coverage"},
+            "subagent": {"dispatcher": "mock"},
         }
         (zeus_dir / "config.json").write_text(json.dumps(config_data), encoding="utf-8")
 
@@ -114,10 +115,10 @@ async def test_dispatch_task_creates_workspace_and_prompt(orchestrator, temp_pro
     result = await orchestrator.dispatch_task(task, bus, store)
 
     assert result["task_id"] == "T-002"
-    assert result["status"] == "dispatched"
+    assert result["status"] == "completed"  # Mock dispatcher falls back when no CLI installed
 
     workspace = Path(result["workspace"])
-    prompt_path = Path(result["prompt_path"])
+    prompt_path = workspace / "PROMPT.md"
 
     assert workspace.exists()
     assert workspace.name == "zeus-agent-T-002"
@@ -131,7 +132,7 @@ async def test_dispatch_task_creates_workspace_and_prompt(orchestrator, temp_pro
     # Verify source was copied
     assert (workspace / "src" / "main.py").exists()
 
-    # Verify events were emitted
+    # Verify events were emitted by the mock dispatcher
     events = bus.get_events()
     assert len(events) == 2
     assert events[0]["type"] == "task.started"
@@ -244,6 +245,7 @@ def adaptive_project():
         config_data = {
             "project": {"name": "Adaptive Test Project"},
             "metrics": {"north_star": "efficiency"},
+            "subagent": {"dispatcher": "mock"},
         }
         (zeus_dir / "config.json").write_text(json.dumps(config_data), encoding="utf-8")
 
