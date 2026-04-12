@@ -32,6 +32,24 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _update_task_status(task_json_path: str, store: LocalStore, task_id: str, status: str) -> bool:
+    """Atomically update a task's status field."""
+    with store.lock(task_json_path):
+        data = store.read_json(task_json_path)
+        tasks = data.get("tasks", [])
+        for t in tasks:
+            if t.get("id") == task_id:
+                t["status"] = status
+                if status == "completed":
+                    t["passes"] = True
+                elif status in ("pending", "running", "paused", "failed", "cancelled"):
+                    if status != "running":
+                        t["passes"] = False
+                store.write_json(task_json_path, data)
+                return True
+        return False
+
+
 class ZeusOrchestrator:
     def __init__(self, version: str = "v2", project_root: str | None = None, max_parallel: int = 3):
         self.version = version
@@ -200,6 +218,8 @@ class ZeusOrchestrator:
                 continue
             if pass_map.get(tid, False):
                 continue
+            if t.get("status") in ("paused", "cancelled", "completed"):
+                continue
 
             eff_wave = self._task_effective_wave(t) or 0
             orig_wave = self._task_original_wave(t) or 0
@@ -267,11 +287,20 @@ class ZeusOrchestrator:
 
     async def _run_and_capture(self, task: dict, bus: AgentBus, store: LocalStore) -> tuple[str, Any]:
         """Wrapper that preserves task_id for result/error correlation."""
+        tid = task["id"]
+        _update_task_status(self._task_json_path, store, tid, "running")
         try:
             result = await self._dispatch_with_semaphore(task, bus, store)
-            return task["id"], result
+            if isinstance(result, Exception):
+                _update_task_status(self._task_json_path, store, tid, "failed")
+            elif isinstance(result, dict) and result.get("status") == "failed":
+                _update_task_status(self._task_json_path, store, tid, "failed")
+            else:
+                _update_task_status(self._task_json_path, store, tid, "completed")
+            return tid, result
         except Exception as exc:
-            return task["id"], exc
+            _update_task_status(self._task_json_path, store, tid, "failed")
+            return tid, exc
 
     def _quarantine_task(
         self,
@@ -324,6 +353,8 @@ class ZeusOrchestrator:
             if tid in dispatched_ids:
                 continue
             if pass_map.get(tid, False):
+                continue
+            if t.get("status") in ("paused", "cancelled", "completed"):
                 continue
             if tid in quarantined_ids:
                 continue
@@ -382,31 +413,25 @@ class ZeusOrchestrator:
             done, running_tasks = await asyncio.wait(
                 running_tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            # Re-read tasks from disk since _run_and_capture may have updated status
+            fresh_data = self._load_task_json(store)
+            fresh_tasks = fresh_data.get("tasks", [])
             for task in done:
                 tid, outcome = await task
                 workspace_path = str(
                     store._resolve(f".zeus/{self.version}/agent-workspaces/zeus-agent-{tid}")
                 )
-                if isinstance(outcome, Exception):
+                task_obj = next((t for t in fresh_tasks if t["id"] == tid), None)
+                if task_obj and task_obj.get("status") == "failed":
                     failed_count += 1
+                    reason = str(outcome) if isinstance(outcome, Exception) else outcome.get("error", "dispatcher_failed")
                     self._quarantine_task(
                         {"id": tid},
-                        reason=f"exception: {outcome}",
+                        reason=reason,
                         store=store,
                         bus=bus,
                         workspace=workspace_path,
                     )
-                elif isinstance(outcome, dict) and outcome.get("status") == "failed":
-                    failed_count += 1
-                    self._quarantine_task(
-                        {"id": tid},
-                        reason=outcome.get("error", "dispatcher_failed"),
-                        store=store,
-                        bus=bus,
-                        workspace=workspace_path,
-                    )
-                # Dispatcher mock/claude/kimi already emits task.completed / task.failed;
-                # we additionally emit task.quarantined for global tracking.
 
         bus.emit("global.completed", "global", "zeus-orchestrator", {})
 
@@ -415,6 +440,67 @@ class ZeusOrchestrator:
             "dispatched": dispatched_count,
             "failed": failed_count,
         }
+
+    # -----------------------------------------------------------------------
+    # Lifecycle controls
+    # -----------------------------------------------------------------------
+    def retry_task(self, task_id: str) -> dict:
+        """Retry a failed or cancelled task: clear quarantine, reset to pending."""
+        store = self._store()
+        with store.lock(self._task_json_path):
+            data = store.read_json(self._task_json_path)
+            tasks = data.get("tasks", [])
+            for t in tasks:
+                if t.get("id") == task_id:
+                    if t.get("status") not in ("failed", "cancelled"):
+                        return {"success": False, "error": f"Task {task_id} cannot be retried from status {t.get('status')}"}
+                    t["status"] = "pending"
+                    t["passes"] = False
+                    t.pop("commit_sha", None)
+                    break
+            else:
+                return {"success": False, "error": f"Task {task_id} not found"}
+            quarantine = data.get("quarantine", [])
+            quarantine = [q for q in quarantine if q.get("task_id") != task_id]
+            data["quarantine"] = quarantine
+            store.write_json(self._task_json_path, data)
+        return {"success": True, "task_id": task_id, "status": "pending"}
+
+    def cancel_task(self, task_id: str) -> dict:
+        """Cancel a pending or running task."""
+        store = self._store()
+        task = None
+        with store.lock(self._task_json_path):
+            data = store.read_json(self._task_json_path)
+            tasks = data.get("tasks", [])
+            for t in tasks:
+                if t.get("id") == task_id:
+                    task = t
+                    break
+        if task is None:
+            return {"success": False, "error": f"Task {task_id} not found"}
+        if task.get("status") not in ("pending", "running", "paused"):
+            return {"success": False, "error": f"Task {task_id} cannot be cancelled from status {task.get('status')}"}
+        _update_task_status(self._task_json_path, store, task_id, "cancelled")
+        return {"success": True, "task_id": task_id, "status": "cancelled"}
+
+    def pause_task(self, task_id: str) -> dict:
+        """Pause a running task (mark as paused so scheduler skips it)."""
+        store = self._store()
+        task = None
+        with store.lock(self._task_json_path):
+            data = store.read_json(self._task_json_path)
+            tasks = data.get("tasks", [])
+            for t in tasks:
+                if t.get("id") == task_id:
+                    task = t
+                    break
+        if task is None:
+            return {"success": False, "error": f"Task {task_id} not found"}
+        if task.get("status") != "running":
+            return {"success": False, "error": f"Task {task_id} cannot be paused from status {task.get('status')}"}
+        _update_task_status(self._task_json_path, store, task_id, "paused")
+        return {"success": True, "task_id": task_id, "status": "paused"}
 
     def _build_dispatcher(self, store: LocalStore):
         """Factory for the subagent dispatcher based on project config."""
@@ -479,7 +565,7 @@ class ZeusOrchestrator:
         def _do_copy():
             workspace_path.mkdir(parents=True, exist_ok=True)
             # Copy contents of project_root into workspace_path, excluding specified patterns
-            ignore = shutil.ignore_patterns(".git", "agent-workspaces", "__pycache__", "*.pyc")
+            ignore = shutil.ignore_patterns(".git", "agent-workspaces", "__pycache__", "*.pyc", "*.tmp", "*.lock")
             shutil.copytree(
                 self.project_root,
                 workspace_path,
@@ -536,15 +622,15 @@ class ZeusOrchestrator:
             done, running_tasks = await asyncio.wait(
                 running_tasks, return_when=asyncio.FIRST_COMPLETED
             )
+            # Re-read tasks from disk since _run_and_capture may have updated status
+            fresh_data = self._load_task_json(store)
+            fresh_tasks = fresh_data.get("tasks", [])
             for task in done:
                 tid, outcome = await task
-                if isinstance(outcome, Exception):
+                task_obj = next((t for t in fresh_tasks if t["id"] == tid), None)
+                if task_obj and task_obj.get("status") == "failed":
                     failed_count += 1
-                    bus.emit("task.failed", tid, "zeus-agent", {"error": str(outcome)})
-                    bus.post(tid, "zeus-agent", f"任务 **{tid}** 执行失败：{outcome}")
-                elif isinstance(outcome, dict) and outcome.get("status") == "failed":
-                    failed_count += 1
-                    # Dispatcher already emitted task.failed inside its run() method
+                    bus.post(tid, f"zeus-agent-{tid}", f"任务 **{tid}** 执行失败：{outcome}")
 
         bus.emit("wave.completed", "wave", "zeus-orchestrator", {"wave": wave_number})
 

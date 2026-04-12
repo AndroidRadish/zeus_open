@@ -396,6 +396,33 @@ def get_mailbox(agent_id: str, version: str = Query("v2"), mark_read: bool = Que
     return {"agent_id": agent_id, "messages": messages}
 
 
+@app.post("/tasks/{task_id}/retry")
+def retry_task(task_id: str, version: str = Query("v2")) -> dict:
+    orch = ZeusOrchestrator(version=version, project_root=str(store.base_dir), max_parallel=3)
+    result = orch.retry_task(task_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Retry failed"))
+    return result
+
+
+@app.post("/tasks/{task_id}/cancel")
+def cancel_task(task_id: str, version: str = Query("v2")) -> dict:
+    orch = ZeusOrchestrator(version=version, project_root=str(store.base_dir), max_parallel=3)
+    result = orch.cancel_task(task_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Cancel failed"))
+    return result
+
+
+@app.post("/tasks/{task_id}/pause")
+def pause_task(task_id: str, version: str = Query("v2")) -> dict:
+    orch = ZeusOrchestrator(version=version, project_root=str(store.base_dir), max_parallel=3)
+    result = orch.pause_task(task_id)
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("error", "Pause failed"))
+    return result
+
+
 @app.get("/global/status")
 def get_global_status(version: str = Query("v2")) -> dict[str, Any]:
     data = _read_task_json(version)
@@ -434,11 +461,15 @@ def get_global_status(version: str = Query("v2")) -> dict[str, Any]:
             "wave": task.get("wave", 1) if task else 1,
         })
 
+    status_map = {t["id"]: t.get("status", "pending") for t in tasks}
+    for r in running:
+        r["status"] = status_map.get(r["task_id"], "running")
     return {
         "running": running,
         "pending_by_wave": pending_by_wave,
         "quarantine": quarantine,
         "scheduler_active": version in _active_global_runs,
+        "status_map": status_map,
     }
 
 

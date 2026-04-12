@@ -75,7 +75,13 @@
             "default": null
           },
           "created_at":  { "type": "string", "format": "date-time" },
-          "completed_at": { "type": ["string", "null"], "format": "date-time", "default": null }
+          "completed_at": { "type": ["string", "null"], "format": "date-time", "default": null },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "running", "paused", "completed", "failed", "cancelled"],
+            "default": "pending",
+            "description": "任务生命周期状态"
+          }
         }
       }
     }

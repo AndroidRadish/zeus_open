@@ -17,9 +17,9 @@ def client(tmp_path):
             "max_parallel_agents": 2,
         },
         "tasks": [
-            {"id": "T-001", "title": "Task 1", "passes": True, "depends_on": [], "wave": 1},
-            {"id": "T-002", "title": "Task 2", "passes": False, "depends_on": [], "wave": 1},
-            {"id": "T-003", "title": "Task 3", "passes": True, "depends_on": [], "wave": 2},
+            {"id": "T-001", "title": "Task 1", "passes": True, "status": "completed", "depends_on": [], "wave": 1},
+            {"id": "T-002", "title": "Task 2", "passes": False, "status": "pending", "depends_on": [], "wave": 1},
+            {"id": "T-003", "title": "Task 3", "passes": True, "status": "completed", "depends_on": [], "wave": 2},
         ],
     }
     task_dir = tmp_path / ".zeus" / "v2"
@@ -373,6 +373,118 @@ def test_mailbox_endpoint_empty(client):
     data = response.json()
     assert data["agent_id"] == "no-one"
     assert data["messages"] == []
+
+
+def test_global_status_includes_status_map(client):
+    response = client.get("/global/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert "status_map" in data
+    assert data["status_map"].get("T-001") == "completed"
+    assert data["status_map"].get("T-002") == "pending"
+
+
+def test_cancel_task_endpoint(client, tmp_path):
+    task_path = tmp_path / ".zeus" / "v2" / "task.json"
+    task_data = json.loads(task_path.read_text(encoding="utf-8"))
+    for t in task_data["tasks"]:
+        if t["id"] == "T-002":
+            t["status"] = "pending"
+            t["passes"] = False
+    task_path.write_text(json.dumps(task_data), encoding="utf-8")
+
+    response = client.post("/tasks/T-002/cancel")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["status"] == "cancelled"
+
+    updated = json.loads(task_path.read_text(encoding="utf-8"))
+    t2 = next(t for t in updated["tasks"] if t["id"] == "T-002")
+    assert t2["status"] == "cancelled"
+    assert t2["passes"] is False
+
+
+def test_pause_task_endpoint(client, tmp_path):
+    task_path = tmp_path / ".zeus" / "v2" / "task.json"
+    task_data = json.loads(task_path.read_text(encoding="utf-8"))
+    for t in task_data["tasks"]:
+        if t["id"] == "T-002":
+            t["status"] = "running"
+            t["passes"] = False
+    task_path.write_text(json.dumps(task_data), encoding="utf-8")
+
+    response = client.post("/tasks/T-002/pause")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["status"] == "paused"
+
+    updated = json.loads(task_path.read_text(encoding="utf-8"))
+    t2 = next(t for t in updated["tasks"] if t["id"] == "T-002")
+    assert t2["status"] == "paused"
+
+
+def test_retry_task_endpoint(client, tmp_path):
+    task_path = tmp_path / ".zeus" / "v2" / "task.json"
+    task_data = json.loads(task_path.read_text(encoding="utf-8"))
+    for t in task_data["tasks"]:
+        if t["id"] == "T-002":
+            t["status"] = "failed"
+            t["passes"] = False
+            t["commit_sha"] = "abc1234"
+    task_data.setdefault("quarantine", []).append({"task_id": "T-002", "reason": "test"})
+    task_path.write_text(json.dumps(task_data), encoding="utf-8")
+
+    response = client.post("/tasks/T-002/retry")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    assert data["status"] == "pending"
+
+    updated = json.loads(task_path.read_text(encoding="utf-8"))
+    t2 = next(t for t in updated["tasks"] if t["id"] == "T-002")
+    assert t2["status"] == "pending"
+    assert t2["passes"] is False
+    assert "commit_sha" not in t2
+    assert all(q["task_id"] != "T-002" for q in updated.get("quarantine", []))
+
+
+def test_cancel_invalid_status_returns_400(client, tmp_path):
+    task_path = tmp_path / ".zeus" / "v2" / "task.json"
+    task_data = json.loads(task_path.read_text(encoding="utf-8"))
+    for t in task_data["tasks"]:
+        if t["id"] == "T-002":
+            t["status"] = "completed"
+            t["passes"] = True
+    task_path.write_text(json.dumps(task_data), encoding="utf-8")
+
+    response = client.post("/tasks/T-002/cancel")
+    assert response.status_code == 400
+
+
+def test_pause_invalid_status_returns_400(client, tmp_path):
+    task_path = tmp_path / ".zeus" / "v2" / "task.json"
+    task_data = json.loads(task_path.read_text(encoding="utf-8"))
+    for t in task_data["tasks"]:
+        if t["id"] == "T-002":
+            t["status"] = "pending"
+    task_path.write_text(json.dumps(task_data), encoding="utf-8")
+
+    response = client.post("/tasks/T-002/pause")
+    assert response.status_code == 400
+
+
+def test_retry_invalid_status_returns_400(client, tmp_path):
+    task_path = tmp_path / ".zeus" / "v2" / "task.json"
+    task_data = json.loads(task_path.read_text(encoding="utf-8"))
+    for t in task_data["tasks"]:
+        if t["id"] == "T-002":
+            t["status"] = "running"
+    task_path.write_text(json.dumps(task_data), encoding="utf-8")
+
+    response = client.post("/tasks/T-002/retry")
+    assert response.status_code == 400
 
 
 def test_agent_ids_endpoint(client, tmp_path):

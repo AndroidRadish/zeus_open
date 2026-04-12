@@ -49,13 +49,13 @@
 - **T-033** Web UI 新增 Global Execution / Agent Collaboration / Agent Logs 三视图
 - **T-034** 集成测试、向后兼容验证、文档更新
 
-## Wave 12 待执行队列 (US-011: Production Hardening)
+## Wave 12 执行进度 (US-011: Production Hardening)
 
-| Task | 标题 | 依赖 |
+| Task | 标题 | 状态 |
 |------|------|------|
-| **T-035** | 任务生命周期控制（retry / cancel / pause）API + Web UI | — |
-| **T-036** | 优雅关闭 + SQLite 调度器状态持久化 | T-035 |
-| **T-037** | Dockerfile + 一键启动脚本 (start.sh / start.ps1) | T-036 |
+| **T-035** | 任务生命周期控制（retry / cancel / pause）API + Web UI | ✅ 已完成 |
+| **T-036** | 优雅关闭 + SQLite 调度器状态持久化 | ⏳ 待执行 |
+| **T-037** | Dockerfile + 一键启动脚本 (start.sh / start.ps1) | ⏳ 待执行 |
 
 ## 会后增强 (Post-T-034)
 - **i18n 补全**: 里程碑、阶段、新标签页全部支持中英切换
