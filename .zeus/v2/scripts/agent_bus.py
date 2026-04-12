@@ -35,6 +35,7 @@ class AgentBus:
             "task.completed",
             "task.failed",
             "task.rescheduled",
+            "task.bootstrapped",
             "agent.message",
             "wave.completed",
         }

@@ -132,11 +132,90 @@ async def test_dispatch_task_creates_workspace_and_prompt(orchestrator, temp_pro
     # Verify source was copied
     assert (workspace / "src" / "main.py").exists()
 
-    # Verify events were emitted by the mock dispatcher
+    # Verify events were emitted (bootstrap + started + completed)
     events = bus.get_events()
-    assert len(events) == 2
-    assert events[0]["type"] == "task.started"
-    assert events[1]["type"] == "task.completed"
+    assert len(events) == 3
+    assert events[0]["type"] == "task.bootstrapped"
+    assert events[1]["type"] == "task.started"
+    assert events[2]["type"] == "task.completed"
+
+
+@pytest.mark.asyncio
+async def test_dispatch_task_bootstraps_identity_files(orchestrator, temp_project):
+    """Existing identity files should be copied into the workspace; missing ones skipped."""
+    store = LocalStore(base_dir=str(temp_project))
+    bus = AgentBus(version="v2", wave=1, store=store)
+
+    # Seed AGENTS.md and USER.md in project root
+    (temp_project / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
+    (temp_project / "USER.md").write_text("# USER\n", encoding="utf-8")
+    # IDENTITY.md and SOUL.md are intentionally missing
+
+    task = {
+        "id": "T-002",
+        "passes": False,
+        "story_id": "US-001",
+        "title": "Bootstrap test task",
+        "depends_on": [],
+        "wave": 1,
+        "type": "feat",
+    }
+
+    result = await orchestrator.dispatch_task(task, bus, store)
+    workspace = Path(result["workspace"])
+
+    assert (workspace / "AGENTS.md").exists()
+    assert (workspace / "USER.md").exists()
+    assert not (workspace / "IDENTITY.md").exists()
+    assert not (workspace / "SOUL.md").exists()
+
+    # Verify task.bootstrapped event
+    events = bus.get_events()
+    bootstrap_events = [e for e in events if e["type"] == "task.bootstrapped"]
+    assert len(bootstrap_events) == 1
+    assert "AGENTS.md" in bootstrap_events[0]["payload"]["injected"]
+    assert "USER.md" in bootstrap_events[0]["payload"]["injected"]
+    assert "IDENTITY.md" in bootstrap_events[0]["payload"]["skipped"]
+    assert "SOUL.md" in bootstrap_events[0]["payload"]["skipped"]
+
+
+@pytest.mark.asyncio
+async def test_dispatch_task_bootstrap_respects_config_override(temp_project):
+    """config.subagent.bootstrap.files should override the default list entirely."""
+    store = LocalStore(base_dir=str(temp_project))
+    bus = AgentBus(version="v2", wave=1, store=store)
+
+    # Update config with custom bootstrap file list
+    config = store.read_json(".zeus/v2/config.json")
+    config["subagent"]["bootstrap"] = {"files": ["CUSTOM.md"]}
+    store.write_json(".zeus/v2/config.json", config)
+
+    (temp_project / "AGENTS.md").write_text("# AGENTS\n", encoding="utf-8")
+    (temp_project / "CUSTOM.md").write_text("# CUSTOM\n", encoding="utf-8")
+
+    orch = ZeusOrchestrator(version="v2", project_root=str(temp_project), max_parallel=2)
+
+    task = {
+        "id": "T-002",
+        "passes": False,
+        "story_id": "US-001",
+        "title": "Config override test",
+        "depends_on": [],
+        "wave": 1,
+        "type": "feat",
+    }
+
+    result = await orch.dispatch_task(task, bus, store)
+    workspace = Path(result["workspace"])
+
+    # Because the whole project tree is copied, AGENTS.md may already be present;
+    # the important thing is that bootstrap only reports CUSTOM.md as injected.
+    assert (workspace / "CUSTOM.md").exists()
+
+    events = bus.get_events()
+    bootstrap_events = [e for e in events if e["type"] == "task.bootstrapped"]
+    assert bootstrap_events[0]["payload"]["injected"] == ["CUSTOM.md"]
+    assert bootstrap_events[0]["payload"]["skipped"] == []
 
 
 # ---------------------------------------------------------------------------

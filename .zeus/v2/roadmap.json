@@ -85,6 +85,20 @@
             ],
             "title": "v2 Subagent Dispatcher Integration",
             "status": "completed"
+        },
+        {
+            "id": "M-007",
+            "task_ids": [
+                "T-020",
+                "T-021",
+                "T-022"
+            ],
+            "spec_ref": ".zeus/v2/specs/2026-04-12-subagent-workspace-bootstrap.md",
+            "story_ids": [
+                "US-007"
+            ],
+            "title": "v2 Subagent Workspace Bootstrap",
+            "status": "in_progress"
         }
     ]
 }

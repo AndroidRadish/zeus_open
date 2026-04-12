@@ -74,3 +74,15 @@
   - Dashboard Wave selector for historical wave inspection
   - Automatic discussion log writes on task start / completion / failure
 - **Next milestone**: Backlog — Auto-heal (Step 2) remains deferred
+
+---
+
+## PLAN — 2026-04-12 (Subagent Workspace Bootstrap)
+
+- **Event**: Plan workspace identity injection so subagents start with full context
+- **Objective**: Copy AGENTS.md, USER.md, IDENTITY.md, and SOUL.md into every agent workspace automatically
+- **New Artifacts**:
+  - Spec: `.zeus/v2/specs/2026-04-12-subagent-workspace-bootstrap.md`
+  - Roadmap: M-007 added with T-020 ~ T-022
+  - PRD: US-007 added
+- **North star impact**: `developer_adoption_rate` ↑↑ (subagents are immediately useful), `multi_agent_efficiency` ↑ (less human copy-paste)

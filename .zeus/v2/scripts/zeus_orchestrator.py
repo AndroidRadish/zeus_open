@@ -251,6 +251,38 @@ class ZeusOrchestrator:
         config = self._load_config_json(store)
         return build_dispatcher(config)
 
+    def _bootstrap_workspace(self, workspace_path: Path, bus: AgentBus, store: LocalStore) -> None:
+        """Copy identity/context files into the agent workspace before dispatch."""
+        config = self._load_config_json(store)
+        subagent_cfg = config.get("subagent", {})
+        bootstrap_cfg = subagent_cfg.get("bootstrap", {})
+
+        default_files = ["AGENTS.md", "USER.md", "IDENTITY.md", "SOUL.md"]
+        file_list = bootstrap_cfg.get("files", default_files)
+
+        injected: list[str] = []
+        skipped: list[str] = []
+
+        for filename in file_list:
+            src = self.project_root / filename
+            if src.exists():
+                dst = workspace_path / filename
+                shutil.copy2(str(src), str(dst))
+                injected.append(filename)
+            else:
+                skipped.append(filename)
+
+        bus.emit(
+            "task.bootstrapped",
+            "workspace",
+            "zeus-orchestrator",
+            {
+                "workspace": str(workspace_path),
+                "injected": injected,
+                "skipped": skipped,
+            },
+        )
+
     async def dispatch_task(self, task: dict, bus: AgentBus, store: LocalStore) -> dict:
         task_id = task["id"]
         agent_id = f"zeus-agent"
@@ -278,6 +310,9 @@ class ZeusOrchestrator:
             )
 
         await asyncio.to_thread(_do_copy)
+
+        # Bootstrap identity/context files into workspace
+        await asyncio.to_thread(self._bootstrap_workspace, workspace_path, bus, store)
 
         # Write PROMPT.md
         prompt = self._build_prompt(task, store)

@@ -64,6 +64,19 @@
                 "Documentation (zeus-execute-v2.md, README) explains how to enable Kimi or Claude subagent mode"
             ],
             "id": "US-006"
+        },
+        {
+            "passes": false,
+            "title": "Subagent Workspace Bootstrap — auto-inject identity and context files",
+            "acceptance_criteria": [
+                "zeus_orchestrator.py copies AGENTS.md, USER.md, IDENTITY.md, and SOUL.md into every agent workspace before dispatch",
+                "config.json optionally accepts subagent.bootstrap.files to customize the list",
+                "Missing files are skipped without raising exceptions",
+                "A task.bootstrapped event is emitted for observability",
+                "Tests cover default behavior and config override",
+                "Documentation (zeus-execute-v2.md) explains the bootstrap behavior and config option"
+            ],
+            "id": "US-007"
         }
     ]
 }
