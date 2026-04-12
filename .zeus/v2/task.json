@@ -216,15 +216,15 @@
     },
     {
       "id": "T-017",
-      "passes": false,
+      "passes": true,
       "story_id": "US-006",
       "title": "Add unit tests for dispatcher command construction, auto-selection, and timeout",
       "depends_on": [
         "T-015",
         "T-016"
       ],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "a0c996b8fc9a09a976efc5828513133efc04afd0",
+      "log_path": ".zeus/v2/ai-logs/T-017.md",
       "wave": 6,
       "original_wave": 6,
       "scheduled_wave": 6,
