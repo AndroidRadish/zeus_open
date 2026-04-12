@@ -86,3 +86,18 @@
   - Roadmap: M-007 added with T-020 ~ T-022
   - PRD: US-007 added
 - **North star impact**: `developer_adoption_rate` ↑↑ (subagents are immediately useful), `multi_agent_efficiency` ↑ (less human copy-paste)
+
+---
+
+## SHIP — 2026-04-12
+
+- **Event**: Complete M-007 — Subagent Workspace Bootstrap
+- **Tasks completed**: T-020, T-021, T-022
+- **Status**: All v2 tests pass (50/50)
+- **Key deliverables**:
+  - `zeus_orchestrator.py` auto-copies identity/context files into every agent workspace before dispatch
+  - `config.json` supports optional `subagent.bootstrap.files` override
+  - `task.bootstrapped` event emitted for observability
+  - Full test coverage for default behavior and config override
+  - Documentation updated in `skills/zeus-execute-v2.md`
+- **Next milestone**: Backlog — Auto-heal (Step 2) remains deferred until further human decision
