@@ -201,6 +201,34 @@ python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
 
 GUI 快速上手指南请见 [`docs/zeus-v2-gui-quickstart.md`](docs/zeus-v2-gui-quickstart.md)。
 
+## 部署
+
+### 一键启动脚本
+
+```bash
+# Linux / macOS（本机 Python）
+./start.sh --port 8234
+
+# Windows（本机 Python）
+.\start.ps1 -Port 8234
+
+# Docker 构建并运行（全平台）
+./start.sh --build
+.\start.ps1 -Build
+```
+
+### Docker（手动）
+
+```bash
+# 构建镜像
+docker build -t zeus-open:v2 .
+
+# 运行容器
+docker run --rm -p 8234:8234 -v $(pwd):/app zeus-open:v2
+```
+
+容器暴露 `8234` 端口，并挂载当前目录，因此 `.zeus/v2/task.json` 和项目文件在宿主机上仍可编辑。
+
 ## 老项目接入（Brownfield）
 
 针对已有代码库，建议按如下顺序：

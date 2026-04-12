@@ -2,10 +2,10 @@
 
 ## 当前状态
 - **项目**: zeus-open (通用 AI-CLI 版 Zeus 框架)
-- **版本**: v2 全部 34 个任务已完成，进入 Wave 12 / US-011 Production Hardening
-- **状态**: Validation pass | 70/70 tests green | 34/34 completed
-- **最后提交**: `5303275` (scheduler_active + wave fix)
-- **当前阶段**: P-003 — v2 Global Orchestrator & Agent Collaboration（已完成），准备进入 Production Hardening
+- **版本**: v2 全部 41 个任务已完成，Wave 12 / US-011 Production Hardening 正式谢幕
+- **状态**: Validation pass | 96/96 v2 tests green | 41/41 completed
+- **最后提交**: `287ce5c` (T-037 Dockerfile + start scripts)
+- **当前阶段**: P-003 — v2 Global Orchestrator & Agent Collaboration（已完成），v2 正式谢幕，v3 规划已就绪
 
 ## v2 已完成里程碑
 
@@ -59,7 +59,7 @@
 | **T-036-C** | 启动状态恢复 + resume_from_state + /global/status | ✅ 已完成 |
 | **T-036-D** | Web UI 恢复横幅和刷新后的全局状态 | ✅ 已完成 |
 | **T-036-E** | 集成测试（shutdown-resume 周期）+ 文档更新 | ✅ 已完成 |
-| **T-037** | Dockerfile + 一键启动脚本 (start.sh / start.ps1) | ⏳ 待执行 |
+| **T-037** | Dockerfile + 一键启动脚本 (start.sh / start.ps1) | ✅ 已完成 |
 
 ## 会后增强 (Post-T-034)
 - **i18n 补全**: 里程碑、阶段、新标签页全部支持中英切换

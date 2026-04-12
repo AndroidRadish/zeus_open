@@ -213,6 +213,34 @@ Then visit `http://localhost:8234/web`.
 
 For a GUI-focused quick-start guide, see [`docs/zeus-v2-gui-quickstart.md`](docs/zeus-v2-gui-quickstart.md).
 
+## Deployment
+
+### One-click start scripts
+
+```bash
+# Linux / macOS (native Python)
+./start.sh --port 8234
+
+# Windows (native Python)
+.\start.ps1 -Port 8234
+
+# Docker build & run (any platform)
+./start.sh --build
+.\start.ps1 -Build
+```
+
+### Docker (manual)
+
+```bash
+# Build image
+docker build -t zeus-open:v2 .
+
+# Run container
+docker run --rm -p 8234:8234 -v $(pwd):/app zeus-open:v2
+```
+
+The container exposes port `8234` and mounts the current directory so that `.zeus/v2/task.json` and project files remain editable on the host.
+
 ## Brownfield Adoption
 
 For existing repositories, run this path:

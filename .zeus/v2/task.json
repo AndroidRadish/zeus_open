@@ -608,7 +608,7 @@
     },
     {
       "id": "T-037",
-      "passes": false,
+      "passes": true,
       "story_id": "US-011",
       "title": "Create Dockerfile and one-click start scripts for v2 backend deployment",
       "description": "Provide a Dockerfile that packages the v2 backend. Add start.sh (Linux/macOS) and start.ps1 (Windows) one-click scripts. Update README with deployment instructions. Verify local Docker build.",
@@ -623,7 +623,9 @@
       "title_zh": "为 v2 后端部署创建 Dockerfile 和一键启动脚本",
       "description_en": "Provide a Dockerfile that packages the v2 backend. Add start.sh (Linux/macOS) and start.ps1 (Windows) one-click scripts. Update README with deployment instructions. Verify local Docker build.",
       "description_zh": "提供打包 v2 后端的 Dockerfile。添加 start.sh 和 start.ps1 一键启动脚本。更新 README 部署说明。验证本地 Docker 构建。",
-      "status": "pending"
+      "status": "completed",
+      "commit_sha": "287ce5c",
+      "completed_at": "2026-04-12T18:13:58Z"
     },
     {
       "id": "T-036-A",

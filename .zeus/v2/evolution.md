@@ -228,3 +228,19 @@
   - Integration tests covering shutdown → persist → restart → resume → reflect in `/global/status`
   - Documentation updated in `skills/zeus-execute-v2.md`
 - **Next milestone**: T-037 — Dockerfile + one-click startup scripts
+
+
+---
+
+## SHIP — 2026-04-13
+
+- **Event**: v2 Official Sunset — Wave 12 complete, all 41 tasks shipped
+- **Tasks completed**: T-037 (Dockerfile + start.sh + start.ps1 + README deployment docs)
+- **Status**: All v2 tests pass (96/96) | v1 validation pass | v2 orchestrator status: 41/41 completed
+- **Key deliverables**:
+  - `Dockerfile` packaging the FastAPI backend with Python 3.11, git, graphviz
+  - `start.sh` (Linux/macOS) and `start.ps1` (Windows) one-click launchers
+  - Native mode and Docker mode supported by both scripts
+  - README.md / README.zh-CN.md updated with deployment instructions
+  - `requirements.txt` formalizing all runtime and test dependencies
+- **Next phase**: v3 — Production Multi-Agent Framework (spec ready at `.zeus/v3/specs/2026-04-13-v3-production-multi-agent-framework.md`)
