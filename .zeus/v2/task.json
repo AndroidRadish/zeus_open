@@ -412,6 +412,69 @@
       "title_zh": "为所有 v2 任务填充 i18n 数据并更新文档",
       "description_en": "Populate title_en/title_zh/description_en/description_zh for all existing v2 tasks. Update zeus-execute-v2.md with i18n guidelines.",
       "description_zh": "为所有现有 v2 任务填充 title_en/title_zh/description_en/description_zh。更新 zeus-execute-v2.md 中的 i18n 指南。"
+    },
+    {
+      "id": "T-026",
+      "passes": false,
+      "story_id": "US-009",
+      "title": "Extend roadmap.json schema and add GET /phases endpoint",
+      "description": "Add phases array to roadmap.json with title, summary, milestone_ids, wave_range. Implement GET /phases in zeus_server.py that computes status and progress_percent per phase.",
+      "depends_on": [],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 9,
+      "original_wave": 9,
+      "scheduled_wave": 9,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-027",
+      "passes": false,
+      "story_id": "US-009",
+      "title": "Update Web UI with Phases tab, phase badge, and phase-aware wave selector",
+      "description": "Add Phases tab to index.html showing phase cards with summaries and nested milestones. Add current phase badge in header. Make dashboard wave selector filter by selected phase.",
+      "depends_on": [
+        "T-026"
+      ],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 9,
+      "original_wave": 9,
+      "scheduled_wave": 9,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-028",
+      "passes": false,
+      "story_id": "US-009",
+      "title": "Seed P-001/P-002 for existing v2 data and update task.json meta with current_phase",
+      "description": "Populate phases in roadmap.json mapping M-001~M-004 to P-001 and M-005~M-008 to P-002. Update task.json meta to include current_phase.",
+      "depends_on": [
+        "T-026"
+      ],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 9,
+      "original_wave": 9,
+      "scheduled_wave": 9,
+      "rescheduled_from": null
+    },
+    {
+      "id": "T-029",
+      "passes": false,
+      "story_id": "US-009",
+      "title": "Add tests for /phases and phase status rules; update documentation",
+      "description": "Write unit/integration tests for GET /phases and phase status/progress calculation. Update zeus-execute-v2.md with phase layer guidelines.",
+      "depends_on": [
+        "T-027",
+        "T-028"
+      ],
+      "commit_sha": null,
+      "log_path": null,
+      "wave": 9,
+      "original_wave": 9,
+      "scheduled_wave": 9,
+      "rescheduled_from": null
     }
   ]
 }

@@ -113,6 +113,23 @@
             ],
             "title": "v2 Web UI Improvements & Multi-language Support",
             "status": "completed"
+        },
+        {
+            "id": "M-009",
+            "task_ids": [
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029"
+            ],
+            "spec_ref": ".zeus/v2/specs/2026-04-12-phase-layer-design.md",
+            "story_ids": [
+                "US-009"
+            ],
+            "title": "v2 Phase Layer — Delivery Batch Management",
+            "status": "planned"
         }
+    ]
+}
     ]
 }

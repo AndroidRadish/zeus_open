@@ -46,6 +46,19 @@
 
 ---
 
+## PLAN — 2026-04-12 (Phase Layer)
+
+- **Event**: Brainstorm and plan a Phase layer above Milestone to solve wave-number inflation
+- **Objective**: Group milestones and waves into named delivery batches (P-001, P-002…) with human-readable summaries
+- **New Artifacts**:
+  - Spec: `.zeus/v2/specs/2026-04-12-phase-layer-design.md`
+  - Roadmap: M-009 planned with T-026 ~ T-029
+  - PRD: US-009 added
+- **North star impact**: `developer_adoption_rate` ↑↑ (humans can reason in phases instead of raw wave numbers), `ui_usability` ↑↑ (scalable navigation for long-running projects)
+- **Status**: Awaiting human approval before implementation
+
+---
+
 ## SHIP — 2026-04-12
 
 - **Event**: Complete M-008 — Web UI Improvements & Multi-language Support

@@ -89,6 +89,21 @@
                 "i18n fields are seeded for all existing v2 tasks and documented in zeus-execute-v2.md"
             ],
             "id": "US-008"
+        },
+        {
+            "passes": false,
+            "title": "Phase Layer — Delivery Batch Management for Wave Proliferation",
+            "acceptance_criteria": [
+                "roadmap.json schema supports an optional phases array with title, summary, milestone_ids, and wave_range",
+                "GET /phases endpoint returns phases with computed status, progress_percent, and nested milestones",
+                "Web UI shows a Phases tab with summary-bearing phase cards and phase-aware wave selector",
+                "task.json optionally tracks meta.current_phase",
+                "All tests pass and new tests cover /phases and phase status calculation",
+                "Documentation explains how to define phases in roadmap.json"
+            ],
+            "id": "US-009"
         }
+    ]
+}
     ]
 }
