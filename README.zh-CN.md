@@ -79,20 +79,44 @@ Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档
 ## v2 新特性
 
 - **零构建 Web 控制台** — Vue 3 + Tailwind CSS，暗色工业风玻璃拟态界面，完整中文适配。
+- **阶段（Phase）视图** — 将里程碑与 Wave 分组为可读的交付阶段（P-001、P-002…），支持进度追踪。
+- **多语言支持** — 任务标题与描述支持中英一键切换。
+- **全局调度器** 🚧 *开发中* — 打破 Wave 执行锁，按全局依赖就绪状态跨 Wave 调度任务。
+- **Agent 协作** 🚧 *开发中* — 基于 Mailbox 协议的 Agent 点对点通信，支持执行中实时协作。
+- **Agent 独立日志** 🚧 *开发中* — 每个 Agent 拥有独立的日志目录，便于溯源与调试。
+- **子代理分发器** — 支持将任务执行委托给 `kimi --print` 或 `claude -p`，实现真正的无人值守多 Agent 运行。
 - **交互式依赖图谱** — 基于 Vis-Network.js，支持拖拽、缩放、悬停提示。
 - **无 Graphviz 的 SVG 回退** — 当系统未安装 `dot` 时，`workflow_graph.py` 以纯 Python 渲染 SVG 依赖图。
 - **多版本切换** — 在 Web UI 中直接切换 `main`、`v2` 及未来版本。
 - **项目选择器** — 无需重启服务，即可在控制台中打开并管理其他本地 Zeus 项目。
 
+### 当前开发状态
+
+| 里程碑 | 状态 | 任务 |
+|---|---|---|
+| M-008 — Web UI 与多语言 | ✅ 已完成 | T-023 ~ T-025 |
+| M-009 — 阶段（Phase）层 | ✅ 已完成 | T-026 ~ T-029 |
+| M-010 — 全局调度器与 Agent 协作 | 🚧 开发中 | **T-030** ✅ → **T-031** 🚧 → **T-032** 🚧 → **T-033** 🚧 → **T-034** 🚧 |
+
 ## 工作流
 
-英文流程图：
+Zeus 遵循确定性的、由反馈驱动的生命周期：
 
-![Zeus Workflow EN](assets/zeus-workflow.en.svg)
+```
+init → discover → brainstorm → plan → execute → feedback → evolve
+         ↑                                              |
+         └──────────────────────────────────────────────┘
+```
 
-中文流程图：
+1. **init** — 初始化北极星指标与项目配置。
+2. **discover** *（可选）* — 为老项目映射现有代码库。
+3. **brainstorm** — 设计规范并产出 `.zeus/{version}/specs/*.md`。
+4. **plan** — 将规范转换为可执行的故事、任务与路线图。
+5. **execute** — 按依赖波次运行任务（v2 支持全局调度与并行 Agent）。
+6. **feedback** — 采集生产信号并归因到具体任务。
+7. **evolve** — 基于验证后的学习创建新版本轨道（v2、v3…）。
 
-![Zeus Workflow ZH](assets/zeus-workflow.zh-CN.svg)
+> **说明：** 旧的 SVG 流程图已退役。上面的文字流程图反映了当前通用工作流。
 
 ## Skill 命令
 
@@ -160,7 +184,11 @@ assets/
 Zeus v2 由 `zeus_server.py`（FastAPI）驱动零构建 Web UI：
 
 - **仪表盘** — 实时 wave 进度、待完成/已完成统计、任务校验状态。
+- **阶段（Phases）** — 以里程碑为中心的交付批次，支持按阶段过滤 Wave。
 - **Agent 监控** — 展示当前运行中的 agent 及其分配任务。
+- **全局执行** 🚧 — 跨 Wave 运行任务列表与失败隔离区（quarantine）。
+- **Agent 协作** 🚧 — 基于 Mailbox 协议的 Agent 间实时消息流。
+- **Agent 日志** 🚧 — 按 Agent 筛选的独立日志浏览器（`activity.md`、`reasoning.jsonl`）。
 - **讨论日志** — 按 wave 查看 markdown 讨论日志，支持轻量渲染。
 - **依赖图谱** — 基于 Vis-Network 的交互式图谱，按状态着色；未安装 Graphviz 时自动回退到纯 Python SVG 渲染。
 - **版本切换** — 自动发现 `.zeus/{version}/task.json` 下的所有版本。
@@ -173,6 +201,8 @@ python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
 ```
 
 然后访问 `http://localhost:8234/web`。
+
+GUI 快速上手指南请见 [`docs/zeus-v2-gui-quickstart.md`](docs/zeus-v2-gui-quickstart.md)。
 
 ## 老项目接入（Brownfield）
 

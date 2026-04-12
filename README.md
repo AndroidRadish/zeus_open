@@ -91,21 +91,44 @@ See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specif
 ## What's New in v2
 
 - **Zero-build Web Dashboard** — Vue 3 + Tailwind CSS, dark industrial glassmorphism UI, fully in Chinese.
+- **Phase Layer** — group milestones and waves into human-readable delivery phases (P-001, P-002…) with progress tracking.
+- **Multi-language Support** — task titles and descriptions switch between English and Chinese with a single click.
+- **Global Scheduler** 🚧 *In Progress* — dispatch tasks across wave boundaries based purely on dependency readiness.
+- **Agent Collaboration** 🚧 *In Progress* — point-to-point Mailbox protocol so agents can communicate while executing.
+- **Agent-centric Logs** 🚧 *In Progress* — per-agent isolated log directories for easier debugging and traceability.
+- **Subagent Dispatcher** — delegates task execution to `kimi --print` or `claude -p` for true unattended multi-agent runs.
 - **Interactive Workflow Graph** — powered by Vis-Network.js with drag, zoom, and hover tooltips.
 - **Graphviz-free SVG Fallback** — `workflow_graph.py` renders dependency diagrams in pure Python when `dot` is unavailable.
 - **Multi-version Switching** — switch between `main`, `v2`, and future versions directly in the Web UI.
 - **Project Picker** — open and manage other local Zeus projects from the dashboard without restarting the server.
-- **Subagent Dispatcher** — delegates task execution to `kimi --print` or `claude -p` for true unattended multi-agent runs.
+
+### Current Development Status
+
+| Milestone | Status | Tasks |
+|---|---|---|
+| M-008 — Web UI & Multi-language | ✅ Completed | T-023 ~ T-025 |
+| M-009 — Phase Layer | ✅ Completed | T-026 ~ T-029 |
+| M-010 — Global Orchestrator & Agent Collaboration | 🚧 In Progress | **T-030** ✅ → **T-031** 🚧 → **T-032** 🚧 → **T-033** 🚧 → **T-034** 🚧 |
 
 ## Workflow
 
-English workflow diagram:
+Zeus follows a deterministic, feedback-driven lifecycle:
 
-![Zeus Workflow EN](assets/zeus-workflow.en.svg)
+```
+init → discover → brainstorm → plan → execute → feedback → evolve
+         ↑                                              |
+         └──────────────────────────────────────────────┘
+```
 
-Chinese workflow diagram:
+1. **init** — initialize north-star metrics and project config.
+2. **discover** *(optional)* — map existing codebase for brownfield projects.
+3. **brainstorm** — design specs and produce `.zeus/{version}/specs/*.md`.
+4. **plan** — convert specs into executable stories, tasks, and roadmaps.
+5. **execute** — run tasks in dependency-aware waves (v2 supports global scheduling and parallel agents).
+6. **feedback** — capture production signals and attribute them to tasks.
+7. **evolve** — create new version tracks (v2, v3…) based on validated learning.
 
-![Zeus Workflow ZH](assets/zeus-workflow.zh-CN.svg)
+> **Note:** The legacy SVG workflow diagrams have been retired. The above text diagram reflects the current universal workflow.
 
 ## Skill Commands
 
@@ -173,7 +196,11 @@ assets/
 Zeus v2 provides a zero-build Web UI served by `zeus_server.py` (FastAPI):
 
 - **Dashboard** — real-time wave progress, pending/completed stats, and task validation status.
+- **Phases** — milestone-centric delivery batches with phase-aware wave filtering.
 - **Agent Monitor** — shows currently running agents and their assigned tasks.
+- **Global Execution** 🚧 — cross-wave running task list and quarantine zone for failures.
+- **Agent Collaboration** 🚧 — live message stream between agents via the Mailbox protocol.
+- **Agent Logs** 🚧 — per-agent isolated log browser (`activity.md`, `reasoning.jsonl`).
 - **Discussion Log** — per-wave markdown discussion logs with lightweight rendering.
 - **Dependency Graph** — interactive Vis-Network graph with color-coded task status; falls back to a pure-Python SVG renderer when Graphviz is not installed.
 - **Version Switcher** — automatically discovers all `.zeus/{version}/task.json` folders.
@@ -186,6 +213,8 @@ python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
 ```
 
 Then visit `http://localhost:8234/web`.
+
+For a GUI-focused quick-start guide, see [`docs/zeus-v2-gui-quickstart.md`](docs/zeus-v2-gui-quickstart.md).
 
 ## Brownfield Adoption
 
