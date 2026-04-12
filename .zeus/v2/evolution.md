@@ -56,3 +56,21 @@
   - Roadmap: M-006 added with T-015 ~ T-019
   - PRD: US-006 added
 - **North star impact**: developer_adoption_rate ↑↑↑, multi_agent_efficiency ↑↑
+
+---
+
+## SHIP — 2026-04-12
+
+- **Event**: Complete M-006 — Subagent Dispatcher Integration
+- **Tasks completed**: T-015, T-016, T-017, T-018, T-019
+- **Status**: All v2 tests pass (48/48)
+- **Key deliverables**:
+  - `subagent_dispatcher.py` with ABC + Mock + Kimi + Claude + Auto implementations
+  - `zeus_orchestrator.py` refactored to delegate execution via dispatcher abstraction
+  - Stdout capture, timeout handling, and uniform Agent Bus event reporting for all CLI backends
+  - Web UI Agent Monitor now shows both "running" and "recent activity" panels
+  - Documentation updated in README and `zeus-execute-v2.md`
+- **Fixes shipped alongside**:
+  - Dashboard Wave selector for historical wave inspection
+  - Automatic discussion log writes on task start / completion / failure
+- **Next milestone**: Backlog — Auto-heal (Step 2) remains deferred

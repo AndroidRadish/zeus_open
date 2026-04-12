@@ -53,7 +53,7 @@
             "id": "US-005"
         },
         {
-            "passes": false,
+            "passes": true,
             "title": "Subagent Dispatcher Integration — enable true unattended multi-agent execution",
             "acceptance_criteria": [
                 "subagent_dispatcher.py provides SubagentDispatcher ABC and implementations for mock, kimi, claude, and auto",
