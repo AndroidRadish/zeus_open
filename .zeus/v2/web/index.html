@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-  <script src="https://unpkg.com/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="https://unpkg.com/vis-network@9.1.2/standalone/umd/vis-network.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -102,12 +102,44 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3">
+            <!-- Project Dir Pill -->
+            <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full glass-panel max-w-[16rem]" :title="status.project_dir">
+              <svg class="w-4 h-4 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span class="text-sm font-medium text-slate-200 truncate">{{ projectDirName }}</span>
+            </div>
+
+            <!-- Version Selector -->
+            <div class="hidden sm:flex items-center gap-2">
+              <label class="text-xs text-slate-400">任务</label>
+              <select
+                v-model="currentVersion"
+                class="appearance-none bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40 cursor-pointer hover:bg-white/10 transition-colors"
+              >
+                <option v-for="v in versions" :key="v.id" :value="v.id">{{ v.label }}</option>
+              </select>
+            </div>
+
             <!-- Wave Badge -->
             <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full glass-panel">
               <span class="text-xs text-slate-400">当前 Wave</span>
               <span class="text-sm font-bold text-white">{{ status.current_wave || 0 }}</span>
             </div>
+
+            <!-- Open Project -->
+            <button
+              @click="showOpenProjectModal"
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg glass-panel text-sm text-slate-300 hover:text-white transition-all"
+              title="打开项目"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 4h4l3 3h9a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
+                <circle cx="12" cy="13" r="2"/>
+              </svg>
+              <span class="hidden sm:inline">打开项目</span>
+            </button>
 
             <!-- Refresh -->
             <button
@@ -237,7 +269,10 @@
         <!-- Progress Bar -->
         <div class="glass-panel rounded-2xl p-5">
           <div class="flex items-center justify-between mb-3">
-            <h3 class="text-base font-semibold text-white">Wave {{ currentWave }} 进度</h3>
+            <h3 class="text-base font-semibold text-white">
+              Wave {{ currentWave }} 进度
+              <span v-if="hasRescheduledTasks" class="ml-2 text-xs font-normal text-slate-400">（含提前调度）</span>
+            </h3>
             <span class="text-sm text-slate-400">{{ waveDoneCount }} / {{ waveTasks.length }} 任务</span>
           </div>
           <div class="h-3 w-full bg-white/5 rounded-full overflow-hidden">
@@ -264,7 +299,18 @@
               <tbody class="divide-y divide-white/5">
                 <tr v-for="task in waveTasks" :key="task.id" class="hover:bg-white/[0.02] transition-colors">
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-white font-mono">{{ task.id }}</td>
-                  <td class="px-6 py-4 text-sm text-slate-300 max-w-md">{{ task.title }}</td>
+                  <td class="px-6 py-4 text-sm text-slate-300 max-w-md">
+                    <div class="flex items-center gap-2">
+                      <span>{{ task.title }}</span>
+                      <span
+                        v-if="task.original_wave != null && task.scheduled_wave != null && task.original_wave !== task.scheduled_wave"
+                        class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
+                        :title="`原 Wave ${task.original_wave}`"
+                      >
+                        原 Wave {{ task.original_wave }}
+                      </span>
+                    </div>
+                  </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm">
                     <div class="flex items-center gap-2.5">
                       <span class="relative flex h-2.5 w-2.5">
@@ -388,9 +434,6 @@
             </div>
             <div class="text-rose-300 font-medium mb-2">图表渲染失败</div>
             <div class="text-sm text-slate-500 mb-4">{{ graphError }}</div>
-            <div class="text-left bg-black/30 rounded-xl p-4 overflow-x-auto border border-white/5">
-              <pre class="text-xs text-slate-400 font-mono">{{ mermaidSource }}</pre>
-            </div>
           </div>
           <div v-else-if="graphLoading" class="flex flex-col items-center justify-center py-20 text-slate-500">
             <svg class="w-10 h-10 animate-spin-slow mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -398,12 +441,95 @@
             </svg>
             <p>正在渲染依赖图...</p>
           </div>
-          <div v-else ref="mermaidContainer" class="mermaid-container rounded-xl flex justify-center min-h-[300px] py-8">
-            <div class="mermaid">{{ mermaidSource }}</div>
+          <div v-else ref="mermaidContainer" class="mermaid-container rounded-xl flex justify-center min-h-[500px] h-[70vh] py-4"></div>
+        </div>
+      </div>
+
+      <!-- Graph Node Tooltip -->
+      <div
+        ref="graphTooltip"
+        class="fixed z-[200] pointer-events-none transition-opacity duration-200"
+        :class="graphTooltipVisible ? 'opacity-100' : 'opacity-0'"
+      >
+        <div class="glass-panel rounded-xl px-4 py-3 border border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.35)] backdrop-blur-md max-w-xs">
+          <div class="text-sm font-semibold text-white mb-1">{{ graphTooltipTitle }}</div>
+          <div class="text-xs text-slate-300 leading-relaxed">{{ graphTooltipBody }}</div>
+          <div class="mt-2 flex items-center gap-2 text-xs">
+            <span class="px-1.5 py-0.5 rounded bg-white/10 text-cyan-300">Wave {{ graphTooltipWave }}</span>
+            <span class="px-1.5 py-0.5 rounded bg-white/10" :class="graphTooltipStatus === 'done' ? 'text-emerald-300' : (graphTooltipStatus === 'in_progress' ? 'text-cyan-300' : 'text-slate-300')">{{ graphTooltipStatusText }}</span>
           </div>
         </div>
       </div>
     </main>
+
+    <!-- Open Project Modal -->
+    <div v-if="openProjectVisible" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeOpenProjectModal"></div>
+      <div class="relative w-full max-w-lg glass-panel rounded-2xl p-6 shadow-2xl">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-white">打开本地 Zeus 项目</h3>
+          <button @click="closeOpenProjectModal" class="text-slate-400 hover:text-white transition-colors">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1.5">项目绝对路径</label>
+            <div class="flex gap-2">
+              <input
+                v-model="openProjectPath"
+                type="text"
+                placeholder="例如 D:\projects\my-zeus-project"
+                class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500/40"
+                @keydown.enter="confirmOpenProject"
+              />
+              <button
+                v-if="canUseFilePicker"
+                @click="browseDirectory"
+                class="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-sm font-medium transition-colors"
+              >
+                浏览...
+              </button>
+            </div>
+          </div>
+
+          <div v-if="openProjectError" class="flex items-start gap-2 text-rose-300 text-sm bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2">
+            <svg class="w-4 h-4 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" x2="12" y1="8" y2="12"/>
+              <line x1="12" x2="12.01" y1="16" y2="16"/>
+            </svg>
+            <span>{{ openProjectError }}</span>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end gap-3">
+          <button
+            @click="closeOpenProjectModal"
+            class="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-white transition-colors"
+          >
+            取消
+          </button>
+          <button
+            @click="confirmOpenProject"
+            :disabled="openProjectLoading || !openProjectPath.trim()"
+            class="px-4 py-2 rounded-lg text-sm font-medium bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <span v-if="openProjectLoading" class="flex items-center gap-2">
+              <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+              </svg>
+              切换中...
+            </span>
+            <span v-else>打开</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Footer -->
     <footer class="border-t border-white/5 mt-auto">
@@ -431,6 +557,8 @@
     createApp({
       setup() {
         const currentTab = ref('dashboard');
+        const currentVersion = ref('v2');
+        const versions = ref([]);
         const loading = ref(false);
         const serverOnline = ref(false);
         const status = ref({
@@ -443,11 +571,24 @@
         const agents = ref([]);
         const discussionWave = ref(1);
         const discussionContent = ref('');
-        const mermaidSource = ref('');
         const graphError = ref('');
         const graphLoading = ref(false);
         const mermaidContainer = ref(null);
+        const graphTooltip = ref(null);
+        const graphTooltipVisible = ref(false);
+        const graphTooltipTitle = ref('');
+        const graphTooltipBody = ref('');
+        const graphTooltipWave = ref(0);
+        const graphTooltipStatus = ref('');
+        const graphTooltipStatusText = ref('');
         let pollInterval = null;
+        let visNetwork = null;
+
+        // Open project modal state
+        const openProjectVisible = ref(false);
+        const openProjectPath = ref('');
+        const openProjectError = ref('');
+        const openProjectLoading = ref(false);
 
         const tabs = [
           { id: 'dashboard', label: '仪表盘', icon: ICONS.dashboard },
@@ -459,6 +600,12 @@
         const currentWave = computed(() => status.value.current_wave || 0);
         const maxWave = computed(() => {
           return Math.max(currentWave.value, 4);
+        });
+        const projectDirName = computed(() => {
+          const dir = status.value.project_dir || '';
+          if (!dir) return '未知项目';
+          const parts = dir.replace(/\\/g, '/').split('/').filter(Boolean);
+          return parts.length ? parts[parts.length - 1] : dir;
         });
         const totalTasks = computed(() => (status.value.pending_tasks || 0) + (status.value.completed_tasks || 0));
         const pendingPercent = computed(() => {
@@ -474,6 +621,9 @@
           const total = waveTasks.value.length || 1;
           return Math.round((waveDoneCount.value / total) * 100);
         });
+        const hasRescheduledTasks = computed(() => {
+          return waveTasks.value.some(t => t.original_wave != null && t.scheduled_wave != null && t.original_wave !== t.scheduled_wave);
+        });
 
         // Running agent task ids
         const runningTaskIds = computed(() => {
@@ -483,13 +633,79 @@
         });
 
         async function apiGet(path) {
-          const res = await fetch(API_BASE + path);
+          const sep = path.includes('?') ? '&' : '?';
+          const res = await fetch(API_BASE + path + sep + 'version=' + encodeURIComponent(currentVersion.value));
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const contentType = res.headers.get('content-type') || '';
           if (contentType.includes('application/json')) {
             return await res.json();
           }
           return await res.text();
+        }
+
+        async function apiPost(path, body) {
+          const res = await fetch(API_BASE + path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) {
+            let detail = `HTTP ${res.status}`;
+            try {
+              const err = await res.json();
+              detail = err.detail || detail;
+            } catch (e) {}
+            throw new Error(detail);
+          }
+          return await res.json();
+        }
+
+        function showOpenProjectModal() {
+          openProjectPath.value = status.value.project_dir || '';
+          openProjectError.value = '';
+          openProjectVisible.value = true;
+        }
+
+        function closeOpenProjectModal() {
+          openProjectVisible.value = false;
+          openProjectError.value = '';
+        }
+
+        async function pasteFromClipboard() {
+          try {
+            const text = await navigator.clipboard.readText();
+            if (text) openProjectPath.value = text.trim();
+          } catch (e) {
+            // Clipboard permission denied or unavailable
+          }
+        }
+
+        async function confirmOpenProject() {
+          openProjectError.value = '';
+          openProjectLoading.value = true;
+          try {
+            await apiPost('/project/open', { project_dir: openProjectPath.value.trim() });
+            openProjectVisible.value = false;
+            currentVersion.value = 'v2';
+            await refreshAll();
+          } catch (e) {
+            openProjectError.value = e.message || '打开项目失败';
+          } finally {
+            openProjectLoading.value = false;
+          }
+        }
+
+        async function fetchVersions() {
+          try {
+            const data = await fetch(API_BASE + '/versions').then(r => r.json());
+            versions.value = data.versions || [];
+            // If current version no longer exists, fall back to first available
+            if (versions.value.length && !versions.value.some(v => v.id === currentVersion.value)) {
+              currentVersion.value = versions.value[0].id;
+            }
+          } catch (e) {
+            versions.value = [{ id: 'v2', label: 'v2' }];
+          }
         }
 
         async function fetchStatus() {
@@ -534,29 +750,131 @@
           }
         }
 
+        function positionTooltip(x, y) {
+          if (!graphTooltip.value) return;
+          const tipRect = graphTooltip.value.getBoundingClientRect();
+          let left = x + 16;
+          let top = y + 16;
+          if (left + tipRect.width > window.innerWidth) left = x - tipRect.width - 16;
+          if (top + tipRect.height > window.innerHeight) top = y - tipRect.height - 16;
+          graphTooltip.value.style.left = left + 'px';
+          graphTooltip.value.style.top = top + 'px';
+        }
+
+        function statusToColor(status) {
+          if (status === 'done') return '#22c55e';
+          if (status === 'in_progress') return '#3b82f6';
+          if (status === 'failed') return '#ef4444';
+          return '#9ca3af';
+        }
+
         async function loadGraph() {
           graphLoading.value = true;
           graphError.value = '';
           try {
-            mermaidSource.value = await apiGet('/graph/mermaid');
-            await nextTick();
-            if (mermaidContainer.value) {
-              const el = mermaidContainer.value.querySelector('.mermaid');
-              if (el) {
-                el.removeAttribute('data-processed');
-                el.textContent = mermaidSource.value;
-              }
-            }
-            await mermaid.run({ querySelector: '.mermaid' });
+            const data = await apiGet('/graph/echarts');
+            const rawNodes = data.nodes || [];
+            const rawLinks = data.links || [];
+            const taskMap = {};
+            rawNodes.forEach(n => { taskMap[n.id] = n; });
+
+            const nodes = rawNodes.map(n => ({
+              id: n.id,
+              label: n.id,
+              value: n.symbolSize ? Math.max(10, n.symbolSize) : 20,
+              color: {
+                background: statusToColor(n.status),
+                border: 'rgba(255,255,255,0.25)',
+                highlight: { background: '#22d3ee', border: '#06b6d4' },
+                hover: { background: '#22d3ee', border: '#06b6d4' }
+              },
+              font: { color: '#f8fafc', face: '"DM Sans","Noto Sans SC",sans-serif', size: 13, strokeWidth: 0 },
+              shadow: false,
+              title: '',
+              _task: n
+            }));
+
+            const edges = rawLinks.map(l => ({
+              from: l.source,
+              to: l.target,
+              color: { color: 'rgba(255,255,255,0.12)', highlight: '#22d3ee', hover: '#22d3ee' },
+              arrows: 'to',
+              width: 1.5,
+              smooth: { type: 'continuous' }
+            }));
+
             graphLoading.value = false;
+            await nextTick();
+
+            if (mermaidContainer.value) {
+              if (visNetwork) {
+                visNetwork.destroy();
+                visNetwork = null;
+              }
+              mermaidContainer.value.innerHTML = '';
+              const dataSet = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+              const options = {
+                nodes: {
+                  borderWidth: 2,
+                  shape: 'dot',
+                  scaling: { min: 10, max: 30 }
+                },
+                edges: {
+                  smooth: { type: 'continuous' }
+                },
+                physics: {
+                  stabilization: { iterations: 200 },
+                  barnesHut: {
+                    gravitationalConstant: -4000,
+                    centralGravity: 0.35,
+                    springLength: 120,
+                    springConstant: 0.06,
+                    damping: 0.09,
+                    avoidOverlap: 0.3
+                  }
+                },
+                interaction: {
+                  hover: true,
+                  tooltipDelay: 0,
+                  zoomView: true,
+                  dragView: true
+                },
+                layout: { randomSeed: 2 }
+              };
+              visNetwork = new vis.Network(mermaidContainer.value, dataSet, options);
+
+              visNetwork.on('hoverNode', (params) => {
+                const nodeId = params.node;
+                dataSet.nodes.update({ id: nodeId, shadow: { enabled: true, color: 'rgba(6,182,212,0.95)', size: 18, x: 0, y: 0 } });
+                const task = taskMap[nodeId];
+                if (!task) return;
+                graphTooltipTitle.value = task.title || nodeId;
+                graphTooltipBody.value = task.description || '暂无描述';
+                graphTooltipWave.value = task.wave || 0;
+                graphTooltipStatus.value = task.status || 'pending';
+                graphTooltipStatusText.value = task.status === 'done' ? '已完成' : (task.status === 'in_progress' ? '进行中' : '待执行');
+                graphTooltipVisible.value = true;
+                const domPos = visNetwork.canvasToDOM(visNetwork.getPositions([nodeId])[nodeId]);
+                nextTick(() => positionTooltip(domPos.x, domPos.y));
+              });
+
+              visNetwork.on('blurNode', (params) => {
+                const nodeId = params.node;
+                dataSet.nodes.update({ id: nodeId, shadow: false });
+                graphTooltipVisible.value = false;
+              });
+
+              visNetwork.on('dragStart', () => { graphTooltipVisible.value = false; });
+            }
           } catch (e) {
             graphLoading.value = false;
-            graphError.value = e.message || 'Mermaid 渲染失败';
+            graphError.value = e.message || '图谱渲染失败';
           }
         }
 
         async function refreshAll() {
           loading.value = true;
+          await fetchVersions();
           await Promise.all([
             fetchStatus(),
             fetchWaveTasks(),
@@ -639,10 +957,15 @@
         watch(currentTab, (tab) => {
           if (tab === 'discussion') loadDiscussion();
           if (tab === 'graph') loadGraph();
+          else graphTooltipVisible.value = false;
+        });
+
+        watch(currentVersion, async () => {
+          discussionWave.value = 1;
+          await refreshAll();
         });
 
         onMounted(async () => {
-          mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', theme: 'dark' });
           await refreshAll();
           startPolling();
           discussionWave.value = currentWave.value || 1;
@@ -654,24 +977,38 @@
 
         return {
           currentTab,
+          currentVersion,
+          versions,
           tabs,
           loading,
           serverOnline,
           status,
           currentWave,
           maxWave,
+          projectDirName,
           waveTasks,
           pendingPercent,
           completedPercent,
           waveDoneCount,
           waveProgressPercent,
+          hasRescheduledTasks,
           agents,
           discussionWave,
           discussionContent,
-          mermaidSource,
           graphError,
           graphLoading,
           mermaidContainer,
+          graphTooltip,
+          graphTooltipVisible,
+          graphTooltipTitle,
+          graphTooltipBody,
+          graphTooltipWave,
+          graphTooltipStatus,
+          graphTooltipStatusText,
+          openProjectVisible,
+          openProjectPath,
+          openProjectError,
+          openProjectLoading,
           refreshAll,
           loadDiscussion,
           isTaskRunning,
@@ -679,6 +1016,10 @@
           getStatusLabel,
           formatTime,
           renderMarkdown,
+          showOpenProjectModal,
+          closeOpenProjectModal,
+          pasteFromClipboard,
+          confirmOpenProject,
         };
       }
     }).mount('#app');

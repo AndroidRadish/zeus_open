@@ -11,11 +11,13 @@ import os
 import shutil
 import subprocess
 import tempfile
+from pathlib import Path
 from typing import Any
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
@@ -38,8 +40,12 @@ store = LocalStore()
 # Helpers
 # ----------------------------------------------------------------------
 
-TASK_JSON_PATH = ".zeus/v2/task.json"
-AGENT_LOGS_DIR = ".zeus/v2/agent-logs"
+def _task_json_path(version: str) -> str:
+    return f".zeus/{version}/task.json"
+
+
+def _agent_logs_dir(version: str) -> str:
+    return f".zeus/{version}/agent-logs"
 
 
 def _resolve(path: str) -> str:
@@ -47,8 +53,8 @@ def _resolve(path: str) -> str:
     return str(store._resolve(path))
 
 
-def _read_task_json() -> dict[str, Any]:
-    return store.read_json(TASK_JSON_PATH)
+def _read_task_json(version: str) -> dict[str, Any]:
+    return store.read_json(_task_json_path(version))
 
 
 def _validate_task_json(data: dict[str, Any]) -> str:
@@ -101,8 +107,8 @@ def _validate_task_json(data: dict[str, Any]) -> str:
     return "pass"
 
 
-def _load_events(wave: int) -> list[dict[str, Any]]:
-    path = os.path.join(AGENT_LOGS_DIR, f"wave-{wave}-events.jsonl")
+def _load_events(wave: int, version: str) -> list[dict[str, Any]]:
+    path = os.path.join(_agent_logs_dir(version), f"wave-{wave}-events.jsonl")
     resolved = store._resolve(path)
     events: list[dict[str, Any]] = []
     if not resolved.exists():
@@ -118,13 +124,26 @@ def _load_events(wave: int) -> list[dict[str, Any]]:
     return events
 
 
+def _discover_versions() -> list[dict[str, str]]:
+    """Scan .zeus/ for available version folders with task.json."""
+    zeus_dir = store._resolve(".zeus")
+    versions = []
+    if zeus_dir.exists():
+        for entry in sorted(zeus_dir.iterdir()):
+            if entry.is_dir() and (entry / "task.json").exists():
+                versions.append({"id": entry.name, "label": entry.name})
+    # Ensure v2 is first if present
+    versions.sort(key=lambda v: (v["id"] != "v2", v["id"]))
+    return versions
+
+
 # ----------------------------------------------------------------------
 # Endpoints
 # ----------------------------------------------------------------------
 
 @app.get("/status")
-def get_status() -> dict[str, Any]:
-    data = _read_task_json()
+def get_status(version: str = Query("v2")) -> dict[str, Any]:
+    data = _read_task_json(version)
     meta = data.get("meta", {})
     tasks = data.get("tasks", [])
     current_wave = meta.get("current_wave", 0)
@@ -132,19 +151,23 @@ def get_status() -> dict[str, Any]:
     pending = sum(1 for t in tasks if not t.get("passes"))
     completed = sum(1 for t in tasks if t.get("passes"))
 
+    config = store.read_json(f".zeus/{version}/config.json") if store._resolve(f".zeus/{version}/config.json").exists() else {}
+    project_name = config.get("project", {}).get("name", "zeus-open")
+
     return {
-        "version": "v2",
-        "project_name": "zeus-open",
+        "version": version,
+        "project_name": project_name,
         "current_wave": current_wave,
         "pending_tasks": pending,
         "completed_tasks": completed,
         "validation": _validate_task_json(data),
+        "project_dir": str(store.base_dir),
     }
 
 
 @app.get("/wave/{n}")
-def get_wave(n: int) -> dict[str, Any]:
-    data = _read_task_json()
+def get_wave(n: int, version: str = Query("v2")) -> dict[str, Any]:
+    data = _read_task_json(version)
     tasks = data.get("tasks", [])
     wave_tasks = [
         {
@@ -152,6 +175,10 @@ def get_wave(n: int) -> dict[str, Any]:
             "title": t.get("title", ""),
             "passes": t.get("passes", False),
             "depends_on": t.get("depends_on", []),
+            "wave": t.get("wave"),
+            "original_wave": t.get("original_wave", t.get("wave")),
+            "scheduled_wave": t.get("scheduled_wave", t.get("wave")),
+            "rescheduled_from": t.get("rescheduled_from"),
         }
         for t in tasks
         if t.get("wave") == n
@@ -160,10 +187,10 @@ def get_wave(n: int) -> dict[str, Any]:
 
 
 @app.get("/agents")
-def get_agents() -> dict[str, Any]:
-    data = _read_task_json()
+def get_agents(version: str = Query("v2")) -> dict[str, Any]:
+    data = _read_task_json(version)
     current_wave = data.get("meta", {}).get("current_wave", 1)
-    events = _load_events(current_wave)
+    events = _load_events(current_wave, version)
 
     state: dict[str, str] = {}
     latest_start: dict[str, dict[str, Any]] = {}
@@ -193,14 +220,14 @@ def get_agents() -> dict[str, Any]:
 
 
 @app.get("/events")
-def get_events(wave: int = Query(...), limit: int = Query(50)) -> list[dict[str, Any]]:
-    events = _load_events(wave)
+def get_events(wave: int = Query(...), limit: int = Query(50), version: str = Query("v2")) -> list[dict[str, Any]]:
+    events = _load_events(wave, version)
     return events[-limit:]
 
 
 @app.get("/discussion")
-def get_discussion(wave: int = Query(...)) -> Response:
-    path = os.path.join(AGENT_LOGS_DIR, f"wave-{wave}-discussion.md")
+def get_discussion(wave: int = Query(...), version: str = Query("v2")) -> Response:
+    path = os.path.join(_agent_logs_dir(version), f"wave-{wave}-discussion.md")
     resolved = store._resolve(path)
     if resolved.exists():
         content = resolved.read_text(encoding="utf-8")
@@ -210,22 +237,22 @@ def get_discussion(wave: int = Query(...)) -> Response:
 
 
 @app.get("/graph/mermaid")
-def graph_mermaid() -> Response:
-    path = _resolve(TASK_JSON_PATH)
+def graph_mermaid(version: str = Query("v2")) -> Response:
+    path = _resolve(_task_json_path(version))
     graph = WorkflowGraph(path)
     return Response(content=graph.to_mermaid(), media_type="text/plain; charset=utf-8")
 
 
 @app.get("/graph/echarts")
-def graph_echarts() -> dict[str, Any]:
-    path = _resolve(TASK_JSON_PATH)
+def graph_echarts(version: str = Query("v2")) -> dict[str, Any]:
+    path = _resolve(_task_json_path(version))
     graph = WorkflowGraph(path)
     return graph.to_echarts()
 
 
 @app.get("/graph/svg")
-def graph_svg() -> Response:
-    path = _resolve(TASK_JSON_PATH)
+def graph_svg(version: str = Query("v2")) -> Response:
+    path = _resolve(_task_json_path(version))
     graph = WorkflowGraph(path)
 
     if shutil.which("dot") is not None:
@@ -254,11 +281,13 @@ def graph_svg() -> Response:
 
 
 @app.post("/wave/{n}/approve")
-def approve_wave(n: int) -> dict[str, Any]:
-    with store.lock(TASK_JSON_PATH):
-        data = store.read_json(TASK_JSON_PATH)
+def approve_wave(n: int, version: str = Query("v2")) -> dict[str, Any]:
+    task_path = _task_json_path(version)
+    with store.lock(task_path):
+        data = store.read_json(task_path)
         tasks = data.get("tasks", [])
-        wave_tasks = [t for t in tasks if t.get("wave") == n]
+        # Approval gate uses original_wave so rescheduled tasks still count toward their home wave
+        wave_tasks = [t for t in tasks if t.get("original_wave", t.get("wave")) == n]
         if not wave_tasks:
             raise HTTPException(status_code=400, detail=f"No tasks found for wave {n}")
         pending = [t for t in wave_tasks if not t.get("passes")]
@@ -268,9 +297,50 @@ def approve_wave(n: int) -> dict[str, Any]:
                 detail=f"Wave {n} has pending tasks",
             )
         data["meta"]["current_wave"] = n + 1
-        store.write_json(TASK_JSON_PATH, data)
+        store.write_json(task_path, data)
 
     return {"approved": True, "next_wave": n + 1}
+
+
+class OpenProjectBody(BaseModel):
+    project_dir: str
+
+
+def _is_valid_zeus_project(project_dir: Path) -> bool:
+    """Check if *project_dir* contains a .zeus/ folder with at least one task.json."""
+    if not project_dir.is_dir():
+        return False
+    zeus_dir = project_dir / ".zeus"
+    if not zeus_dir.is_dir():
+        return False
+    for entry in zeus_dir.iterdir():
+        if entry.is_dir() and (entry / "task.json").exists():
+            return True
+    return False
+
+
+@app.post("/project/open")
+def open_project(body: OpenProjectBody) -> dict[str, Any]:
+    target = Path(body.project_dir).expanduser().resolve()
+    if not target.is_dir():
+        raise HTTPException(status_code=400, detail="project_dir must be a directory")
+    if not _is_valid_zeus_project(target):
+        raise HTTPException(
+            status_code=400,
+            detail="Not a valid Zeus project: .zeus directory missing or no task.json found",
+        )
+    global store
+    store = LocalStore(base_dir=str(target))
+    return {
+        "success": True,
+        "project_dir": str(store.base_dir),
+        "status": get_status(version="v2"),
+    }
+
+
+@app.get("/versions")
+def get_versions() -> dict[str, Any]:
+    return {"versions": _discover_versions()}
 
 
 # ----------------------------------------------------------------------
@@ -287,7 +357,13 @@ if os.path.isdir(web_dir):
 def main() -> None:
     parser = argparse.ArgumentParser(description="ZeusOpen v2 Server")
     parser.add_argument("--port", type=int, default=8234)
+    parser.add_argument("--project-dir", type=str, default=None, help="Zeus project root directory")
     args = parser.parse_args()
+
+    if args.project_dir:
+        global store
+        store = LocalStore(base_dir=args.project_dir)
+
     uvicorn.run(app, host="0.0.0.0", port=args.port)
 
 
