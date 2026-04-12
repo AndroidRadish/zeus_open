@@ -81,12 +81,11 @@ Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档
 - **零构建 Web 控制台** — Vue 3 + Tailwind CSS，暗色工业风玻璃拟态界面，完整中文适配。
 - **阶段（Phase）视图** — 将里程碑与 Wave 分组为可读的交付阶段（P-001、P-002…），支持进度追踪。
 - **多语言支持** — 任务标题与描述支持中英一键切换。
-- **全局调度器** 🚧 *开发中* — 打破 Wave 执行锁，按全局依赖就绪状态跨 Wave 调度任务。
-- **Agent 协作** 🚧 *开发中* — 基于 Mailbox 协议的 Agent 点对点通信，支持执行中实时协作。
-- **Agent 独立日志** 🚧 *开发中* — 每个 Agent 拥有独立的日志目录，便于溯源与调试。
+- **全局调度器** — 打破 Wave 执行锁，按全局依赖就绪状态跨 Wave 调度任务，失败任务自动进入隔离区。
+- **Agent 协作** — 基于 Mailbox 协议的 Agent 点对点通信，支持执行中实时协作。
+- **Agent 独立日志** — 每个 Agent 拥有独立的日志目录（`activity.md` + `reasoning.jsonl`），便于溯源与调试。
+- **一键全局运行** — 直接在 Web UI 中启动全局调度器。
 - **子代理分发器** — 支持将任务执行委托给 `kimi --print` 或 `claude -p`，实现真正的无人值守多 Agent 运行。
-- **交互式依赖图谱** — 基于 Vis-Network.js，支持拖拽、缩放、悬停提示。
-- **无 Graphviz 的 SVG 回退** — 当系统未安装 `dot` 时，`workflow_graph.py` 以纯 Python 渲染 SVG 依赖图。
 - **多版本切换** — 在 Web UI 中直接切换 `main`、`v2` 及未来版本。
 - **项目选择器** — 无需重启服务，即可在控制台中打开并管理其他本地 Zeus 项目。
 
@@ -96,7 +95,7 @@ Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档
 |---|---|---|
 | M-008 — Web UI 与多语言 | ✅ 已完成 | T-023 ~ T-025 |
 | M-009 — 阶段（Phase）层 | ✅ 已完成 | T-026 ~ T-029 |
-| M-010 — 全局调度器与 Agent 协作 | 🚧 开发中 | **T-030** ✅ → **T-031** 🚧 → **T-032** 🚧 → **T-033** 🚧 → **T-034** 🚧 |
+| M-010 — 全局调度器与 Agent 协作 | ✅ 已完成 | T-030 ~ T-034 |
 
 ## 工作流
 
@@ -185,12 +184,10 @@ Zeus v2 由 `zeus_server.py`（FastAPI）驱动零构建 Web UI：
 
 - **仪表盘** — 实时 wave 进度、待完成/已完成统计、任务校验状态。
 - **阶段（Phases）** — 以里程碑为中心的交付批次，支持按阶段过滤 Wave。
-- **Agent 监控** — 展示当前运行中的 agent 及其分配任务。
-- **全局执行** 🚧 — 跨 Wave 运行任务列表与失败隔离区（quarantine）。
-- **Agent 协作** 🚧 — 基于 Mailbox 协议的 Agent 间实时消息流。
-- **Agent 日志** 🚧 — 按 Agent 筛选的独立日志浏览器（`activity.md`、`reasoning.jsonl`）。
-- **讨论日志** — 按 wave 查看 markdown 讨论日志，支持轻量渲染。
-- **依赖图谱** — 基于 Vis-Network 的交互式图谱，按状态着色；未安装 Graphviz 时自动回退到纯 Python SVG 渲染。
+- **里程碑（Milestones）** — 可展开的里程碑卡片，含任务列表与进度条。
+- **全局执行** — 跨 Wave 运行任务列表、待执行队列、失败隔离区（quarantine），支持一键启动调度器。
+- **Agent 协作** — 基于 Mailbox 协议的 Agent 间实时消息流。
+- **Agent 日志** — 按 Agent 筛选的独立日志浏览器（`activity.md`、`reasoning.jsonl`）。
 - **版本切换** — 自动发现 `.zeus/{version}/task.json` 下的所有版本。
 - **打开项目** — 通过 UI 动态切换其他 Zeus 项目目录，无需重启服务。
 

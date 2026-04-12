@@ -93,12 +93,11 @@ See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specif
 - **Zero-build Web Dashboard** — Vue 3 + Tailwind CSS, dark industrial glassmorphism UI, fully in Chinese.
 - **Phase Layer** — group milestones and waves into human-readable delivery phases (P-001, P-002…) with progress tracking.
 - **Multi-language Support** — task titles and descriptions switch between English and Chinese with a single click.
-- **Global Scheduler** 🚧 *In Progress* — dispatch tasks across wave boundaries based purely on dependency readiness.
-- **Agent Collaboration** 🚧 *In Progress* — point-to-point Mailbox protocol so agents can communicate while executing.
-- **Agent-centric Logs** 🚧 *In Progress* — per-agent isolated log directories for easier debugging and traceability.
+- **Global Scheduler** — dispatch tasks across wave boundaries based purely on dependency readiness, with a quarantine zone for failed tasks.
+- **Agent Collaboration** — point-to-point Mailbox protocol so agents can communicate while executing.
+- **Agent-centric Logs** — per-agent isolated log directories (`activity.md` + `reasoning.jsonl`) for easier debugging and traceability.
+- **One-Click Global Run** — start the global scheduler directly from the Web UI.
 - **Subagent Dispatcher** — delegates task execution to `kimi --print` or `claude -p` for true unattended multi-agent runs.
-- **Interactive Workflow Graph** — powered by Vis-Network.js with drag, zoom, and hover tooltips.
-- **Graphviz-free SVG Fallback** — `workflow_graph.py` renders dependency diagrams in pure Python when `dot` is unavailable.
 - **Multi-version Switching** — switch between `main`, `v2`, and future versions directly in the Web UI.
 - **Project Picker** — open and manage other local Zeus projects from the dashboard without restarting the server.
 
@@ -108,7 +107,7 @@ See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specif
 |---|---|---|
 | M-008 — Web UI & Multi-language | ✅ Completed | T-023 ~ T-025 |
 | M-009 — Phase Layer | ✅ Completed | T-026 ~ T-029 |
-| M-010 — Global Orchestrator & Agent Collaboration | 🚧 In Progress | **T-030** ✅ → **T-031** 🚧 → **T-032** 🚧 → **T-033** 🚧 → **T-034** 🚧 |
+| M-010 — Global Orchestrator & Agent Collaboration | ✅ Completed | T-030 ~ T-034 |
 
 ## Workflow
 
@@ -197,12 +196,10 @@ Zeus v2 provides a zero-build Web UI served by `zeus_server.py` (FastAPI):
 
 - **Dashboard** — real-time wave progress, pending/completed stats, and task validation status.
 - **Phases** — milestone-centric delivery batches with phase-aware wave filtering.
-- **Agent Monitor** — shows currently running agents and their assigned tasks.
-- **Global Execution** 🚧 — cross-wave running task list and quarantine zone for failures.
-- **Agent Collaboration** 🚧 — live message stream between agents via the Mailbox protocol.
-- **Agent Logs** 🚧 — per-agent isolated log browser (`activity.md`, `reasoning.jsonl`).
-- **Discussion Log** — per-wave markdown discussion logs with lightweight rendering.
-- **Dependency Graph** — interactive Vis-Network graph with color-coded task status; falls back to a pure-Python SVG renderer when Graphviz is not installed.
+- **Milestones** — expandable milestone cards with task lists and progress bars.
+- **Global Execution** — cross-wave running task list, pending queue, quarantine zone, and one-click scheduler launch.
+- **Agent Collaboration** — live message stream between agents via the Mailbox protocol.
+- **Agent Logs** — per-agent isolated log browser (`activity.md`, `reasoning.jsonl`).
 - **Version Switcher** — automatically discovers all `.zeus/{version}/task.json` folders.
 - **Open Project** — switch to another Zeus project directory on the fly via the UI.
 
