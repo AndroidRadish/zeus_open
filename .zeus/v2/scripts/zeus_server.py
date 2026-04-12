@@ -194,6 +194,7 @@ def get_agents(version: str = Query("v2")) -> dict[str, Any]:
 
     state: dict[str, str] = {}
     latest_start: dict[str, dict[str, Any]] = {}
+    latest_end: dict[str, dict[str, Any]] = {}
 
     for evt in events:
         tid = evt.get("task_id")
@@ -201,22 +202,35 @@ def get_agents(version: str = Query("v2")) -> dict[str, Any]:
         if typ == "task.started":
             latest_start[tid] = evt
             state[tid] = "running"
-        elif typ in ("task.completed", "task.failed"):
-            state[tid] = "done"
+        elif typ == "task.completed":
+            state[tid] = "completed"
+            latest_end[tid] = evt
+        elif typ == "task.failed":
+            state[tid] = "failed"
+            latest_end[tid] = evt
 
-    agents = []
+    running: list[dict[str, Any]] = []
+    recent: list[dict[str, Any]] = []
+
     for tid, evt in latest_start.items():
+        agent = {
+            "agent_id": evt.get("agent_id", ""),
+            "task_id": tid,
+            "started_at": evt.get("ts", ""),
+            "status": state.get(tid, "running"),
+        }
+        if latest_end.get(tid):
+            agent["finished_at"] = latest_end[tid].get("ts", "")
         if state.get(tid) == "running":
-            agents.append(
-                {
-                    "agent_id": evt.get("agent_id", ""),
-                    "task_id": tid,
-                    "started_at": evt.get("ts", ""),
-                    "status": "running",
-                }
-            )
+            running.append(agent)
+        else:
+            recent.append(agent)
 
-    return {"agents": agents}
+    # Sort recent by finished_at descending, keep top 10
+    recent.sort(key=lambda a: a.get("finished_at", ""), reverse=True)
+    recent = recent[:10]
+
+    return {"running": running, "recent": recent}
 
 
 @app.get("/events")

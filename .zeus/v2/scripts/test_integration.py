@@ -231,8 +231,8 @@ def test_api_smoke_full_lifecycle(tmp_path: Path) -> None:
         r = requests.get(f"{base_url}/agents")
         assert r.status_code == 200
         agents_data = r.json()
-        agents = agents_data["agents"]
-        assert any(a["task_id"] == "T-002" and a["status"] == "running" for a in agents)
+        running = agents_data["running"]
+        assert any(a["task_id"] == "T-002" and a["status"] == "running" for a in running)
 
         # GET /events?wave=1
         r = requests.get(f"{base_url}/events", params={"wave": 1})
