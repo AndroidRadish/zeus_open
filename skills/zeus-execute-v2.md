@@ -107,6 +107,27 @@ Same as v1:
 4. Task-level AI log `.zeus/v2/ai-logs/{ISO-ts}-{task_id}.md`
 5. Progress append to `.zeus/v2/progress.txt`
 
+## Task Multi-language Support
+
+Zeus v2 task metadata supports bilingual fields. In `task.json`, you can optionally add localized versions of `title` and `description`:
+
+```json
+{
+  "id": "T-026",
+  "title": "Implement feature X",
+  "title_en": "Implement feature X",
+  "title_zh": "实现功能 X",
+  "description": "Detailed English description...",
+  "description_en": "Detailed English description...",
+  "description_zh": "详细的中文描述..."
+}
+```
+
+**Rules:**
+- All i18n fields are optional.
+- The Web UI language toggle (中 / EN) reads `title_{lang}` / `description_{lang}` first, then falls back to the base `title` / `description`.
+- The orchestrator prompt builder uses `title_zh` / `description_zh` when generating Chinese prompts.
+
 ## Failure policy
 
 - Agent timeout >10 min marks task failed.

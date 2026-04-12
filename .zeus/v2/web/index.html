@@ -111,6 +111,20 @@
               <span class="text-sm font-medium text-slate-200 truncate">{{ projectDirName }}</span>
             </div>
 
+            <!-- Language Toggle -->
+            <div class="hidden sm:flex items-center gap-1 rounded-lg bg-white/5 border border-white/10 p-0.5">
+              <button
+                @click="lang = 'zh'"
+                class="px-2 py-1 rounded text-xs font-medium transition-colors"
+                :class="lang === 'zh' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400 hover:text-slate-200'"
+              >中</button>
+              <button
+                @click="lang = 'en'"
+                class="px-2 py-1 rounded text-xs font-medium transition-colors"
+                :class="lang === 'en' ? 'bg-cyan-500/20 text-cyan-300' : 'text-slate-400 hover:text-slate-200'"
+              >EN</button>
+            </div>
+
             <!-- Version Selector -->
             <div class="hidden sm:flex items-center gap-2">
               <label class="text-xs text-slate-400">任务</label>
@@ -312,7 +326,7 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-white font-mono">{{ task.id }}</td>
                   <td class="px-6 py-4 text-sm text-slate-300 max-w-md">
                     <div class="flex items-center gap-2">
-                      <span>{{ task.title }}</span>
+                      <span>{{ getLocalized(task, 'title') }}</span>
                       <span
                         v-if="task.original_wave != null && task.scheduled_wave != null && task.original_wave !== task.scheduled_wave"
                         class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-500/10 text-cyan-300 border border-cyan-500/20"
@@ -345,6 +359,86 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Milestones View -->
+      <div v-if="currentTab === 'milestones'" class="space-y-6">
+        <div v-if="milestones.length === 0" class="glass-panel rounded-2xl p-10 text-center">
+          <p class="text-slate-500">暂无里程碑数据</p>
+        </div>
+        <div
+          v-for="ms in milestones"
+          :key="ms.id"
+          class="glass-panel rounded-2xl overflow-hidden transition-all duration-300"
+        >
+          <!-- Milestone Header -->
+          <div
+            class="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 cursor-pointer hover:bg-white/[0.02]"
+            @click="toggleMilestone(ms.id)"
+          >
+            <div class="flex items-center gap-3">
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
+                :class="milestoneStatusClass(ms.status)"
+              >
+                {{ milestoneStatusText(ms.status) }}
+              </span>
+              <h3 class="text-base font-semibold text-white">{{ ms.title }}</h3>
+              <span class="text-xs text-slate-500">{{ ms.tasks.length }} 个任务</span>
+            </div>
+            <div class="flex items-center gap-4 flex-1 sm:justify-end">
+              <div class="flex-1 sm:max-w-[12rem] h-2 bg-white/5 rounded-full overflow-hidden">
+                <div
+                  class="h-full rounded-full transition-all duration-700"
+                  :class="ms.status === 'completed' ? 'bg-emerald-500' : 'bg-cyan-500'"
+                  :style="{ width: ms.progress_percent + '%' }"
+                ></div>
+              </div>
+              <span class="text-sm font-medium text-slate-300 w-10 text-right">{{ ms.progress_percent }}%</span>
+              <svg
+                class="w-5 h-5 text-slate-400 transition-transform duration-300"
+                :class="expandedMilestones.has(ms.id) ? 'rotate-180' : ''"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Milestone Tasks -->
+          <div v-show="expandedMilestones.has(ms.id)" class="border-t border-white/5">
+            <div class="overflow-x-auto">
+              <table class="min-w-full">
+                <thead class="bg-white/[0.02]">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">任务 ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">标题</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">状态</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Wave</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                  <tr v-for="task in ms.tasks" :key="task.id" class="hover:bg-white/[0.02] transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-white font-mono">{{ task.id }}</td>
+                    <td class="px-6 py-4 text-sm text-slate-300 max-w-md">{{ getLocalized(task, 'title') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                        :class="task.passes ? 'bg-emerald-500/10 text-emerald-300' : 'bg-slate-500/10 text-slate-300'"
+                      >
+                        {{ task.passes ? '已完成' : '待执行' }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400 font-mono">{{ task.wave }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -599,12 +693,14 @@
       agents: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
       discussion: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
       graph: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+      milestones: '<path d="M12 2l7 19-7-4-7 4 7-19z"/>',
     };
 
     createApp({
       setup() {
         const currentTab = ref('dashboard');
         const currentVersion = ref('v2');
+        const lang = ref('zh');
         const versions = ref([]);
         const loading = ref(false);
         const serverOnline = ref(false);
@@ -616,6 +712,9 @@
         });
         const waveTasks = ref([]);
         const agents = ref([]);
+        const recentAgents = ref([]);
+        const milestones = ref([]);
+        const expandedMilestones = ref(new Set());
         const dashboardWave = ref(1);
         const discussionWave = ref(1);
         const discussionContent = ref('');
@@ -640,6 +739,7 @@
 
         const tabs = [
           { id: 'dashboard', label: '仪表盘', icon: ICONS.dashboard },
+          { id: 'milestones', label: '里程碑', icon: ICONS.milestones },
           { id: 'agents', label: 'Agent 监控', icon: ICONS.agents },
           { id: 'discussion', label: '讨论日志', icon: ICONS.discussion },
           { id: 'graph', label: '依赖图谱', icon: ICONS.graph },
@@ -740,6 +840,39 @@
             openProjectError.value = e.message || '打开项目失败';
           } finally {
             openProjectLoading.value = false;
+          }
+        }
+
+        function getLocalized(task, field) {
+          const localized = task[`${field}_${lang.value}`];
+          if (localized) return localized;
+          return task[field] || '';
+        }
+
+        function milestoneStatusText(status) {
+          if (status === 'completed') return '已完成';
+          if (status === 'in_progress') return '进行中';
+          return '待开始';
+        }
+
+        function milestoneStatusClass(status) {
+          if (status === 'completed') return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20';
+          if (status === 'in_progress') return 'bg-amber-500/10 text-amber-300 border-amber-500/20';
+          return 'bg-slate-500/10 text-slate-300 border-slate-500/20';
+        }
+
+        function toggleMilestone(msId) {
+          const s = expandedMilestones.value;
+          if (s.has(msId)) s.delete(msId);
+          else s.add(msId);
+        }
+
+        async function fetchMilestones() {
+          try {
+            const data = await apiGet('/milestones');
+            milestones.value = data.milestones || [];
+          } catch (e) {
+            milestones.value = [];
           }
         }
 
@@ -931,6 +1064,7 @@
           ]);
           dashboardWave.value = currentWave.value || 1;
           await fetchWaveTasks();
+          if (currentTab.value === 'milestones') await fetchMilestones();
           if (currentTab.value === 'discussion') await loadDiscussion();
           if (currentTab.value === 'graph') await loadGraph();
           loading.value = false;
@@ -1026,6 +1160,7 @@
         });
 
         watch(currentTab, (tab) => {
+          if (tab === 'milestones') fetchMilestones();
           if (tab === 'discussion') loadDiscussion();
           if (tab === 'graph') loadGraph();
           else graphTooltipVisible.value = false;
@@ -1050,6 +1185,7 @@
         return {
           currentTab,
           currentVersion,
+          lang,
           versions,
           tabs,
           loading,
@@ -1067,6 +1203,8 @@
           dashboardWave,
           agents,
           recentAgents,
+          milestones,
+          expandedMilestones,
           discussionWave,
           discussionContent,
           graphError,
@@ -1090,6 +1228,11 @@
           getStatusLabel,
           formatTime,
           renderMarkdown,
+          getLocalized,
+          milestoneStatusText,
+          milestoneStatusClass,
+          toggleMilestone,
+          fetchMilestones,
           showOpenProjectModal,
           closeOpenProjectModal,
           pasteFromClipboard,

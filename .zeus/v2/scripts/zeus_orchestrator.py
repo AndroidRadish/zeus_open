@@ -75,13 +75,21 @@ class ZeusOrchestrator:
         except Exception:
             return {}
 
+    @staticmethod
+    def _localize(task: dict, field: str, lang: str = "zh") -> str:
+        """Return localized task field if available, else fall back to base field."""
+        localized = task.get(f"{field}_{lang}")
+        if localized:
+            return localized
+        return task.get(field, "")
+
     def _build_prompt(self, task: dict, store: LocalStore) -> str:
         config = self._load_config_json(store)
         north_star = config.get("metrics", {}).get("north_star", "N/A")
         project_name = config.get("project", {}).get("name", "ZeusOpen Project")
         task_id = task["id"]
-        task_title = task["title"]
-        task_desc = task.get("description", "")
+        task_title = self._localize(task, "title", "zh")
+        task_desc = self._localize(task, "description", "zh")
         task_type = task.get("type", "feat")
         task_files = ", ".join(task.get("files", [])) or "N/A"
         depends_on = ", ".join(task.get("depends_on", [])) or "none"

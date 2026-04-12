@@ -26,6 +26,27 @@ def client(tmp_path):
     task_dir.mkdir(parents=True)
     (task_dir / "task.json").write_text(json.dumps(task_data), encoding="utf-8")
 
+    roadmap_data = {
+        "version": "v2",
+        "milestones": [
+            {
+                "id": "M-001",
+                "title": "Infra",
+                "status": "in_progress",
+                "task_ids": ["T-001", "T-002"],
+                "story_ids": ["US-001"],
+            },
+            {
+                "id": "M-002",
+                "title": "Future",
+                "status": "pending",
+                "task_ids": ["T-003"],
+                "story_ids": ["US-002"],
+            },
+        ],
+    }
+    (task_dir / "roadmap.json").write_text(json.dumps(roadmap_data), encoding="utf-8")
+
     events = [
         {
             "ts": "2026-04-10T07:00:00Z",
@@ -250,3 +271,25 @@ def test_open_project_not_zeus(client, tmp_path):
     response = client.post("/project/open", json={"project_dir": str(plain_dir)})
     assert response.status_code == 400
     assert "Not a valid Zeus project" in response.json()["detail"]
+
+
+def test_milestones_endpoint(client):
+    response = client.get("/milestones")
+    assert response.status_code == 200
+    data = response.json()
+    assert "milestones" in data
+    assert len(data["milestones"]) == 2
+
+    m1 = next(m for m in data["milestones"] if m["id"] == "M-001")
+    assert m1["title"] == "Infra"
+    assert m1["status"] == "in_progress"
+    assert m1["progress_percent"] == 50
+    assert len(m1["tasks"]) == 2
+    assert any(t["id"] == "T-001" and t["passes"] is True for t in m1["tasks"])
+    assert any(t["id"] == "T-002" and t["passes"] is False for t in m1["tasks"])
+
+    m2 = next(m for m in data["milestones"] if m["id"] == "M-002")
+    assert m2["title"] == "Future"
+    assert m2["status"] == "completed"
+    assert m2["progress_percent"] == 100
+    assert len(m2["tasks"]) == 1

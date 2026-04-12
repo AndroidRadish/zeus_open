@@ -22,7 +22,11 @@
             "description": "api = 后端 API；frontend = 前端页面/组件；infra = 基础设施；docs = 文档"
           },
           "title":       { "type": "string" },
+          "title_en":    { "type": "string" },
+          "title_zh":    { "type": "string" },
           "description": { "type": "string" },
+          "description_en": { "type": "string" },
+          "description_zh": { "type": "string" },
           "files": {
             "type": "array",
             "items": { "type": "string" },

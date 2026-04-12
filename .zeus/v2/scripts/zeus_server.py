@@ -173,6 +173,11 @@ def get_wave(n: int, version: str = Query("v2")) -> dict[str, Any]:
         {
             "id": t["id"],
             "title": t.get("title", ""),
+            "title_en": t.get("title_en"),
+            "title_zh": t.get("title_zh"),
+            "description": t.get("description", ""),
+            "description_en": t.get("description_en"),
+            "description_zh": t.get("description_zh"),
             "passes": t.get("passes", False),
             "depends_on": t.get("depends_on", []),
             "wave": t.get("wave"),
@@ -184,6 +189,48 @@ def get_wave(n: int, version: str = Query("v2")) -> dict[str, Any]:
         if t.get("wave") == n
     ]
     return {"wave": n, "tasks": wave_tasks}
+
+
+@app.get("/milestones")
+def get_milestones(version: str = Query("v2")) -> dict[str, Any]:
+    roadmap_path = f".zeus/{version}/roadmap.json"
+    roadmap_data = store.read_json(roadmap_path) if store._resolve(roadmap_path).exists() else {"milestones": []}
+    task_data = _read_task_json(version)
+    tasks = {t["id"]: t for t in task_data.get("tasks", [])}
+
+    result: list[dict[str, Any]] = []
+    for ms in roadmap_data.get("milestones", []):
+        ms_tasks: list[dict[str, Any]] = []
+        for tid in ms.get("task_ids", []):
+            if tid in tasks:
+                t = tasks[tid]
+                ms_tasks.append({
+                    "id": t["id"],
+                    "title": t.get("title", ""),
+                    "title_en": t.get("title_en"),
+                    "title_zh": t.get("title_zh"),
+                    "passes": t.get("passes", False),
+                    "wave": t.get("wave"),
+                    "original_wave": t.get("original_wave", t.get("wave")),
+                    "scheduled_wave": t.get("scheduled_wave", t.get("wave")),
+                })
+        total = len(ms_tasks)
+        done = sum(1 for mt in ms_tasks if mt["passes"])
+        if total == 0:
+            status = "pending"
+        elif done == total:
+            status = "completed"
+        else:
+            status = "in_progress"
+        progress = round((done / total) * 100) if total else 0
+        result.append({
+            "id": ms.get("id"),
+            "title": ms.get("title", ""),
+            "status": status,
+            "progress_percent": progress,
+            "tasks": ms_tasks,
+        })
+    return {"milestones": result}
 
 
 @app.get("/agents")
