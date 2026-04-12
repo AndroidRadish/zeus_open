@@ -188,12 +188,12 @@
     },
     {
       "id": "T-015",
-      "passes": false,
+      "passes": true,
       "story_id": "US-006",
       "title": "Create subagent_dispatcher.py with ABC + Mock + Kimi + Claude + Auto implementations",
       "depends_on": [],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "a0c996b8fc9a09a976efc5828513133efc04afd0",
+      "log_path": ".zeus/v2/ai-logs/T-015.md",
       "wave": 5,
       "original_wave": 5,
       "scheduled_wave": 5,
@@ -201,14 +201,14 @@
     },
     {
       "id": "T-016",
-      "passes": false,
+      "passes": true,
       "story_id": "US-006",
       "title": "Refactor zeus_orchestrator.py to delegate execution to dispatcher and add config parsing",
       "depends_on": [
         "T-015"
       ],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "9386d0a0ca2a9024d9fe887b768fc12a3edfe587",
+      "log_path": ".zeus/v2/ai-logs/T-016.md",
       "wave": 6,
       "original_wave": 6,
       "scheduled_wave": 6,
