@@ -142,14 +142,14 @@
     },
     {
       "id": "T-012",
-      "passes": false,
+      "passes": true,
       "story_id": "US-005",
       "title": "Refactor zeus_orchestrator.py scheduling loop to priority-queue + adaptive slot filling",
       "depends_on": [
         "T-011"
       ],
-      "commit_sha": null,
-      "log_path": null,
+      "commit_sha": "6330369b624bedd56fae89142f6bf2fb39d48bb6",
+      "log_path": ".zeus/v2/ai-logs/T-012.md",
       "wave": 6,
       "original_wave": 6,
       "scheduled_wave": 6,
