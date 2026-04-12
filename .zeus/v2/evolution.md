@@ -46,6 +46,33 @@
 
 ---
 
+## SHIP — 2026-04-12
+
+- **Event**: Complete M-008 — Web UI Improvements & Multi-language Support
+- **Tasks completed**: T-023, T-024, T-025
+- **Status**: All v2 tests pass (51/51)
+- **Key deliverables**:
+  - New `/milestones` API endpoint and Web UI "Milestones" tab for milestone-centric progress reading
+  - Task schema extended with optional `title_en`, `title_zh`, `description_en`, `description_zh`
+  - Web UI language toggle (中 / EN) with `getLocalized` helper and graceful fallback
+  - All 25 v2 tasks seeded with bilingual titles; descriptions localized where present
+  - Documentation updated in `skills/zeus-execute-v2.md`
+- **Next milestone**: Backlog — Auto-heal (Step 2) remains deferred until further human decision
+
+---
+
+## PLAN — 2026-04-12 (Web UI Improvements & Multi-language Support)
+
+- **Event**: Address wave-based UI redundancy and finally ship task i18n (EN/ZH)
+- **Objective**: Add a Milestones-centric view for smooth human reading; extend task schema and UI for bilingual task metadata
+- **New Artifacts**:
+  - Spec: `.zeus/v2/specs/2026-04-12-web-ui-improvements.md`
+  - Roadmap: M-008 added with T-023 ~ T-025
+  - PRD: US-008 added
+- **North star impact**: `developer_adoption_rate` ↑↑ (better UX for non-native speakers), `ui_usability` ↑↑ (milestone view removes wave-switching friction)
+
+---
+
 ## PLAN — 2026-04-12 (Subagent Dispatcher)
 
 - **Event**: Plan subagent dispatcher integration after discovering `kimi --print` and `claude -p` support

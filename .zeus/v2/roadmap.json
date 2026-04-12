@@ -99,6 +99,20 @@
             ],
             "title": "v2 Subagent Workspace Bootstrap",
             "status": "completed"
+        },
+        {
+            "id": "M-008",
+            "task_ids": [
+                "T-023",
+                "T-024",
+                "T-025"
+            ],
+            "spec_ref": ".zeus/v2/specs/2026-04-12-web-ui-improvements.md",
+            "story_ids": [
+                "US-008"
+            ],
+            "title": "v2 Web UI Improvements & Multi-language Support",
+            "status": "completed"
         }
     ]
 }

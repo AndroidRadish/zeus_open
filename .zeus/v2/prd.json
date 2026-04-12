@@ -77,6 +77,18 @@
                 "Documentation (zeus-execute-v2.md) explains the bootstrap behavior and config option"
             ],
             "id": "US-007"
+        },
+        {
+            "passes": true,
+            "title": "Web UI Improvements & Multi-language Support",
+            "acceptance_criteria": [
+                "Web UI provides a Milestones tab that groups tasks by roadmap milestone with per-milestone progress bars",
+                "Task schema supports optional title_en, title_zh, description_en, description_zh",
+                "Web UI has a language toggle (EN/ZH) and all task displays are localized with graceful fallback",
+                "All existing tests pass and new tests cover the /milestones endpoint",
+                "i18n fields are seeded for all existing v2 tasks and documented in zeus-execute-v2.md"
+            ],
+            "id": "US-008"
         }
     ]
 }
