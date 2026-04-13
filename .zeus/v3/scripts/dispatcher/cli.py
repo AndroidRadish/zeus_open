@@ -178,6 +178,16 @@ def build_dispatcher(config: dict[str, Any] | None = None) -> SubagentDispatcher
         return KimiSubagentDispatcher(timeout_seconds=timeout)
     if mode == "claude":
         return ClaudeSubagentDispatcher(timeout_seconds=timeout)
+    if mode == "docker":
+        from dispatcher.docker import DockerSubagentDispatcher
+        docker_cfg = subagent_cfg.get("docker", {})
+        return DockerSubagentDispatcher(
+            image=docker_cfg.get("image", "python:3.13-slim"),
+            timeout_seconds=timeout,
+            memory_limit=docker_cfg.get("memory_limit"),
+            cpu_limit=docker_cfg.get("cpu_limit"),
+            extra_volumes=docker_cfg.get("extra_volumes"),
+        )
     if mode == "mock":
         from dispatcher.mock import MockSubagentDispatcher
         return MockSubagentDispatcher()

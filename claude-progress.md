@@ -75,7 +75,8 @@
 | **P3 Dashboard** | Zero-build real-time dashboard (`/dashboard`) with SSE + metrics | ✅ 已完成 (`6c0b697`) |
 | **P3 M-010 Pre** | `zeus_runner.py --status --version v3` reads v3 SQLite database | ✅ 已完成 (`933aa28`) |
 | **Redis Queue** | Redis-backed task queue (`--queue-backend redis`) + fakeredis tests | ✅ 已完成 (`7909a74`) |
-| **M-008 Docker** | `docker-compose.yml` + Dockerfile, split api/scheduler/worker via `--mode` | ✅ 已完成 |
+| **M-008 Docker** | `docker-compose.yml` + Dockerfile, split api/scheduler/worker via `--mode` | ✅ 已完成 (`b96466b`) |
+| **M-009 Docker** | Docker sandbox dispatcher (`dispatcher=docker`) with cgroup/volume support | ✅ 已完成 |
 
 ### v3 已修复关键问题
 - **Windows subprocess ARP 路径转义**: `repr(str(path))` 保证 `python -c` 中的字符串字面量安全
