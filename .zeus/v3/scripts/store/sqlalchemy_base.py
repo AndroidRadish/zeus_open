@@ -163,15 +163,19 @@ class _SqlAlchemyStateStore(AsyncStateStore):
         agent_id: str | None = None,
         wave: int | None = None,
         payload: dict[str, Any] | None = None,
+        ts: Any | None = None,
     ) -> int:
         async with self._session_factory() as session:
-            obj = EventLog(
+            kwargs: dict[str, Any] = dict(
                 event_type=event_type,
                 task_id=task_id,
                 agent_id=agent_id,
                 wave=wave,
                 payload=payload,
             )
+            if ts is not None:
+                kwargs["ts"] = ts
+            obj = EventLog(**kwargs)
             session.add(obj)
             await session.commit()
             return obj.id

@@ -120,6 +120,66 @@ async def test_sse_endpoint_registered(api_client):
 
 
 @pytest.mark.asyncio
+async def test_metrics_tasks(api_client, sqlite_store):
+    client, _ = api_client
+    await sqlite_store.upsert_task({"id": "T-MT-1", "status": "pending", "wave": 1})
+    # Simulate events with explicit ISO timestamps
+    await sqlite_store.log_event("task.started", task_id="T-MT-1", agent_id="w-0", payload={})
+    await sqlite_store.log_event("task.completed", task_id="T-MT-1", agent_id="w-0", payload={})
+
+    resp = await client.get("/metrics/tasks")
+    assert resp.status_code == 200
+    data = resp.json()
+    mt1 = next((m for m in data if m["task_id"] == "T-MT-1"), None)
+    assert mt1 is not None
+    assert mt1["status"] == "pending"  # store state hasn't been updated in this test
+    assert mt1["duration_ms"] is not None
+
+
+@pytest.mark.asyncio
+async def test_metrics_bottleneck(api_client, sqlite_store):
+    client, _ = api_client
+    from datetime import datetime, timezone, timedelta
+    base = datetime(2026, 4, 13, 10, 0, 0, tzinfo=timezone.utc)
+    for i in range(3):
+        tid = f"T-BOT-{i}"
+        await sqlite_store.upsert_task({"id": tid, "status": "completed", "wave": 1})
+        await sqlite_store.log_event("task.started", task_id=tid, agent_id="w-0", payload={}, ts=base)
+    # Different finish times; durations are (completed - started)
+    durations = [1000, 3000, 5000]  # ms
+    for i, dur_ms in enumerate(durations):
+        tid = f"T-BOT-{i}"
+        finished = base + timedelta(milliseconds=dur_ms)
+        await sqlite_store.log_event("task.completed" if i != 1 else "task.failed", task_id=tid, agent_id="w-0", payload={}, ts=finished)
+
+    resp = await client.get("/metrics/bottleneck?top_n=2")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) <= 2
+    # Longest should be T-BOT-2 (5s)
+    assert data[0]["task_id"] == "T-BOT-2"
+    assert data[0]["duration_ms"] == 5000
+
+
+@pytest.mark.asyncio
+async def test_metrics_blocked(api_client, sqlite_store):
+    client, _ = api_client
+    # T-BLK-1 fails, blocking T-BLK-2 and T-BLK-3
+    await sqlite_store.upsert_task({"id": "T-BLK-1", "status": "failed", "wave": 1, "depends_on": []})
+    await sqlite_store.upsert_task({"id": "T-BLK-2", "status": "pending", "wave": 2, "depends_on": ["T-BLK-1"]})
+    await sqlite_store.upsert_task({"id": "T-BLK-3", "status": "pending", "wave": 2, "depends_on": ["T-BLK-2"]})
+
+    resp = await client.get("/metrics/blocked")
+    assert resp.status_code == 200
+    data = resp.json()
+    chain = next((c for c in data if c["blocked_by"] == "T-BLK-1"), None)
+    assert chain is not None
+    assert chain["blocked_task_count"] == 2
+    assert "T-BLK-2" in chain["blocked_task_ids"]
+    assert "T-BLK-3" in chain["blocked_task_ids"]
+
+
+@pytest.mark.asyncio
 async def test_event_bus_subscribe():
     bus = EventBus()
 

@@ -86,6 +86,7 @@ class AsyncStateStore(abc.ABC):
         agent_id: str | None = None,
         wave: int | None = None,
         payload: dict[str, Any] | None = None,
+        ts: Any | None = None,
     ) -> int:
         """Append an event and return the generated event id."""
         raise NotImplementedError

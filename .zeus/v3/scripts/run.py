@@ -22,6 +22,7 @@ from api.bus import EventBus
 from api.server import create_app
 from config import ZeusConfig
 from core.scheduler import ZeusScheduler
+from core.tracing import init_tracing
 from core.worker_pool import WorkerPool
 from db.engine import make_async_engine
 from db.models import Base
@@ -45,6 +46,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--serve", action="store_true", help="Start the API server instead of running the scheduler")
     parser.add_argument("--host", default="127.0.0.1", help="API server host")
     parser.add_argument("--port", type=int, default=8000, help="API server port")
+    parser.add_argument("--trace", action="store_true", help="Enable OpenTelemetry console trace output")
     return parser.parse_args(argv)
 
 
@@ -66,6 +68,7 @@ async def main(argv: list[str] | None = None) -> int:
         return 1
 
     database_url = args.database_url or f"sqlite+aiosqlite:///{project_root / '.zeus' / version / 'state.db'}"
+    tracer = init_tracing(export_to_console=args.trace)
     print(f"🚀 ZeusOpen v3 Runner")
     print(f"   Project : {project_root}")
     print(f"   Version : {version}")
@@ -125,29 +128,37 @@ async def main(argv: list[str] | None = None) -> int:
     idle_count = 0
     max_idle_ticks = 10  # If scheduler is idle and queue is empty for 10 ticks, we are done
 
-    try:
-        while True:
-            ready = await scheduler.tick(enqueued_ids)
-            ticks += 1
-            if ready:
-                idle_count = 0
-                print(f"   Tick {ticks}: enqueued {len(ready)} task(s) — {', '.join(t['id'] for t in ready)}")
-            else:
-                idle_count += 1
-                qsize = await queue.size()
-                if qsize == 0 and idle_count >= max_idle_ticks:
-                    pending = len(await store.list_tasks(status="pending"))
-                    running = len(await store.list_tasks(status="running"))
-                    if pending == 0 and running == 0:
-                        break
-                await asyncio.sleep(0.2)
-    except KeyboardInterrupt:
-        print("\n⏹ Interrupted by user")
-    finally:
-        await pool.stop()
-        await scheduler.mark_global_completed()
-        await store.close()
-        await queue.close()
+    with tracer.start_as_current_span("scheduler-run") as span:
+        span.set_attribute("max_workers", args.max_workers)
+        span.set_attribute("database_url", database_url)
+        try:
+            while True:
+                with tracer.start_as_current_span("scheduler-tick") as tick_span:
+                    ready = await scheduler.tick(enqueued_ids)
+                    ticks += 1
+                    tick_span.set_attribute("tick", ticks)
+                    tick_span.set_attribute("enqueued_count", len(ready))
+                    if ready:
+                        idle_count = 0
+                        print(f"   Tick {ticks}: enqueued {len(ready)} task(s) — {', '.join(t['id'] for t in ready)}")
+                    else:
+                        idle_count += 1
+                        qsize = await queue.size()
+                        if qsize == 0 and idle_count >= max_idle_ticks:
+                            pending = len(await store.list_tasks(status="pending"))
+                            running = len(await store.list_tasks(status="running"))
+                            tick_span.set_attribute("pending", pending)
+                            tick_span.set_attribute("running", running)
+                            if pending == 0 and running == 0:
+                                break
+                        await asyncio.sleep(0.2)
+        except KeyboardInterrupt:
+            print("\n⏹ Interrupted by user")
+        finally:
+            await pool.stop()
+            await scheduler.mark_global_completed()
+            await store.close()
+            await queue.close()
 
     # 6. Report
     print("\n🏁 Run complete")

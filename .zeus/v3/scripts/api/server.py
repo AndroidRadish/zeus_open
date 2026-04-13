@@ -15,6 +15,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from api.bus import EventBus
+from api.metrics import MetricsCollector
 from db.engine import make_async_engine
 from db.models import Base
 from store.sqlite_store import SQLiteStateStore
@@ -88,27 +89,23 @@ def create_app(store: SQLiteStateStore, bus: EventBus | None = None) -> FastAPI:
 
     @app.get("/metrics/summary")
     async def metrics_summary() -> dict[str, Any]:
-        tasks = await store.list_tasks()
-        total = len(tasks)
-        completed = sum(1 for t in tasks if t["status"] == "completed")
-        failed = sum(1 for t in tasks if t["status"] == "failed")
-        pending = sum(1 for t in tasks if t["status"] == "pending")
-        running = sum(1 for t in tasks if t["status"] == "running")
-        quarantined = len(await store.list_quarantine())
+        collector = MetricsCollector(store)
+        return await collector.summary()
 
-        # Simple pass-rate metric
-        evaluated = completed + failed
-        pass_rate = (completed / evaluated) if evaluated else 0.0
+    @app.get("/metrics/tasks")
+    async def metrics_tasks() -> list[dict[str, Any]]:
+        collector = MetricsCollector(store)
+        return await collector.task_metrics()
 
-        return {
-            "total_tasks": total,
-            "completed": completed,
-            "failed": failed,
-            "pending": pending,
-            "running": running,
-            "quarantined": quarantined,
-            "pass_rate": round(pass_rate, 4),
-        }
+    @app.get("/metrics/bottleneck")
+    async def metrics_bottleneck(top_n: int = Query(5, ge=1, le=100)) -> list[dict[str, Any]]:
+        collector = MetricsCollector(store)
+        return await collector.bottleneck_tasks(top_n=top_n)
+
+    @app.get("/metrics/blocked")
+    async def metrics_blocked() -> list[dict[str, Any]]:
+        collector = MetricsCollector(store)
+        return await collector.blocked_chains()
 
     return app
 
