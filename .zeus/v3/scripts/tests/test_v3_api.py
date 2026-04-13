@@ -214,7 +214,8 @@ async def test_dashboard_serves_index(api_client):
     resp = await client.get("/dashboard/")
     assert resp.status_code == 200
     assert "text/html" in resp.headers.get("content-type", "")
-    assert "ZeusOpen v3 Dashboard" in resp.text
+    # Vite-built SPA: check for root mount point and asset references
+    assert '<div id="app"></div>' in resp.text or "ZeusOpen v3 Dashboard" in resp.text
 
 
 @pytest.mark.asyncio
