@@ -4,3 +4,6 @@
 *.pyc
 *.pyo
 .zeus/v2/agent-workspaces/
+*.db
+*.sqlite
+*.sqlite3

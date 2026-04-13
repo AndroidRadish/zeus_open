@@ -82,6 +82,8 @@
 | **Heartbeat** | Worker heartbeat + scheduler lease recovery (crash tolerance) | ✅ 已完成 (`05360fe`) |
 | **M-010 CLI** | `zeus_runner.py --version v3` supports `status`, `plan`, and `run` | ✅ 已完成 (`8870b0d`) |
 | **K8s** | Kubernetes manifests (api, scheduler, worker, redis, HPA, PVC) | ✅ 已完成 |
+| **Dashboard Controls** | Task-level actions (retry/cancel/pause/resume/quarantine) + Control Center (scheduler/worker/import/run) | ✅ 已完成 |
+| **ControlPlane** | Embedded subprocess manager for local API server (`/control/*` endpoints) | ✅ 已完成 |
 
 ### v3 已修复关键问题
 - **Windows subprocess ARP 路径转义**: `repr(str(path))` 保证 `python -c` 中的字符串字面量安全
@@ -104,3 +106,7 @@
 - v3 Phase 1 expansion 完成：importer、dispatcher、workspace、worker 集成 (`fc974e8`)
 - v3 Phase 1 A1 完成：CLI runner、stress tests、subprocess 集成测试 (`49d5199`)
 - 26/26 v3 测试全部通过
+- v3 Dashboard Control Center 完成：任务板内嵌操作 + 系统控制中心 Tab
+- 新增 14 个 API 端点（6 task actions + 8 control plane）
+- 64/64 v3 测试全绿（含 18 个新增测试）
+- 将 v3 Specs 中的 Option B（watch-mode state machine）纳入未来演进规划

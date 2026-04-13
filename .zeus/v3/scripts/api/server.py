@@ -6,6 +6,7 @@ Provides REST + SSE endpoints for the v3 execution engine.
 from __future__ import annotations
 
 import argparse
+import os
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -18,13 +19,22 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from api.bus import EventBus
+from api.control_plane import ControlPlane
 from api.metrics import MetricsCollector
 from db.engine import make_async_engine
 from db.models import Base
 from store.sqlite_store import SQLiteStateStore
 
 
-def create_app(store: SQLiteStateStore, bus: EventBus | None = None) -> FastAPI:
+class ScaleWorkersRequest(BaseModel):
+    count: int
+
+
+def create_app(
+    store: SQLiteStateStore,
+    bus: EventBus | None = None,
+    control_plane: ControlPlane | None = None,
+) -> FastAPI:
     bus = bus or EventBus()
 
     @asynccontextmanager
@@ -67,6 +77,75 @@ def create_app(store: SQLiteStateStore, bus: EventBus | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Task not found")
         return task
 
+    # ------------------------------------------------------------------
+    # Task actions
+    # ------------------------------------------------------------------
+    @app.post("/tasks/{task_id}/retry")
+    async def retry_task(task_id: str) -> dict[str, Any]:
+        task = await store.get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        await store.unquarantine_task(task_id)
+        await store.update_task_status(task_id, "pending", passes=False, worker_id=None)
+        await store.log_event(event_type="task.retried", task_id=task_id, agent_id="control-plane", payload={})
+        bus.emit("task.retried", {"task_id": task_id})
+        return {"success": True, "task_id": task_id}
+
+    @app.post("/tasks/{task_id}/cancel")
+    async def cancel_task(task_id: str) -> dict[str, Any]:
+        task = await store.get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        await store.update_task_status(task_id, "cancelled")
+        await store.log_event(event_type="task.cancelled", task_id=task_id, agent_id="control-plane", payload={})
+        bus.emit("task.cancelled", {"task_id": task_id})
+        return {"success": True, "task_id": task_id}
+
+    @app.post("/tasks/{task_id}/pause")
+    async def pause_task(task_id: str) -> dict[str, Any]:
+        task = await store.get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        await store.update_task_status(task_id, "paused")
+        await store.log_event(event_type="task.paused", task_id=task_id, agent_id="control-plane", payload={})
+        bus.emit("task.paused", {"task_id": task_id})
+        return {"success": True, "task_id": task_id}
+
+    @app.post("/tasks/{task_id}/resume")
+    async def resume_task(task_id: str) -> dict[str, Any]:
+        task = await store.get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        await store.update_task_status(task_id, "pending")
+        await store.log_event(event_type="task.resumed", task_id=task_id, agent_id="control-plane", payload={})
+        bus.emit("task.resumed", {"task_id": task_id})
+        return {"success": True, "task_id": task_id}
+
+    @app.post("/tasks/{task_id}/quarantine")
+    async def quarantine_task(task_id: str) -> dict[str, Any]:
+        task = await store.get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        await store.quarantine_task(task_id, reason="manual quarantine")
+        await store.update_task_status(task_id, "failed", passes=False)
+        await store.log_event(event_type="task.quarantined", task_id=task_id, agent_id="control-plane", payload={})
+        bus.emit("task.quarantined", {"task_id": task_id})
+        return {"success": True, "task_id": task_id}
+
+    @app.post("/tasks/{task_id}/unquarantine")
+    async def unquarantine_task(task_id: str) -> dict[str, Any]:
+        task = await store.get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        await store.unquarantine_task(task_id)
+        await store.update_task_status(task_id, "pending", passes=False)
+        await store.log_event(event_type="task.unquarantined", task_id=task_id, agent_id="control-plane", payload={})
+        bus.emit("task.unquarantined", {"task_id": task_id})
+        return {"success": True, "task_id": task_id}
+
+    # ------------------------------------------------------------------
+    # Events
+    # ------------------------------------------------------------------
     @app.get("/events")
     async def list_events(
         event_type: str | None = Query(None),
@@ -98,6 +177,9 @@ def create_app(store: SQLiteStateStore, bus: EventBus | None = None) -> FastAPI:
             },
         )
 
+    # ------------------------------------------------------------------
+    # Metrics
+    # ------------------------------------------------------------------
     @app.get("/metrics/summary")
     async def metrics_summary() -> dict[str, Any]:
         collector = MetricsCollector(store)
@@ -117,6 +199,63 @@ def create_app(store: SQLiteStateStore, bus: EventBus | None = None) -> FastAPI:
     async def metrics_blocked() -> list[dict[str, Any]]:
         collector = MetricsCollector(store)
         return await collector.blocked_chains()
+
+    # ------------------------------------------------------------------
+    # Control plane
+    # ------------------------------------------------------------------
+    def _ensure_control_plane():
+        if control_plane is None:
+            raise HTTPException(status_code=503, detail="Control plane not enabled")
+
+    @app.get("/control/status")
+    async def control_status() -> dict[str, Any]:
+        _ensure_control_plane()
+        return await control_plane.status()
+
+    @app.post("/control/scheduler/start")
+    async def control_scheduler_start() -> dict[str, Any]:
+        _ensure_control_plane()
+        try:
+            pid = control_plane.spawn_scheduler()
+            return {"success": True, "pid": pid}
+        except RuntimeError as e:
+            raise HTTPException(status_code=409, detail=str(e))
+
+    @app.post("/control/scheduler/stop")
+    async def control_scheduler_stop() -> dict[str, Any]:
+        _ensure_control_plane()
+        control_plane.stop_scheduler()
+        return {"success": True}
+
+    @app.post("/control/scheduler/tick")
+    async def control_scheduler_tick() -> dict[str, Any]:
+        _ensure_control_plane()
+        result = await control_plane.tick_once()
+        return {"success": True, "result": result}
+
+    @app.post("/control/workers/scale")
+    async def control_workers_scale(body: ScaleWorkersRequest) -> dict[str, Any]:
+        _ensure_control_plane()
+        pids = control_plane.spawn_workers(body.count)
+        return {"success": True, "pids": pids}
+
+    @app.post("/control/workers/stop")
+    async def control_workers_stop() -> dict[str, Any]:
+        _ensure_control_plane()
+        control_plane.stop_workers()
+        return {"success": True}
+
+    @app.post("/control/import")
+    async def control_import() -> dict[str, Any]:
+        _ensure_control_plane()
+        result = await control_plane.import_tasks()
+        return {"success": True, "result": result}
+
+    @app.post("/control/global/run")
+    async def control_global_run() -> dict[str, Any]:
+        _ensure_control_plane()
+        result = await control_plane.global_run()
+        return {"success": True, "result": result}
 
     return app
 
@@ -149,7 +288,12 @@ def main(argv: list[str] | None = None) -> FastAPI:
 
     store = SQLiteStateStore(database_url)
     bus = EventBus()
-    app = create_app(store, bus)
+
+    control_plane = None
+    if os.environ.get("ZEUS_CONTROL_PLANE_ENABLED", "true").lower() != "false":
+        control_plane = ControlPlane(store, bus, project_root, database_url)
+
+    app = create_app(store, bus, control_plane)
     return app
 
 

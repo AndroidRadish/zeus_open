@@ -12,6 +12,12 @@
     "zh": "中",
     "en": "EN"
   },
+  "tabs": {
+    "overview": "Overview",
+    "tasks": "Tasks",
+    "events": "Events",
+    "control": "Control"
+  },
   "stats": {
     "total": "Total",
     "completed": "Completed",
@@ -27,6 +33,7 @@
     "wave": "Wave",
     "status": "Status",
     "result": "Result",
+    "actions": "Actions",
     "unnamed": "Untitled Task",
     "empty": "No tasks yet"
   },
@@ -34,14 +41,46 @@
     "pending": "Pending",
     "running": "Running",
     "completed": "Completed",
-    "failed": "Failed"
+    "failed": "Failed",
+    "paused": "Paused"
   },
   "result": {
     "pass": "Pass",
     "fail": "Fail"
   },
+  "actions": {
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "pause": "Pause",
+    "resume": "Resume",
+    "quarantine": "Quarantine",
+    "unquarantine": "Unquarantine"
+  },
   "events": {
     "title": "Live Events",
     "empty": "Waiting for events…"
+  },
+  "control": {
+    "title": "Control Center",
+    "plan": "Plan",
+    "scheduler": "Scheduler",
+    "workers": "Workers",
+    "queue": "Queue",
+    "global": "Global",
+    "start": "Start",
+    "stop": "Stop",
+    "scale": "Scale",
+    "tick": "Tick Once",
+    "import": "Import task.json",
+    "runAll": "Run All",
+    "status": "Status",
+    "running": "Running",
+    "stopped": "Stopped",
+    "current": "Current",
+    "target": "Target"
+  },
+  "feedback": {
+    "success": "Success",
+    "error": "Error"
   }
 }

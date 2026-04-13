@@ -226,3 +226,145 @@ async def test_root_redirects_info(api_client):
     data = resp.json()
     assert "dashboard" in data
     assert data["dashboard"] == "/dashboard"
+
+
+# ---------------------------------------------------------------------
+# Task action endpoints
+# ---------------------------------------------------------------------
+
+def _capture_emit(bus):
+    """Monkey-patch bus.emit to record calls."""
+    emitted = []
+    original = bus.emit
+
+    def _emit(event_type, payload=None):
+        emitted.append((event_type, payload or {}))
+        original(event_type, payload)
+
+    bus.emit = _emit
+    return emitted
+
+
+@pytest.mark.asyncio
+async def test_task_retry(api_client, sqlite_store):
+    client, bus = api_client
+    await sqlite_store.upsert_task({"id": "T-ACT-1", "status": "failed", "wave": 1, "passes": False, "worker_id": "w-1"})
+    await sqlite_store.quarantine_task("T-ACT-1", "err")
+
+    emitted = _capture_emit(bus)
+    resp = await client.post("/tasks/T-ACT-1/retry")
+    assert resp.status_code == 200
+    assert resp.json() == {"success": True, "task_id": "T-ACT-1"}
+
+    task = await sqlite_store.get_task("T-ACT-1")
+    assert task["status"] == "pending"
+    assert task["passes"] is False
+    assert task["worker_id"] is None
+    assert await sqlite_store.is_quarantined("T-ACT-1") is False
+
+    events = await sqlite_store.query_events(task_id="T-ACT-1", event_type="task.retried")
+    assert len(events) == 1
+    assert any(e == "task.retried" and p.get("task_id") == "T-ACT-1" for e, p in emitted)
+
+
+@pytest.mark.asyncio
+async def test_task_cancel(api_client, sqlite_store):
+    client, bus = api_client
+    await sqlite_store.upsert_task({"id": "T-ACT-2", "status": "pending", "wave": 1})
+
+    emitted = _capture_emit(bus)
+    resp = await client.post("/tasks/T-ACT-2/cancel")
+    assert resp.status_code == 200
+    assert resp.json() == {"success": True, "task_id": "T-ACT-2"}
+
+    task = await sqlite_store.get_task("T-ACT-2")
+    assert task["status"] == "cancelled"
+
+    events = await sqlite_store.query_events(task_id="T-ACT-2", event_type="task.cancelled")
+    assert len(events) == 1
+    assert any(e == "task.cancelled" and p.get("task_id") == "T-ACT-2" for e, p in emitted)
+
+
+@pytest.mark.asyncio
+async def test_task_pause(api_client, sqlite_store):
+    client, bus = api_client
+    await sqlite_store.upsert_task({"id": "T-ACT-3", "status": "pending", "wave": 1})
+
+    emitted = _capture_emit(bus)
+    resp = await client.post("/tasks/T-ACT-3/pause")
+    assert resp.status_code == 200
+    assert resp.json() == {"success": True, "task_id": "T-ACT-3"}
+
+    task = await sqlite_store.get_task("T-ACT-3")
+    assert task["status"] == "paused"
+
+    events = await sqlite_store.query_events(task_id="T-ACT-3", event_type="task.paused")
+    assert len(events) == 1
+    assert any(e == "task.paused" and p.get("task_id") == "T-ACT-3" for e, p in emitted)
+
+
+@pytest.mark.asyncio
+async def test_task_resume(api_client, sqlite_store):
+    client, bus = api_client
+    await sqlite_store.upsert_task({"id": "T-ACT-4", "status": "paused", "wave": 1})
+
+    emitted = _capture_emit(bus)
+    resp = await client.post("/tasks/T-ACT-4/resume")
+    assert resp.status_code == 200
+    assert resp.json() == {"success": True, "task_id": "T-ACT-4"}
+
+    task = await sqlite_store.get_task("T-ACT-4")
+    assert task["status"] == "pending"
+
+    events = await sqlite_store.query_events(task_id="T-ACT-4", event_type="task.resumed")
+    assert len(events) == 1
+    assert any(e == "task.resumed" and p.get("task_id") == "T-ACT-4" for e, p in emitted)
+
+
+@pytest.mark.asyncio
+async def test_task_quarantine(api_client, sqlite_store):
+    client, bus = api_client
+    await sqlite_store.upsert_task({"id": "T-ACT-5", "status": "pending", "wave": 1})
+
+    emitted = _capture_emit(bus)
+    resp = await client.post("/tasks/T-ACT-5/quarantine")
+    assert resp.status_code == 200
+    assert resp.json() == {"success": True, "task_id": "T-ACT-5"}
+
+    task = await sqlite_store.get_task("T-ACT-5")
+    assert task["status"] == "failed"
+    assert task["passes"] is False
+    assert await sqlite_store.is_quarantined("T-ACT-5") is True
+
+    events = await sqlite_store.query_events(task_id="T-ACT-5", event_type="task.quarantined")
+    assert len(events) == 1
+    assert any(e == "task.quarantined" and p.get("task_id") == "T-ACT-5" for e, p in emitted)
+
+
+@pytest.mark.asyncio
+async def test_task_unquarantine(api_client, sqlite_store):
+    client, bus = api_client
+    await sqlite_store.upsert_task({"id": "T-ACT-6", "status": "failed", "wave": 1, "passes": False})
+    await sqlite_store.quarantine_task("T-ACT-6", "err")
+
+    emitted = _capture_emit(bus)
+    resp = await client.post("/tasks/T-ACT-6/unquarantine")
+    assert resp.status_code == 200
+    assert resp.json() == {"success": True, "task_id": "T-ACT-6"}
+
+    task = await sqlite_store.get_task("T-ACT-6")
+    assert task["status"] == "pending"
+    assert task["passes"] is False
+    assert await sqlite_store.is_quarantined("T-ACT-6") is False
+
+    events = await sqlite_store.query_events(task_id="T-ACT-6", event_type="task.unquarantined")
+    assert len(events) == 1
+    assert any(e == "task.unquarantined" and p.get("task_id") == "T-ACT-6" for e, p in emitted)
+
+
+@pytest.mark.asyncio
+async def test_task_action_404(api_client):
+    client, _ = api_client
+    for action in ("retry", "cancel", "pause", "resume", "quarantine", "unquarantine"):
+        resp = await client.post(f"/tasks/NOT-FOUND/{action}")
+        assert resp.status_code == 404, f"Action {action} should 404"

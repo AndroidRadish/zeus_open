@@ -12,6 +12,12 @@
     "zh": "中",
     "en": "EN"
   },
+  "tabs": {
+    "overview": "概览",
+    "tasks": "任务",
+    "events": "事件",
+    "control": "控制"
+  },
   "stats": {
     "total": "总任务",
     "completed": "已完成",
@@ -27,6 +33,7 @@
     "wave": "Wave",
     "status": "状态",
     "result": "结果",
+    "actions": "操作",
     "unnamed": "未命名任务",
     "empty": "暂无任务数据"
   },
@@ -34,14 +41,46 @@
     "pending": "等待中",
     "running": "运行中",
     "completed": "已完成",
-    "failed": "失败"
+    "failed": "失败",
+    "paused": "已暂停"
   },
   "result": {
     "pass": "通过",
     "fail": "未通过"
   },
+  "actions": {
+    "retry": "重试",
+    "cancel": "取消",
+    "pause": "暂停",
+    "resume": "恢复",
+    "quarantine": "隔离",
+    "unquarantine": "解除隔离"
+  },
   "events": {
     "title": "实时事件流",
     "empty": "等待事件…"
+  },
+  "control": {
+    "title": "控制中心",
+    "plan": "计划",
+    "scheduler": "调度器",
+    "workers": "工作进程",
+    "queue": "队列",
+    "global": "全局",
+    "start": "启动",
+    "stop": "停止",
+    "scale": "缩放",
+    "tick": "执行一次",
+    "import": "导入 task.json",
+    "runAll": "全部运行",
+    "status": "状态",
+    "running": "运行中",
+    "stopped": "已停止",
+    "current": "当前",
+    "target": "目标"
+  },
+  "feedback": {
+    "success": "成功",
+    "error": "错误"
   }
 }

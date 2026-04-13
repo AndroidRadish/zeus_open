@@ -54,6 +54,12 @@ python run.py --mode serve --project-root . --host 0.0.0.0 --port 8000
 
 Open http://127.0.0.1:8000/dashboard in your browser.
 
+The Dashboard now includes:
+- **Overview Tab** — Live stats, task list, and event stream
+- **Tasks Tab** — Task list with inline actions (Retry / Cancel / Pause / Resume / Quarantine)
+- **Events Tab** — Full-screen real-time event log
+- **Control Tab** — System control center for importing tasks, starting/stopping the scheduler, scaling workers, and one-click global run
+
 ---
 
 ## CLI Modes
@@ -141,12 +147,26 @@ Base URL: `http://127.0.0.1:8000`
 | GET | `/health` | Health check |
 | GET | `/tasks` | List all tasks (filter by `?status=` or `?wave=`) |
 | GET | `/tasks/{id}` | Get single task details |
+| POST | `/tasks/{id}/retry` | Retry a failed/quarantined task |
+| POST | `/tasks/{id}/cancel` | Cancel a pending/running task |
+| POST | `/tasks/{id}/pause` | Pause a pending task |
+| POST | `/tasks/{id}/resume` | Resume a paused task |
+| POST | `/tasks/{id}/quarantine` | Manually quarantine a task |
+| POST | `/tasks/{id}/unquarantine` | Remove task from quarantine |
 | GET | `/events` | Query event log (paginated) |
 | GET | `/events/stream` | **SSE** real-time event stream |
 | GET | `/metrics/summary` | High-level metrics + pass rate |
 | GET | `/metrics/tasks` | Per-task duration and status |
 | GET | `/metrics/bottleneck` | Top-N slowest tasks |
 | GET | `/metrics/blocked` | Dependency chains blocked by failure/quarantine |
+| GET | `/control/status` | Control plane status (scheduler, workers, queue) |
+| POST | `/control/scheduler/start` | Start scheduler subprocess |
+| POST | `/control/scheduler/stop` | Stop scheduler subprocess |
+| POST | `/control/scheduler/tick` | Trigger one scheduler tick |
+| POST | `/control/workers/scale` | Scale workers (`{"count": 3}`) |
+| POST | `/control/workers/stop` | Stop all worker subprocesses |
+| POST | `/control/import` | Re-import `task.json` |
+| POST | `/control/global/run` | One-click import + scheduler + workers |
 | GET | `/dashboard/` | Vue 3 SPA dashboard |
 
 ---
@@ -191,6 +211,20 @@ Components:
 - `zeus-state-pvc` — Shared SQLite state volume (ReadWriteMany)
 
 > **Note:** `ReadWriteMany` requires a CSI driver that supports it (e.g., NFS, EFS, Azure Files). For single-node clusters (kind/minikube), use `hostPath` or switch to a single-replica SQLite setup.
+
+---
+
+## Control Plane
+
+When running the API server locally (`--mode serve`), an embedded `ControlPlane` is enabled by default. It lets the Dashboard start/stop scheduler and worker subprocesses via `/control/*` endpoints.
+
+To disable it (recommended for Docker/K8s where orchestration is external):
+```bash
+set ZEUS_CONTROL_PLANE_ENABLED=false  # Windows
+export ZEUS_CONTROL_PLANE_ENABLED=false  # Linux/macOS
+```
+
+When disabled, the Dashboard hides the Control Tab and the API returns `503` for `/control/*` requests.
 
 ---
 
