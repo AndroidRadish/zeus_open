@@ -1,0 +1,14 @@
+{
+  "project": {
+    "name": "zeus-open"
+  },
+  "metrics": {
+    "north_star": "adoption_rate"
+  },
+  "subagent": {
+    "dispatcher": "auto"
+  },
+  "workspace": {
+    "backend": "copytree"
+  }
+}

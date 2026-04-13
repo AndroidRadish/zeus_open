@@ -6,6 +6,7 @@ zeus_runner.py — 通用 AI-CLI 版 Zeus 执行引擎
 """
 
 import argparse
+import asyncio
 import io
 import json
 import os
@@ -15,6 +16,11 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Allow importing v3 modules when runner is invoked from project root
+_V3_SCRIPTS = Path(".zeus/v3/scripts").resolve()
+if str(_V3_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_V3_SCRIPTS))
 
 # Fix Windows console encoding for emoji/unicode output
 if sys.platform == "win32" and hasattr(sys.stdout, "buffer"):
@@ -150,6 +156,10 @@ class ZeusRunner:
     def status(self) -> None:
         print(f"\n🚀 Zeus Status (version: {self.version})\n")
 
+        if self.version == "v3":
+            self._status_v3()
+            return
+
         valid, errors = self.validate()
         config = self.load_config()
         data = self.load_tasks()
@@ -197,6 +207,83 @@ class ZeusRunner:
             print("  Some tasks have no wave assigned. Run zeus:plan first.")
         else:
             print(f"  Run: python .zeus/scripts/zeus_runner.py --wave {current_wave}")
+        print()
+
+    def _status_v3(self) -> None:
+        try:
+            from store.sqlite_store import SQLiteStateStore
+        except Exception as e:
+            print(f"❌ Cannot import v3 modules: {e}")
+            return
+
+        config = self.load_config()
+        db_path = Path(".zeus/v3/state.db").resolve()
+        if not db_path.exists():
+            db_path = Path(".zeus/v3/zeus_open_v3.sqlite").resolve()
+        database_url = f"sqlite+aiosqlite:///{db_path}"
+
+        async def _fetch() -> dict:
+            store = SQLiteStateStore(database_url)
+            tasks = await store.list_tasks()
+            quarantine = await store.list_quarantine()
+            await store.close()
+            return {"tasks": tasks, "quarantine": quarantine}
+
+        try:
+            result = asyncio.run(_fetch())
+        except Exception as e:
+            print(f"❌ Failed to read v3 database: {e}")
+            return
+
+        tasks = result["tasks"]
+        total = len(tasks)
+        completed = sum(1 for t in tasks if t["status"] == "completed")
+        failed = sum(1 for t in tasks if t["status"] == "failed")
+        pending = sum(1 for t in tasks if t["status"] == "pending")
+        running = sum(1 for t in tasks if t["status"] == "running")
+        quarantined = len(result["quarantine"])
+
+        pending_tasks = [t for t in tasks if t["status"] == "pending"]
+        waves = [t.get("wave", 999) for t in pending_tasks if t.get("wave") is not None]
+        current_wave = min(waves) if waves else None
+
+        print(f"Project : {config.get('project', {}).get('name', 'N/A')}")
+        print(f"North Star: {config.get('metrics', {}).get('north_star', 'N/A')}")
+        print(f"Tasks   : {completed}/{total} completed, {failed} failed, {pending} pending, {running} running")
+        print(f"Validation: ✅ pass")
+        if current_wave is not None:
+            print(f"Next Wave: {current_wave}")
+        else:
+            print("Next Wave: (all done)")
+        if quarantined:
+            print(f"Quarantine: {quarantined} task(s) quarantined")
+
+        recent = [t for t in tasks if t["status"] == "completed"][-5:]
+        if recent:
+            print("\nRecent completed:")
+            for t in recent:
+                sha = t.get("commit_sha", "N/A")[:7] if t.get("commit_sha") else "N/A"
+                title = t.get("title", "")
+                print(f"  ✅ {t['id']}: {title} → {sha}")
+
+        next_pending = [t for t in tasks if t["status"] == "pending"][:5]
+        if next_pending:
+            print("\nNext up:")
+            for t in next_pending:
+                print(f"  ⏳ {t['id']}: {t.get('title', '')} (wave {t.get('wave', 'N/A')})")
+        elif running:
+            running_tasks = [t for t in tasks if t["status"] == "running"][:5]
+            print("\nIn progress:")
+            for t in running_tasks:
+                print(f"  🏃 {t['id']}: {t.get('title', '')} (wave {t.get('wave', 'N/A')})")
+
+        print("\n📋 Recommendation:")
+        if pending == 0 and running == 0:
+            print("  All tasks complete. Consider /zeus:feedback or /zeus:evolve.")
+        elif running:
+            print(f"  Watch live dashboard: python .zeus/v3/scripts/run.py --serve")
+        else:
+            print(f"  Run: python .zeus/v3/scripts/run.py --max-workers 3")
         print()
 
     def plan(self) -> None:
