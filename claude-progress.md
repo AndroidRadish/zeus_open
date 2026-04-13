@@ -110,3 +110,12 @@
 - 新增 14 个 API 端点（6 task actions + 8 control plane）
 - 64/64 v3 测试全绿（含 18 个新增测试）
 - 将 v3 Specs 中的 Option B（watch-mode state machine）纳入未来演进规划
+- **已完成（T-V3-001）**：子 Agent 进度上报机制（A+B 方案）
+  - ✅ `workspace/base.py`：Prompt 新增 `progress.jsonl` 文件日志 + HTTP 主动上报说明
+  - ✅ `core/worker.py`：Heartbeat loop 每 10 秒扫描 `progress.jsonl`，去重后写入 `EventLog` 并触发 SSE `task.progress`
+  - ✅ `api/server.py`：新增 `POST /tasks/{id}/progress` HTTP 接收端点
+  - ✅ `dispatcher/mock.py`：Mock dispatcher 分阶段模拟写入 `progress.jsonl`
+  - ✅ `EventsPanel.vue`：Dashboard 对 `task.progress` 事件进行彩色 step 标签展示
+  - ✅ `tests/test_v3_api.py`：新增 HTTP 进度上报端点测试（200 + 404 + event + bus emit 验证）
+  - ✅ `tests/test_v3_core.py`：新增 Worker heartbeat 扫描 `progress.jsonl` 及去重逻辑测试
+  - ✅ 67/67 v3 测试全绿，Dashboard 构建成功

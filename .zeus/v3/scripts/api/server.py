@@ -143,6 +143,20 @@ def create_app(
         bus.emit("task.unquarantined", {"task_id": task_id})
         return {"success": True, "task_id": task_id}
 
+    @app.post("/tasks/{task_id}/progress")
+    async def report_progress(task_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        task = await store.get_task(task_id)
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
+        await store.log_event(
+            event_type="task.progress",
+            task_id=task_id,
+            agent_id="external",
+            payload={"source": "http", **body},
+        )
+        bus.emit("task.progress", {"task_id": task_id, "progress": body, "source": "http"})
+        return {"success": True, "task_id": task_id}
+
     # ------------------------------------------------------------------
     # Events
     # ------------------------------------------------------------------

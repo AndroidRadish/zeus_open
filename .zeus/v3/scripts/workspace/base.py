@@ -85,6 +85,15 @@ class BaseWorkspaceManager(abc.ABC):
    }}
    ```
 5. **不需要**在隔离工作区中执行 `git commit`，也**不需要**修改主项目的 `task.json`。
+6. **进度上报（A 方案 - 文件日志）**：在执行过程中，每完成一个重要里程碑，请向当前工作区根目录的 `progress.jsonl` 追加一行 JSON：
+   ```json
+   {{"ts": "2026-04-13T15:30:00Z", "step": "planning", "message": "已完成架构分析"}}
+   ```
+   建议的 step 值：`planning`（规划）、`reading`（阅读）、`writing`（编写）、`testing`（测试）、`reviewing`（审查）、`completed`（完成）。
+7. **进度上报（B 方案 - HTTP 推送）**：如果你具备网络访问能力，也可以随时通过 HTTP POST 主动上报进度：
+   ```bash
+   curl -X POST http://127.0.0.1:8000/tasks/{task_id}/progress -H "Content-Type: application/json" -d '{{"step":"writing","message":"正在修改 api/server.py"}}'
+   ```
 
 完成后，请在 Kimi Code 主会话中报告执行结果。
 """

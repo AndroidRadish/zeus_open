@@ -363,6 +363,31 @@ async def test_task_unquarantine(api_client, sqlite_store):
 
 
 @pytest.mark.asyncio
+async def test_task_progress_http(api_client, sqlite_store):
+    client, bus = api_client
+    await sqlite_store.upsert_task({"id": "T-ACT-7", "status": "running", "wave": 1})
+
+    emitted = _capture_emit(bus)
+    resp = await client.post("/tasks/T-ACT-7/progress", json={"step": "writing", "message": "hello"})
+    assert resp.status_code == 200
+    assert resp.json() == {"success": True, "task_id": "T-ACT-7"}
+
+    events = await sqlite_store.query_events(task_id="T-ACT-7", event_type="task.progress")
+    assert len(events) == 1
+    assert events[0]["payload"]["source"] == "http"
+    assert events[0]["payload"]["step"] == "writing"
+    assert events[0]["payload"]["message"] == "hello"
+    assert any(e == "task.progress" and p.get("task_id") == "T-ACT-7" for e, p in emitted)
+
+
+@pytest.mark.asyncio
+async def test_task_progress_http_404(api_client):
+    client, _ = api_client
+    resp = await client.post("/tasks/NOT-FOUND/progress", json={"step": "test"})
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_task_action_404(api_client):
     client, _ = api_client
     for action in ("retry", "cancel", "pause", "resume", "quarantine", "unquarantine"):

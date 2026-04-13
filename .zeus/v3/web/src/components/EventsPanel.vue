@@ -6,6 +6,26 @@ const { t } = useI18n()
 defineProps<{
   events: { time: string; event: string; data: any }[]
 }>()
+
+function isProgress(ev: { event: string; data: any }) {
+  return ev.event === 'task.progress' && ev.data?.progress
+}
+
+function stepColor(step: string) {
+  const map: Record<string, string> = {
+    planning: '#a78bfa',
+    reading: '#94a3b8',
+    writing: '#22d3ee',
+    testing: '#fbbf24',
+    reviewing: '#f97316',
+    completed: '#34d399',
+  }
+  return map[step] || '#94a3b8'
+}
+
+function stepLabel(step: string) {
+  return step || 'progress'
+}
 </script>
 
 <template>
@@ -15,12 +35,27 @@ defineProps<{
     </div>
     <div class="events-body custom-scrollbar">
       <transition-group name="ev" tag="ul" class="events-list">
-        <li v-for="(ev, idx) in events" :key="idx" class="event-row">
-          <div class="event-meta">
-            <span class="timestamp">{{ ev.time }}</span>
-            <span class="event-name">{{ ev.event }}</span>
-          </div>
-          <div class="event-data">{{ JSON.stringify(ev.data) }}</div>
+        <li v-for="(ev, idx) in events" :key="idx" class="event-row" :class="{ 'progress-row': isProgress(ev) }">
+          <template v-if="isProgress(ev)">
+            <div class="progress-meta">
+              <span class="timestamp">{{ ev.time }}</span>
+              <span class="progress-source">{{ ev.data.source === 'http' ? 'HTTP' : 'FILE' }}</span>
+            </div>
+            <div class="progress-content">
+              <span class="progress-step" :style="{ backgroundColor: stepColor(ev.data.progress.step) + '22', color: stepColor(ev.data.progress.step), borderColor: stepColor(ev.data.progress.step) + '44' }">
+                {{ stepLabel(ev.data.progress.step) }}
+              </span>
+              <span class="progress-message">{{ ev.data.progress.message }}</span>
+            </div>
+            <div class="progress-task">Task: {{ ev.data.task_id }}</div>
+          </template>
+          <template v-else>
+            <div class="event-meta">
+              <span class="timestamp">{{ ev.time }}</span>
+              <span class="event-name">{{ ev.event }}</span>
+            </div>
+            <div class="event-data">{{ JSON.stringify(ev.data) }}</div>
+          </template>
         </li>
       </transition-group>
       <div v-if="events.length === 0" class="empty-events">
@@ -79,6 +114,11 @@ defineProps<{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+.event-row.progress-row {
+  background: rgba(255,255,255,0.025);
+  border-left: 3px solid rgba(34,211,238,0.35);
+}
+
 .event-meta {
   display: flex;
   align-items: center;
@@ -97,6 +137,51 @@ defineProps<{
   color: #cbd5e1;
   opacity: 0.95;
   word-break: break-all;
+}
+
+.progress-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+}
+
+.progress-source {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  background: rgba(255,255,255,0.06);
+  color: #94a3b8;
+}
+
+.progress-content {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.progress-step {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.55rem;
+  border-radius: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border: 1px solid;
+}
+
+.progress-message {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.progress-task {
+  font-size: 0.7rem;
+  color: #64748b;
 }
 
 .empty-events {

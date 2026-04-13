@@ -20,6 +20,7 @@ import pytest
 import pytest_asyncio
 
 import sys
+from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from db.engine import make_async_engine
@@ -440,3 +441,62 @@ def test_zeus_result_validates():
 def test_zeus_result_invalid_status():
     with pytest.raises(Exception):
         ZeusResult(status="unknown")
+
+
+@pytest.mark.asyncio
+async def test_worker_heartbeat_scans_progress_jsonl(sqlite_store, memory_queue, workspace_manager):
+    """Worker heartbeat loop should scan progress.jsonl, deduplicate, and log events."""
+    store = sqlite_store
+    q = memory_queue
+    await store.upsert_task({"id": "T-PROG", "status": "pending", "wave": 1, "depends_on": []})
+    await q.enqueue({"id": "T-PROG", "wave": 1})
+
+    real_sleep = asyncio.sleep
+
+    class SlowDispatcher:
+        async def run(self, task, workspace, prompt):
+            progress_path = workspace / "progress.jsonl"
+            # Write first line
+            progress_path.write_text(
+                json.dumps({"step": "planning", "message": "m1"}) + "\n", encoding="utf-8"
+            )
+            await real_sleep(0.5)  # use real sleep so heartbeat has time to run
+            # Append second line
+            with open(progress_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"step": "writing", "message": "m2"}) + "\n")
+            await real_sleep(0.5)
+            # Write result
+            result = {
+                "status": "completed",
+                "changed_files": [],
+                "test_summary": {"passed": 1, "failed": 0, "skipped": 0},
+                "commit_sha": "prog-test",
+                "artifacts": {},
+            }
+            (workspace / "zeus-result.json").write_text(json.dumps(result), encoding="utf-8")
+            return result
+
+    async def fast_sleep(delay):
+        return await real_sleep(0.01)
+
+    import core.worker as cw
+    pool = WorkerPool(store, q, SlowDispatcher(), workspace_manager, max_workers=1)
+    with patch.object(cw.asyncio, "sleep", fast_sleep):
+        await pool.start()
+        for _ in range(300):
+            await real_sleep(0.05)
+            t = await store.get_task("T-PROG")
+            if t["status"] == "completed":
+                break
+        else:
+            print("Task did not complete in time")
+        await pool.stop()
+
+    task = await store.get_task("T-PROG")
+    assert task["status"] == "completed"
+    events = await store.query_events(task_id="T-PROG", event_type="task.progress")
+    assert len(events) == 2
+    # query_events returns descending order by id
+    steps = [e["payload"]["step"] for e in reversed(events)]
+    assert steps == ["planning", "writing"]
+    assert all(e["payload"]["source"] == "file" for e in events)

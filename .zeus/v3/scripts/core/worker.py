@@ -71,10 +71,36 @@ class ZeusWorker:
             workspace = await self.workspace_manager.prepare(task)
             prompt = self.workspace_manager.prompt_path(tid).read_text("utf-8")
 
+            last_progress_line_count = 0
+
             async def _heartbeat_loop():
+                nonlocal last_progress_line_count
                 while True:
                     await asyncio.sleep(10)
                     await self.store.update_task_heartbeat(tid, self.worker_id)
+                    if workspace is not None:
+                        progress_path = workspace / "progress.jsonl"
+                        if progress_path.exists():
+                            try:
+                                lines = progress_path.read_text("utf-8").strip().splitlines()
+                                if len(lines) > last_progress_line_count:
+                                    new_lines = lines[last_progress_line_count:]
+                                    for line in new_lines:
+                                        try:
+                                            data = json.loads(line)
+                                            await self.store.log_event(
+                                                event_type="task.progress",
+                                                task_id=tid,
+                                                agent_id=self.worker_id,
+                                                payload={"source": "file", **data},
+                                            )
+                                            if self.bus:
+                                                self.bus.emit("task.progress", {"task_id": tid, "worker_id": self.worker_id, "progress": data, "source": "file"})
+                                        except Exception:
+                                            pass
+                                    last_progress_line_count = len(lines)
+                            except Exception:
+                                pass
 
             heartbeat_task = asyncio.create_task(_heartbeat_loop())
             raw_result = await self.dispatcher.run(task, workspace, prompt)
