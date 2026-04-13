@@ -103,8 +103,10 @@ async def main(argv: list[str] | None = None) -> int:
 
     # 3. API server mode
     if args.mode == "serve":
+        from api.control_plane import ControlPlane
         bus = EventBus()
-        app = create_app(store, bus)
+        control_plane = ControlPlane(store, bus, project_root, database_url)
+        app = create_app(store, bus, control_plane)
         import uvicorn
         print(f"[SERVE] Starting API server at http://{args.host}:{args.port}")
         config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")
