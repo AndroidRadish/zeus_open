@@ -171,6 +171,29 @@ docker compose up --scale zeus-worker=4
 
 ---
 
+## Kubernetes Deployment
+
+```bash
+cd .zeus/v3/k8s
+kubectl apply -f namespace.yaml
+kubectl apply -f pvc.yaml
+kubectl apply -f redis.yaml
+kubectl apply -f zeus-api.yaml
+kubectl apply -f zeus-scheduler.yaml
+kubectl apply -f zeus-worker.yaml
+```
+
+Components:
+- `redis` — In-cluster Redis service
+- `zeus-api` — LoadBalancer Service on port 80
+- `zeus-scheduler` — Singleton scheduler Deployment
+- `zeus-worker` — Deployment with HPA (2-10 replicas, CPU 70%)
+- `zeus-state-pvc` — Shared SQLite state volume (ReadWriteMany)
+
+> **Note:** `ReadWriteMany` requires a CSI driver that supports it (e.g., NFS, EFS, Azure Files). For single-node clusters (kind/minikube), use `hostPath` or switch to a single-replica SQLite setup.
+
+---
+
 ## Dispatcher Modes
 
 Configured in `.zeus/v3/config.json` under `subagent.dispatcher`:

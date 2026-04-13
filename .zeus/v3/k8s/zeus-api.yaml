@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zeus-api
+  namespace: zeus-open
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zeus-api
+  template:
+    metadata:
+      labels:
+        app: zeus-api
+    spec:
+      containers:
+        - name: api
+          image: zeus-open:v3
+          command:
+            - python
+            - .zeus/v3/scripts/run.py
+            - --mode=serve
+            - --project-root=/app
+            - --host=0.0.0.0
+            - --port=8000
+            - --queue-backend=redis
+            - --redis-url=redis://redis:6379/0
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              value: "sqlite+aiosqlite:////data/state.db"
+          volumeMounts:
+            - name: zeus-state
+              mountPath: /data
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: zeus-state
+          persistentVolumeClaim:
+            claimName: zeus-state-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zeus-api
+  namespace: zeus-open
+spec:
+  type: LoadBalancer
+  selector:
+    app: zeus-api
+  ports:
+    - port: 80
+      targetPort: 8000

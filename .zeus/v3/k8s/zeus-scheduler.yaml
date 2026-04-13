@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zeus-scheduler
+  namespace: zeus-open
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zeus-scheduler
+  template:
+    metadata:
+      labels:
+        app: zeus-scheduler
+    spec:
+      containers:
+        - name: scheduler
+          image: zeus-open:v3
+          command:
+            - python
+            - .zeus/v3/scripts/run.py
+            - --mode=scheduler
+            - --project-root=/app
+            - --queue-backend=redis
+            - --redis-url=redis://redis:6379/0
+          env:
+            - name: DATABASE_URL
+              value: "sqlite+aiosqlite:////data/state.db"
+          volumeMounts:
+            - name: zeus-state
+              mountPath: /data
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: zeus-state
+          persistentVolumeClaim:
+            claimName: zeus-state-pvc

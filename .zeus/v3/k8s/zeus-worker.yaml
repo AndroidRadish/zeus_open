@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zeus-worker
+  namespace: zeus-open
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: zeus-worker
+  template:
+    metadata:
+      labels:
+        app: zeus-worker
+    spec:
+      containers:
+        - name: worker
+          image: zeus-open:v3
+          command:
+            - python
+            - .zeus/v3/scripts/run.py
+            - --mode=worker
+            - --project-root=/app
+            - --max-workers=3
+            - --queue-backend=redis
+            - --redis-url=redis://redis:6379/0
+          env:
+            - name: DATABASE_URL
+              value: "sqlite+aiosqlite:////data/state.db"
+          volumeMounts:
+            - name: zeus-state
+              mountPath: /data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+      volumes:
+        - name: zeus-state
+          persistentVolumeClaim:
+            claimName: zeus-state-pvc
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: zeus-worker-hpa
+  namespace: zeus-open
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: zeus-worker
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
