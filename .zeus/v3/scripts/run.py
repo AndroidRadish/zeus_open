@@ -44,7 +44,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--redis-url", default=None, help="Redis URL (required if queue-backend=redis)")
     parser.add_argument("--dispatcher", default=None, choices=["mock", "kimi", "claude", "auto"], help="Override dispatcher mode")
     parser.add_argument("--import-only", action="store_true", help="Only import task.json and exit")
-    parser.add_argument("--serve", action="store_true", help="Start the API server instead of running the scheduler")
+    parser.add_argument("--mode", default="combined", choices=["combined", "scheduler", "worker", "serve"], help="Execution mode")
     parser.add_argument("--host", default="127.0.0.1", help="API server host")
     parser.add_argument("--port", type=int, default=8000, help="API server port")
     parser.add_argument("--trace", action="store_true", help="Enable OpenTelemetry console trace output")
@@ -93,7 +93,7 @@ async def main(argv: list[str] | None = None) -> int:
         return 0
 
     # 3. API server mode
-    if args.serve:
+    if args.mode == "serve":
         bus = EventBus()
         app = create_app(store, bus)
         import uvicorn
@@ -123,51 +123,73 @@ async def main(argv: list[str] | None = None) -> int:
     scheduler = ZeusScheduler(store, queue, bus)
     pool = WorkerPool(store, queue, dispatcher, workspace_manager, max_workers=args.max_workers, bus=bus)
 
-    # 5. Start workers and scheduling loop
-    await pool.start()
-    print("▶ Scheduler started")
-
-    enqueued_ids: set[str] = set()
+    # 5. Start workers and/or scheduling loop based on mode
     ticks = 0
     idle_count = 0
-    max_idle_ticks = 10  # If scheduler is idle and queue is empty for 10 ticks, we are done
+    max_idle_ticks = 10
+    enqueued_ids: set[str] = set()
 
-    with tracer.start_as_current_span("scheduler-run") as span:
-        span.set_attribute("max_workers", args.max_workers)
-        span.set_attribute("database_url", database_url)
+    if args.mode in ("combined", "worker"):
+        await pool.start()
+        print("▶ Workers started")
+
+    if args.mode in ("combined", "scheduler"):
+        print("▶ Scheduler started")
+        with tracer.start_as_current_span("scheduler-run") as span:
+            span.set_attribute("max_workers", args.max_workers)
+            span.set_attribute("database_url", database_url)
+            span.set_attribute("mode", args.mode)
+            try:
+                while True:
+                    with tracer.start_as_current_span("scheduler-tick") as tick_span:
+                        ready = await scheduler.tick(enqueued_ids)
+                        ticks += 1
+                        tick_span.set_attribute("tick", ticks)
+                        tick_span.set_attribute("enqueued_count", len(ready))
+                        if ready:
+                            idle_count = 0
+                            print(f"   Tick {ticks}: enqueued {len(ready)} task(s) — {', '.join(t['id'] for t in ready)}")
+                        else:
+                            idle_count += 1
+                            qsize = await queue.size()
+                            if qsize == 0 and idle_count >= max_idle_ticks:
+                                pending = len(await store.list_tasks(status="pending"))
+                                running = len(await store.list_tasks(status="running"))
+                                tick_span.set_attribute("pending", pending)
+                                tick_span.set_attribute("running", running)
+                                if pending == 0 and running == 0:
+                                    break
+                            await asyncio.sleep(0.2)
+            except KeyboardInterrupt:
+                print("\n⏹ Interrupted by user")
+
+    if args.mode == "worker":
+        # In worker-only mode, run indefinitely until interrupted
+        print("▶ Workers running (Ctrl+C to stop)")
         try:
             while True:
-                with tracer.start_as_current_span("scheduler-tick") as tick_span:
-                    ready = await scheduler.tick(enqueued_ids)
-                    ticks += 1
-                    tick_span.set_attribute("tick", ticks)
-                    tick_span.set_attribute("enqueued_count", len(ready))
-                    if ready:
-                        idle_count = 0
-                        print(f"   Tick {ticks}: enqueued {len(ready)} task(s) — {', '.join(t['id'] for t in ready)}")
-                    else:
-                        idle_count += 1
-                        qsize = await queue.size()
-                        if qsize == 0 and idle_count >= max_idle_ticks:
-                            pending = len(await store.list_tasks(status="pending"))
-                            running = len(await store.list_tasks(status="running"))
-                            tick_span.set_attribute("pending", pending)
-                            tick_span.set_attribute("running", running)
-                            if pending == 0 and running == 0:
-                                break
-                        await asyncio.sleep(0.2)
+                await asyncio.sleep(1)
+                # Health check: if queue is idle and all tasks are terminal, exit gracefully
+                qsize = await queue.size()
+                pending = len(await store.list_tasks(status="pending"))
+                running = len(await store.list_tasks(status="running"))
+                if qsize == 0 and pending == 0 and running == 0:
+                    break
         except KeyboardInterrupt:
             print("\n⏹ Interrupted by user")
-        finally:
-            await pool.stop()
-            await scheduler.mark_global_completed()
-            await store.close()
-            await queue.close()
+
+    if args.mode in ("combined", "worker"):
+        await pool.stop()
+    if args.mode in ("combined", "scheduler"):
+        await scheduler.mark_global_completed()
+    await store.close()
+    await queue.close()
 
     # 6. Report
-    print("\n🏁 Run complete")
-    print(f"   Total ticks : {ticks}")
-    print(f"   Enqueued    : {len(enqueued_ids)}")
+    if args.mode in ("combined", "scheduler"):
+        print("\n🏁 Run complete")
+        print(f"   Total ticks : {ticks}")
+        print(f"   Enqueued    : {len(enqueued_ids)}")
     return 0
 
 

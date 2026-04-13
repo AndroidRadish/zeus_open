@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  zeus-api:
+    build:
+      context: ..
+      dockerfile: v3/Dockerfile
+    command:
+      - --mode=serve
+      - --project-root=/app
+      - --host=0.0.0.0
+      - --port=8000
+      - --database-url=sqlite+aiosqlite:////app/.zeus/v3/state.db
+      - --queue-backend=redis
+      - --redis-url=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    volumes:
+      - zeus_state:/app/.zeus/v3
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  zeus-scheduler:
+    build:
+      context: ..
+      dockerfile: v3/Dockerfile
+    command:
+      - --mode=scheduler
+      - --project-root=/app
+      - --database-url=sqlite+aiosqlite:////app/.zeus/v3/state.db
+      - --queue-backend=redis
+      - --redis-url=redis://redis:6379/0
+    volumes:
+      - zeus_state:/app/.zeus/v3
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  zeus-worker:
+    build:
+      context: ..
+      dockerfile: v3/Dockerfile
+    command:
+      - --mode=worker
+      - --project-root=/app
+      - --max-workers=3
+      - --database-url=sqlite+aiosqlite:////app/.zeus/v3/state.db
+      - --queue-backend=redis
+      - --redis-url=redis://redis:6379/0
+    volumes:
+      - zeus_state:/app/.zeus/v3
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - redis
+    deploy:
+      replicas: 2
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  zeus_state:
