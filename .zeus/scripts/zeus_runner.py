@@ -288,6 +288,10 @@ class ZeusRunner:
 
     def plan(self) -> None:
         print(f"\n📋 Execution Plan (version: {self.version})\n")
+        if self.version == "v3":
+            self._plan_v3()
+            return
+
         pending = self.get_pending_tasks()
         if not pending:
             print("✅ No pending tasks.")
@@ -306,6 +310,48 @@ class ZeusRunner:
                 deps = ", ".join(t.get("depends_on", [])) or "none"
                 print(f"  {t['id']}: {t['title']} [depends_on: {deps}]")
             print()
+
+    def _plan_v3(self) -> None:
+        try:
+            from store.sqlite_store import SQLiteStateStore
+        except Exception as e:
+            print(f"❌ Cannot import v3 modules: {e}")
+            return
+
+        db_path = Path(".zeus/v3/state.db").resolve()
+        if not db_path.exists():
+            db_path = Path(".zeus/v3/zeus_open_v3.sqlite").resolve()
+        database_url = f"sqlite+aiosqlite:///{db_path}"
+
+        async def _fetch() -> list[dict]:
+            store = SQLiteStateStore(database_url)
+            tasks = await store.list_tasks(status="pending")
+            await store.close()
+            return tasks
+
+        try:
+            pending = asyncio.run(_fetch())
+        except Exception as e:
+            print(f"❌ Failed to read v3 database: {e}")
+            return
+
+        if not pending:
+            print("✅ No pending tasks.")
+            return
+
+        waves: dict[int, list[dict]] = {}
+        for t in pending:
+            w = t.get("wave", 999)
+            waves.setdefault(w, []).append(t)
+
+        for w in sorted(waves.keys()):
+            tasks = waves[w]
+            print(f"Wave {w} — {len(tasks)} task(s):")
+            for t in tasks:
+                deps = ", ".join(t.get("depends_on", [])) or "none"
+                print(f"  {t['id']}: {t.get('title', '')} [depends_on: {deps}]")
+            print()
+        print("Run with: python .zeus/v3/scripts/run.py --project-root . --max-workers 3")
 
     def _build_prompt(self, task: dict) -> str:
         config = self.load_config()
@@ -406,6 +452,10 @@ class ZeusRunner:
             return "unknown"
 
     def run_wave(self, wave: int | None = None, task_id: str | None = None, auto: bool = False) -> None:
+        if self.version == "v3":
+            self._run_wave_v3()
+            return
+
         pending = self.get_pending_tasks(wave=wave, task_id=task_id)
         if not pending:
             print("✅ 没有待执行的任务。")
@@ -454,6 +504,21 @@ class ZeusRunner:
             print(f"✅ {tid} 已完成并记录 (commit: {commit_sha[:7]})")
 
         print("\n🏁 本轮执行结束。")
+        self.status()
+
+    def _run_wave_v3(self) -> None:
+        print("\n▶ Delegating to v3 execution engine...\n")
+        cmd = [
+            sys.executable,
+            ".zeus/v3/scripts/run.py",
+            "--project-root", ".",
+            "--max-workers", "3",
+        ]
+        try:
+            subprocess.run(cmd, check=False)
+        except KeyboardInterrupt:
+            print("\n⏹ Aborted by user")
+        print("\n🏁 v3 execution finished.")
         self.status()
 
 

@@ -79,7 +79,8 @@
 | **M-009 Docker** | Docker sandbox dispatcher (`dispatcher=docker`) with cgroup/volume support | ✅ 已完成 (`2dd0f05`) |
 | **M-007 Vite** | Vite + Vue 3 + TypeScript dashboard, builds into `/dashboard/` | ✅ 已完成 (`98c93e9`) |
 | **Docs** | `.zeus/v3/README.md` + main README v3 section | ✅ 已完成 (`c750360`) |
-| **Heartbeat** | Worker heartbeat + scheduler lease recovery (crash tolerance) | ✅ 已完成 |
+| **Heartbeat** | Worker heartbeat + scheduler lease recovery (crash tolerance) | ✅ 已完成 (`05360fe`) |
+| **M-010 CLI** | `zeus_runner.py --version v3` supports `status`, `plan`, and `run` | ✅ 已完成 |
 
 ### v3 已修复关键问题
 - **Windows subprocess ARP 路径转义**: `repr(str(path))` 保证 `python -c` 中的字符串字面量安全
