@@ -73,7 +73,8 @@
 | **P2 M-005** | MetricsCollector (tasks, bottleneck, blocked chains) + OpenTelemetry tracing | ✅ 已完成 (`6525dd5`) |
 | **P2 M-006** | Git worktree workspace backend (zero-copy isolation) | ✅ 已完成 (`4840f60`) |
 | **P3 Dashboard** | Zero-build real-time dashboard (`/dashboard`) with SSE + metrics | ✅ 已完成 (`6c0b697`) |
-| **P3 M-010 Pre** | `zeus_runner.py --status --version v3` reads v3 SQLite database | ✅ 已完成 |
+| **P3 M-010 Pre** | `zeus_runner.py --status --version v3` reads v3 SQLite database | ✅ 已完成 (`933aa28`) |
+| **Redis Queue** | Redis-backed task queue (`--queue-backend redis`) + fakeredis tests | ✅ 已完成 |
 
 ### v3 已修复关键问题
 - **Windows subprocess ARP 路径转义**: `repr(str(path))` 保证 `python -c` 中的字符串字面量安全

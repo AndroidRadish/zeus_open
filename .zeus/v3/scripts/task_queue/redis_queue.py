@@ -52,4 +52,7 @@ class RedisTaskQueue(TaskQueue):
         return await self._client.llen(self._queue)
 
     async def close(self) -> None:
-        await self._client.close()
+        if hasattr(self._client, "aclose"):
+            await self._client.aclose()
+        else:
+            await self._client.close()

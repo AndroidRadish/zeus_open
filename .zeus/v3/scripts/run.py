@@ -40,7 +40,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--version", default="v3", help="Zeus version folder")
     parser.add_argument("--max-workers", type=int, default=3, help="Max concurrent workers")
     parser.add_argument("--database-url", default=None, help="SQLAlchemy async DB URL")
-    parser.add_argument("--queue-backend", default="memory", choices=["memory", "sqlite"], help="Task queue backend")
+    parser.add_argument("--queue-backend", default="memory", choices=["memory", "sqlite", "redis"], help="Task queue backend")
+    parser.add_argument("--redis-url", default=None, help="Redis URL (required if queue-backend=redis)")
     parser.add_argument("--dispatcher", default=None, choices=["mock", "kimi", "claude", "auto"], help="Override dispatcher mode")
     parser.add_argument("--import-only", action="store_true", help="Only import task.json and exit")
     parser.add_argument("--serve", action="store_true", help="Start the API server instead of running the scheduler")
@@ -105,6 +106,9 @@ async def main(argv: list[str] | None = None) -> int:
     # 4. Runner mode: prepare queue, dispatcher, workspace manager
     if args.queue_backend == "sqlite":
         queue = SqliteTaskQueue(str(project_root / ".zeus" / version / "queue.sqlite"))
+    elif args.queue_backend == "redis":
+        redis_url = args.redis_url or config.raw().get("queue", {}).get("redis_url", "redis://localhost:6379/0")
+        queue = RedisTaskQueue(redis_url)
     else:
         queue = MemoryTaskQueue()
 
