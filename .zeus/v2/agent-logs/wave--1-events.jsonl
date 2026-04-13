@@ -3,3 +3,8 @@
 {"ts": "2026-04-12T17:13:41Z", "type": "task.quarantined", "wave": -1, "task_id": "T-036-D", "agent_id": "zeus-orchestrator", "payload": {"reason": "dispatcher_failed", "workspace": "D:\\SchoolDoc\\TrueProject\\zeus-open\\.zeus\\v2\\agent-workspaces\\zeus-agent-T-036-D"}}
 {"ts": "2026-04-12T17:15:32Z", "type": "task.quarantined", "wave": -1, "task_id": "T-036-A", "agent_id": "zeus-orchestrator", "payload": {"reason": "dispatcher_failed", "workspace": "D:\\SchoolDoc\\TrueProject\\zeus-open\\.zeus\\v2\\agent-workspaces\\zeus-agent-T-036-A"}}
 {"ts": "2026-04-12T17:15:32Z", "type": "global.completed", "wave": -1, "task_id": "global", "agent_id": "zeus-orchestrator", "payload": {}}
+{"ts": "2026-04-12T17:35:22Z", "type": "global.completed", "wave": -1, "task_id": "global", "agent_id": "zeus-orchestrator", "payload": {}}
+{"ts": "2026-04-12T17:36:56Z", "type": "global.completed", "wave": -1, "task_id": "global", "agent_id": "zeus-orchestrator", "payload": {}}
+{"ts": "2026-04-12T17:39:42Z", "type": "task.quarantined", "wave": -1, "task_id": "T-036-B", "agent_id": "zeus-orchestrator", "payload": {"reason": "dispatcher_failed", "workspace": ".zeus\\v2\\agent-workspaces\\zeus-agent-T-036-B"}}
+{"ts": "2026-04-12T17:39:42Z", "type": "task.quarantined", "wave": -1, "task_id": "T-036-C", "agent_id": "zeus-orchestrator", "payload": {"reason": "dispatcher_failed", "workspace": ".zeus\\v2\\agent-workspaces\\zeus-agent-T-036-C"}}
+{"ts": "2026-04-12T17:39:42Z", "type": "global.completed", "wave": -1, "task_id": "global", "agent_id": "zeus-orchestrator", "payload": {}}

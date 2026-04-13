@@ -6,3 +6,7 @@
 任务 **T-036-D** 已被隔离：dispatcher_failed
 ## 17:15:32 — zeus-orchestrator (T-036-A)
 任务 **T-036-A** 已被隔离：dispatcher_failed
+## 17:39:42 — zeus-orchestrator (T-036-B)
+任务 **T-036-B** 已被隔离：dispatcher_failed
+## 17:39:42 — zeus-orchestrator (T-036-C)
+任务 **T-036-C** 已被隔离：dispatcher_failed
