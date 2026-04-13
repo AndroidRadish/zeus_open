@@ -393,13 +393,24 @@ async def test_end_to_end_scheduler_worker_pool(sqlite_store, memory_queue, work
     ready1 = await scheduler.tick(enqueued_ids)
     assert {t["id"] for t in ready1} == {"T-601", "T-602"}
 
-    await asyncio.sleep(0.5)
+    # Poll until T-601 completes (workspace copy may take >0.5s on Windows)
+    for _ in range(50):
+        await asyncio.sleep(0.1)
+        t601 = await store.get_task("T-601")
+        if t601["status"] == "completed":
+            break
 
     # Tick 2: T-601 completed, T-603 now ready
     ready2 = await scheduler.tick(enqueued_ids)
     assert {t["id"] for t in ready2} == {"T-603"}
 
-    await asyncio.sleep(0.5)
+    # Poll until all tasks complete
+    for _ in range(50):
+        await asyncio.sleep(0.1)
+        pending = len(await store.list_tasks(status="pending"))
+        running = len(await store.list_tasks(status="running"))
+        if pending == 0 and running == 0:
+            break
     await pool.stop()
 
     for tid in ("T-601", "T-602", "T-603"):

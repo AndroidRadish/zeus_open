@@ -65,12 +65,21 @@ async def main(argv: list[str] | None = None) -> int:
 
     task_json_path = project_root / ".zeus" / version / "task.json"
     if not task_json_path.exists():
-        print(f"❌ task.json not found: {task_json_path}")
+        # Auto-detect project root when run.py is executed from .zeus/<version>/scripts/
+        run_py = Path(__file__).resolve()
+        if run_py.name == "run.py" and run_py.parent.name == "scripts":
+            candidate = run_py.parent.parent.parent.parent
+            candidate_task_json = candidate / ".zeus" / version / "task.json"
+            if candidate_task_json.exists():
+                project_root = candidate
+                task_json_path = candidate_task_json
+    if not task_json_path.exists():
+        print(f"[ERROR] task.json not found: {task_json_path}")
         return 1
 
     database_url = args.database_url or f"sqlite+aiosqlite:///{project_root / '.zeus' / version / 'state.db'}"
     tracer = init_tracing(export_to_console=args.trace)
-    print(f"🚀 ZeusOpen v3 Runner")
+    print(">> ZeusOpen v3 Runner")
     print(f"   Project : {project_root}")
     print(f"   Version : {version}")
     print(f"   DB      : {database_url}")
@@ -83,13 +92,13 @@ async def main(argv: list[str] | None = None) -> int:
     # 2. Import tasks
     store = SQLiteStateStore(database_url)
     import_result = await import_tasks_from_json(store, task_json_path)
-    print(f"📥 Imported {import_result['imported_tasks']} tasks, "
+    print(f"[IMPORT] Imported {import_result['imported_tasks']} tasks, "
           f"{import_result['quarantine_count']} quarantined, "
           f"meta keys: {import_result['meta_keys']}")
 
     if args.import_only:
         await store.close()
-        print("✅ Import complete.")
+        print("[OK] Import complete.")
         return 0
 
     # 3. API server mode
@@ -97,7 +106,7 @@ async def main(argv: list[str] | None = None) -> int:
         bus = EventBus()
         app = create_app(store, bus)
         import uvicorn
-        print(f"🌐 Starting API server at http://{args.host}:{args.port}")
+        print(f"[SERVE] Starting API server at http://{args.host}:{args.port}")
         config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")
         server = uvicorn.Server(config)
         await server.serve()
@@ -131,10 +140,10 @@ async def main(argv: list[str] | None = None) -> int:
 
     if args.mode in ("combined", "worker"):
         await pool.start()
-        print("▶ Workers started")
+        print(">> Workers started")
 
     if args.mode in ("combined", "scheduler"):
-        print("▶ Scheduler started")
+        print(">> Scheduler started")
         with tracer.start_as_current_span("scheduler-run") as span:
             span.set_attribute("max_workers", args.max_workers)
             span.set_attribute("database_url", database_url)
@@ -161,11 +170,11 @@ async def main(argv: list[str] | None = None) -> int:
                                     break
                             await asyncio.sleep(0.2)
             except KeyboardInterrupt:
-                print("\n⏹ Interrupted by user")
+                print("\n[STOP] Interrupted by user")
 
     if args.mode == "worker":
         # In worker-only mode, run indefinitely until interrupted
-        print("▶ Workers running (Ctrl+C to stop)")
+        print(">> Workers running (Ctrl+C to stop)")
         try:
             while True:
                 await asyncio.sleep(1)
@@ -176,7 +185,7 @@ async def main(argv: list[str] | None = None) -> int:
                 if qsize == 0 and pending == 0 and running == 0:
                     break
         except KeyboardInterrupt:
-            print("\n⏹ Interrupted by user")
+            print("\n[STOP] Interrupted by user")
 
     if args.mode in ("combined", "worker"):
         await pool.stop()
@@ -187,7 +196,7 @@ async def main(argv: list[str] | None = None) -> int:
 
     # 6. Report
     if args.mode in ("combined", "scheduler"):
-        print("\n🏁 Run complete")
+        print("\n[DONE] Run complete")
         print(f"   Total ticks : {ticks}")
         print(f"   Enqueued    : {len(enqueued_ids)}")
     return 0
@@ -197,5 +206,5 @@ if __name__ == "__main__":
     try:
         sys.exit(asyncio.run(main()))
     except KeyboardInterrupt:
-        print("\n⏹ Aborted")
+        print("\n[STOP] Aborted")
         sys.exit(130)

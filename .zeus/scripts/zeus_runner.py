@@ -47,7 +47,7 @@ class ZeusRunner:
 
     def _load_json(self, path: Path) -> dict:
         if not path.exists():
-            print(f"❌ 文件不存在: {path}")
+            print(f"[ERROR] 文件不存在: {path}")
             sys.exit(1)
         with open(path, "r", encoding="utf-8-sig") as f:
             return json.load(f)
@@ -154,7 +154,7 @@ class ZeusRunner:
         return len(errors) == 0, errors
 
     def status(self) -> None:
-        print(f"\n🚀 Zeus Status (version: {self.version})\n")
+        print(f"\n>> Zeus Status (version: {self.version})\n")
 
         if self.version == "v3":
             self._status_v3()
@@ -174,9 +174,9 @@ class ZeusRunner:
         print(f"North Star: {config.get('metrics', {}).get('north_star', 'N/A')}")
         print(f"Tasks   : {passed}/{total} completed ({pending} pending)")
         if valid:
-            print("Validation: ✅ pass")
+            print("Validation: [OK] pass")
         else:
-            print(f"Validation: ⚠️  {len(errors)} issue(s)")
+            print(f"Validation: [WARN]  {len(errors)} issue(s)")
             for err in errors[:5]:
                 print(f"  - {err}")
         if current_wave is not None:
@@ -190,7 +190,7 @@ class ZeusRunner:
             print("\nRecent completed:")
             for t in recent:
                 sha = t.get("commit_sha", "N/A")[:7] if t.get("commit_sha") else "N/A"
-                print(f"  ✅ {t['id']}: {t['title']} → {sha}")
+                print(f"  [OK] {t['id']}: {t['title']} → {sha}")
 
         # Next pending
         next_pending = self.get_pending_tasks(wave=current_wave)[:5]
@@ -200,7 +200,7 @@ class ZeusRunner:
                 print(f"  ⏳ {t['id']}: {t['title']} (wave {t.get('wave', 'N/A')})")
 
         # Recommendation
-        print("\n📋 Recommendation:")
+        print("\n[INFO] Recommendation:")
         if pending == 0:
             print("  All tasks complete. Consider /zeus:feedback or /zeus:evolve.")
         elif current_wave is None:
@@ -213,7 +213,7 @@ class ZeusRunner:
         try:
             from store.sqlite_store import SQLiteStateStore
         except Exception as e:
-            print(f"❌ Cannot import v3 modules: {e}")
+            print(f"[ERROR] Cannot import v3 modules: {e}")
             return
 
         config = self.load_config()
@@ -232,7 +232,7 @@ class ZeusRunner:
         try:
             result = asyncio.run(_fetch())
         except Exception as e:
-            print(f"❌ Failed to read v3 database: {e}")
+            print(f"[ERROR] Failed to read v3 database: {e}")
             return
 
         tasks = result["tasks"]
@@ -250,7 +250,7 @@ class ZeusRunner:
         print(f"Project : {config.get('project', {}).get('name', 'N/A')}")
         print(f"North Star: {config.get('metrics', {}).get('north_star', 'N/A')}")
         print(f"Tasks   : {completed}/{total} completed, {failed} failed, {pending} pending, {running} running")
-        print(f"Validation: ✅ pass")
+        print(f"Validation: [OK] pass")
         if current_wave is not None:
             print(f"Next Wave: {current_wave}")
         else:
@@ -264,20 +264,20 @@ class ZeusRunner:
             for t in recent:
                 sha = t.get("commit_sha", "N/A")[:7] if t.get("commit_sha") else "N/A"
                 title = t.get("title", "")
-                print(f"  ✅ {t['id']}: {title} → {sha}")
+                print(f"  [OK] {t['id']}: {title} → {sha}")
 
         next_pending = [t for t in tasks if t["status"] == "pending"][:5]
         if next_pending:
             print("\nNext up:")
             for t in next_pending:
-                print(f"  ⏳ {t['id']}: {t.get('title', '')} (wave {t.get('wave', 'N/A')})")
+                print(f"  [PEND] {t['id']}: {t.get('title', '')} (wave {t.get('wave', 'N/A')})")
         elif running:
             running_tasks = [t for t in tasks if t["status"] == "running"][:5]
             print("\nIn progress:")
             for t in running_tasks:
-                print(f"  🏃 {t['id']}: {t.get('title', '')} (wave {t.get('wave', 'N/A')})")
+                print(f"  [RUN] {t['id']}: {t.get('title', '')} (wave {t.get('wave', 'N/A')})")
 
-        print("\n📋 Recommendation:")
+        print("\n[INFO] Recommendation:")
         if pending == 0 and running == 0:
             print("  All tasks complete. Consider /zeus:feedback or /zeus:evolve.")
         elif running:
@@ -287,14 +287,14 @@ class ZeusRunner:
         print()
 
     def plan(self) -> None:
-        print(f"\n📋 Execution Plan (version: {self.version})\n")
+        print(f"\n[INFO] Execution Plan (version: {self.version})\n")
         if self.version == "v3":
             self._plan_v3()
             return
 
         pending = self.get_pending_tasks()
         if not pending:
-            print("✅ No pending tasks.")
+            print("[OK] No pending tasks.")
             return
 
         # Group by wave
@@ -315,7 +315,7 @@ class ZeusRunner:
         try:
             from store.sqlite_store import SQLiteStateStore
         except Exception as e:
-            print(f"❌ Cannot import v3 modules: {e}")
+            print(f"[ERROR] Cannot import v3 modules: {e}")
             return
 
         db_path = Path(".zeus/v3/state.db").resolve()
@@ -332,11 +332,11 @@ class ZeusRunner:
         try:
             pending = asyncio.run(_fetch())
         except Exception as e:
-            print(f"❌ Failed to read v3 database: {e}")
+            print(f"[ERROR] Failed to read v3 database: {e}")
             return
 
         if not pending:
-            print("✅ No pending tasks.")
+            print("[OK] No pending tasks.")
             return
 
         waves: dict[int, list[dict]] = {}
@@ -458,7 +458,7 @@ class ZeusRunner:
 
         pending = self.get_pending_tasks(wave=wave, task_id=task_id)
         if not pending:
-            print("✅ 没有待执行的任务。")
+            print("[OK] 没有待执行的任务。")
             return
 
         if task_id:
@@ -489,7 +489,7 @@ class ZeusRunner:
 
             # Create AI log template for user
             log_path = self._create_ai_log_template(tid)
-            print(f"\n📝 AI log 模板已创建: {log_path}")
+            print(f"\n[LOG] AI log 模板已创建: {log_path}")
 
             # Wait for user to finish execution in Kimi Code
             done = input("\n任务是否已在你的 AI 会话中完成? [y/n]: ").strip().lower()
@@ -501,9 +501,9 @@ class ZeusRunner:
             log_ref = f"{tid}.md"
             self._mark_done(tid, commit_sha, log_ref)
             self._append_progress(tid, title, note="通过 AI 会话完成")
-            print(f"✅ {tid} 已完成并记录 (commit: {commit_sha[:7]})")
+            print(f"[OK] {tid} 已完成并记录 (commit: {commit_sha[:7]})")
 
-        print("\n🏁 本轮执行结束。")
+        print("\n[DONE] 本轮执行结束。")
         self.status()
 
     def _run_wave_v3(self) -> None:
@@ -518,7 +518,7 @@ class ZeusRunner:
             subprocess.run(cmd, check=False)
         except KeyboardInterrupt:
             print("\n⏹ Aborted by user")
-        print("\n🏁 v3 execution finished.")
+        print("\n[DONE] v3 execution finished.")
         self.status()
 
 
