@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from db.models import EventLog, Quarantine, SchedulerMeta, TaskState
@@ -30,6 +30,8 @@ def _taskstate_to_dict(obj: TaskState) -> dict[str, Any]:
         "ai_log_ref": obj.ai_log_ref,
         "files": obj.files,
         "extra": obj.extra,
+        "worker_id": obj.worker_id,
+        "heartbeat_at": obj.heartbeat_at.isoformat() if obj.heartbeat_at else None,
         "created_at": obj.created_at.isoformat() if obj.created_at else None,
         "updated_at": obj.updated_at.isoformat() if obj.updated_at else None,
     }
@@ -100,6 +102,15 @@ class _SqlAlchemyStateStore(AsyncStateStore):
                 updates["passes"] = passes
             updates.update(fields)
             await session.execute(update(TaskState).where(TaskState.id == task_id).values(**updates))
+            await session.commit()
+
+    async def update_task_heartbeat(self, task_id: str, worker_id: str) -> None:
+        async with self._session_factory() as session:
+            await session.execute(
+                update(TaskState)
+                .where(TaskState.id == task_id)
+                .values(worker_id=worker_id, heartbeat_at=func.now())
+            )
             await session.commit()
 
     async def delete_task(self, task_id: str) -> None:

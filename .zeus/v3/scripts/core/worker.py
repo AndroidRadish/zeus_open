@@ -6,6 +6,7 @@ reads the Agent Result Protocol (ARP), and updates the state store.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from typing import Any, Awaitable, Callable
@@ -53,6 +54,7 @@ class ZeusWorker:
 
     async def _execute(self, task: dict[str, Any]) -> None:
         tid = task["id"]
+        await self.store.update_task_heartbeat(tid, self.worker_id)
         await self.store.log_event(
             event_type="task.started",
             task_id=tid,
@@ -64,9 +66,17 @@ class ZeusWorker:
             self.bus.emit("task.started", {"task_id": tid, "worker_id": self.worker_id, "wave": task.get("wave")})
 
         workspace: Path | None = None
+        heartbeat_task = None
         try:
             workspace = await self.workspace_manager.prepare(task)
             prompt = self.workspace_manager.prompt_path(tid).read_text("utf-8")
+
+            async def _heartbeat_loop():
+                while True:
+                    await asyncio.sleep(10)
+                    await self.store.update_task_heartbeat(tid, self.worker_id)
+
+            heartbeat_task = asyncio.create_task(_heartbeat_loop())
             raw_result = await self.dispatcher.run(task, workspace, prompt)
         except Exception as exc:
             await self.store.log_event(
@@ -77,11 +87,18 @@ class ZeusWorker:
             )
             if self.bus:
                 self.bus.emit("task.failed", {"task_id": tid, "worker_id": self.worker_id, "error": str(exc)})
-            await self.store.update_task_status(tid, "failed", passes=False)
+            await self.store.update_task_status(tid, "failed", passes=False, worker_id=None)
             if workspace:
                 await self.store.quarantine_task(tid, str(exc), workspace=str(workspace))
             await self.queue.nack(tid, reason=str(exc))
             return
+        finally:
+            if heartbeat_task:
+                heartbeat_task.cancel()
+                try:
+                    await heartbeat_task
+                except asyncio.CancelledError:
+                    pass
 
         # Primary source of truth: zeus-result.json in workspace
         zeus_result = self._read_zeus_result(workspace)
@@ -99,7 +116,7 @@ class ZeusWorker:
             )
             if self.bus:
                 self.bus.emit("task.failed", {"task_id": tid, "worker_id": self.worker_id, "error": f"invalid zeus-result.json: {exc}"})
-            await self.store.update_task_status(tid, "failed", passes=False)
+            await self.store.update_task_status(tid, "failed", passes=False, worker_id=None)
             if workspace:
                 await self.store.quarantine_task(tid, f"invalid zeus-result.json: {exc}", workspace=str(workspace))
             await self.queue.nack(tid, reason=f"invalid zeus-result.json: {exc}")
@@ -111,6 +128,7 @@ class ZeusWorker:
                 "completed",
                 passes=True,
                 commit_sha=validated.commit_sha,
+                worker_id=None,
             )
             await self.store.log_event(
                 event_type="task.completed",
@@ -126,6 +144,7 @@ class ZeusWorker:
             await self.queue.ack(tid)
         else:
             await self.store.update_task_status(tid, "failed", passes=False)
+            await self.store.update_task_status(tid, "failed", passes=False, worker_id=None)
             await self.store.log_event(
                 event_type="task.failed",
                 task_id=tid,

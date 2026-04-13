@@ -38,6 +38,11 @@ class AsyncStateStore(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    async def update_task_heartbeat(self, task_id: str, worker_id: str) -> None:
+        """Update the heartbeat timestamp and worker assignment for a running task."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
     async def delete_task(self, task_id: str) -> None:
         raise NotImplementedError
 

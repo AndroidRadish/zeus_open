@@ -39,7 +39,11 @@ class TaskState(Base):
     commit_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
     ai_log_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
     files: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
-    extra: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    extra: Mapped[Any] = mapped_column(JSON, nullable=True)
+    worker_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    heartbeat_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -66,7 +70,7 @@ class Quarantine(Base):
         DateTime(timezone=True), server_default=func.now()
     )
     workspace: Mapped[str | None] = mapped_column(Text, nullable=True)
-    extra: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    extra: Mapped[Any] = mapped_column(JSON, nullable=True)
 
 
 class SchedulerMeta(Base):
@@ -96,4 +100,4 @@ class EventLog(Base):
     task_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     agent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     wave: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    payload: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    payload: Mapped[Any] = mapped_column(JSON, nullable=True)
