@@ -4,10 +4,8 @@ Control plane endpoint tests for ZeusOpen v3.
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock
 
 import pytest
 import pytest_asyncio
@@ -24,30 +22,6 @@ from db.models import Base
 from store.sqlite_store import SQLiteStateStore
 
 
-class FakePopen:
-    """Mock subprocess.Popen for scheduler/worker tests."""
-
-    _pid_counter = 1000
-
-    def __init__(self, cmd):
-        self.cmd = cmd
-        self.pid = FakePopen._pid_counter
-        FakePopen._pid_counter += 1
-        self._alive = True
-
-    def poll(self):
-        return None if self._alive else 0
-
-    def terminate(self):
-        self._alive = False
-
-    def kill(self):
-        self._alive = False
-
-    def wait(self, timeout=None):
-        self._alive = False
-
-
 @pytest_asyncio.fixture
 async def sqlite_store(tmp_path):
     db_path = tmp_path / "control.sqlite"
@@ -61,7 +35,7 @@ async def sqlite_store(tmp_path):
 
 
 @pytest_asyncio.fixture
-async def control_api_client(sqlite_store, tmp_path, monkeypatch):
+async def control_api_client(sqlite_store, tmp_path):
     bus = EventBus()
     project_root = tmp_path / "project"
     project_root.mkdir()
@@ -72,9 +46,6 @@ async def control_api_client(sqlite_store, tmp_path, monkeypatch):
     )
     database_url = f"sqlite+aiosqlite:///{tmp_path / 'control.sqlite'}"
     cp = ControlPlane(sqlite_store, bus, project_root, database_url)
-
-    # Mock subprocess.Popen so we don't spawn real long-running processes
-    monkeypatch.setattr(subprocess, "Popen", FakePopen)
 
     app = create_app(sqlite_store, bus, cp)
     transport = ASGITransport(app=app)
@@ -97,7 +68,7 @@ async def test_control_status_empty(control_api_client):
 
 
 @pytest.mark.asyncio
-async def test_control_scheduler_start_stop(control_api_client):
+async def test_control_scheduler_start_stop(control_api_client, sqlite_store):
     client, cp, _ = control_api_client
 
     resp = await client.post("/control/scheduler/start")
@@ -105,6 +76,7 @@ async def test_control_scheduler_start_stop(control_api_client):
     start_data = resp.json()
     assert start_data["success"] is True
     assert isinstance(start_data["pid"], int)
+    assert await sqlite_store.get_meta("scheduler_target_state") == "running"
 
     # Double-start should conflict
     resp = await client.post("/control/scheduler/start")
@@ -113,6 +85,8 @@ async def test_control_scheduler_start_stop(control_api_client):
     resp = await client.post("/control/scheduler/stop")
     assert resp.status_code == 200
     assert resp.json()["success"] is True
+    assert await sqlite_store.get_meta("scheduler_target_state") == "stopped"
+    assert await sqlite_store.get_meta("scheduler_actual_state") == "stopped"
 
     # Verify status reflects stopped state
     resp = await client.get("/control/status")
@@ -120,23 +94,25 @@ async def test_control_scheduler_start_stop(control_api_client):
 
 
 @pytest.mark.asyncio
-async def test_control_workers_scale_stop(control_api_client):
+async def test_control_workers_scale_stop(control_api_client, sqlite_store):
     client, cp, _ = control_api_client
 
     resp = await client.post("/control/workers/scale", json={"count": 2})
     assert resp.status_code == 200
     data = resp.json()
     assert data["success"] is True
-    assert len(data["pids"]) == 2
+    assert data["pids"] == []
+    assert await sqlite_store.get_meta("worker_target_count") == 2
 
     resp = await client.get("/control/status")
     status = resp.json()
     assert status["workers"]["count"] == 2
-    assert len(status["workers"]["pids"]) == 2
+    assert status["workers"]["target"] == 2
 
     resp = await client.post("/control/workers/stop")
     assert resp.status_code == 200
     assert resp.json()["success"] is True
+    assert await sqlite_store.get_meta("worker_target_count") == 0
 
     resp = await client.get("/control/status")
     assert resp.json()["workers"]["count"] == 0
@@ -177,7 +153,10 @@ async def test_control_global_run(control_api_client, sqlite_store):
     data = resp.json()
     assert data["success"] is True
     assert "scheduler_pid" in data["result"]
-    assert len(data["result"]["worker_pids"]) == 3
+    assert data["result"]["worker_pids"] == []
+
+    assert await sqlite_store.get_meta("scheduler_target_state") == "running"
+    assert await sqlite_store.get_meta("worker_target_count") == 3
 
     last_import = await sqlite_store.get_meta("last_import_at")
     assert last_import is not None

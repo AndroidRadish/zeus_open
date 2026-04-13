@@ -113,15 +113,17 @@ async def main(argv: list[str] | None = None) -> int:
         return 0
 
     # 4. Runner mode: prepare queue, dispatcher, workspace manager
+    config = ZeusConfig(project_root, version)
+
     if args.queue_backend == "sqlite":
         queue = SqliteTaskQueue(str(project_root / ".zeus" / version / "queue.sqlite"))
     elif args.queue_backend == "redis":
         redis_url = args.redis_url or config.raw().get("queue", {}).get("redis_url", "redis://localhost:6379/0")
+        from task_queue.redis_queue import RedisTaskQueue
         queue = RedisTaskQueue(redis_url)
     else:
         queue = MemoryTaskQueue()
 
-    config = ZeusConfig(project_root, version)
     dispatcher_cfg = config.raw()
     if args.dispatcher:
         dispatcher_cfg.setdefault("subagent", {})["dispatcher"] = args.dispatcher
@@ -142,55 +144,117 @@ async def main(argv: list[str] | None = None) -> int:
         await pool.start()
         print(">> Workers started")
 
-    if args.mode in ("combined", "scheduler"):
-        print(">> Scheduler started")
-        with tracer.start_as_current_span("scheduler-run") as span:
-            span.set_attribute("max_workers", args.max_workers)
-            span.set_attribute("database_url", database_url)
-            span.set_attribute("mode", args.mode)
-            try:
-                while True:
-                    with tracer.start_as_current_span("scheduler-tick") as tick_span:
-                        ready = await scheduler.tick(enqueued_ids)
-                        ticks += 1
-                        tick_span.set_attribute("tick", ticks)
-                        tick_span.set_attribute("enqueued_count", len(ready))
-                        if ready:
-                            idle_count = 0
-                            print(f"   Tick {ticks}: enqueued {len(ready)} task(s) — {', '.join(t['id'] for t in ready)}")
-                        else:
-                            idle_count += 1
-                            qsize = await queue.size()
-                            if qsize == 0 and idle_count >= max_idle_ticks:
-                                pending = len(await store.list_tasks(status="pending"))
-                                running = len(await store.list_tasks(status="running"))
-                                tick_span.set_attribute("pending", pending)
-                                tick_span.set_attribute("running", running)
-                                if pending == 0 and running == 0:
-                                    break
-                            await asyncio.sleep(0.2)
-            except KeyboardInterrupt:
-                print("\n[STOP] Interrupted by user")
-
     if args.mode == "worker":
-        # In worker-only mode, run indefinitely until interrupted
-        print(">> Workers running (Ctrl+C to stop)")
+        await store.set_meta("worker_actual_count", len(pool._workers))
+        print(">> Worker watch mode started")
         try:
             while True:
-                await asyncio.sleep(1)
-                # Health check: if queue is idle and all tasks are terminal, exit gracefully
+                target = await store.get_meta("worker_target_count", args.max_workers)
+                if target != len(pool._workers):
+                    await pool.scale_to(target)
+                    await store.set_meta("worker_actual_count", len(pool._workers))
+                    print(f"   Workers scaled to {len(pool._workers)}")
+                if target == 0:
+                    print("[Workers] target count is 0, exiting")
+                    break
                 qsize = await queue.size()
                 pending = len(await store.list_tasks(status="pending"))
                 running = len(await store.list_tasks(status="running"))
                 if qsize == 0 and pending == 0 and running == 0:
+                    print("[Workers] no more work, exiting")
                     break
+                await asyncio.sleep(2)
         except KeyboardInterrupt:
             print("\n[STOP] Interrupted by user")
+        finally:
+            await pool.stop()
+            await store.set_meta("worker_actual_count", 0)
 
-    if args.mode in ("combined", "worker"):
-        await pool.stop()
     if args.mode in ("combined", "scheduler"):
+        if args.mode == "scheduler":
+            print(">> Scheduler watch mode started")
+            await store.set_meta("scheduler_actual_state", "idle")
+            import os
+            await store.set_meta("scheduler_pid", os.getpid())
+            await store.set_meta("scheduler_active", False)
+            with tracer.start_as_current_span("scheduler-watch") as span:
+                span.set_attribute("max_workers", args.max_workers)
+                span.set_attribute("database_url", database_url)
+                span.set_attribute("mode", args.mode)
+                try:
+                    while True:
+                        target = await store.get_meta("scheduler_target_state", "stopped")
+                        if target != "running":
+                            await store.set_meta("scheduler_actual_state", "stopped")
+                            await store.set_meta("scheduler_active", False)
+                            print("[Scheduler] target state is not running, exiting")
+                            break
+                        await store.set_meta("scheduler_actual_state", "running")
+                        await store.set_meta("scheduler_active", True)
+                        with tracer.start_as_current_span("scheduler-tick") as tick_span:
+                            ready = await scheduler.tick(enqueued_ids)
+                            ticks += 1
+                            tick_span.set_attribute("tick", ticks)
+                            tick_span.set_attribute("enqueued_count", len(ready))
+                            if ready:
+                                idle_count = 0
+                                print(f"   Tick {ticks}: enqueued {len(ready)} task(s) — {', '.join(t['id'] for t in ready)}")
+                            else:
+                                idle_count += 1
+                                qsize = await queue.size()
+                                if qsize == 0 and idle_count >= max_idle_ticks:
+                                    pending = len(await store.list_tasks(status="pending"))
+                                    running = len(await store.list_tasks(status="running"))
+                                    tick_span.set_attribute("pending", pending)
+                                    tick_span.set_attribute("running", running)
+                                    if pending == 0 and running == 0:
+                                        await scheduler.mark_global_completed()
+                                        print("[Scheduler] all tasks complete, exiting")
+                                        break
+                                await asyncio.sleep(0.2)
+                except KeyboardInterrupt:
+                    print("\n[STOP] Interrupted by user")
+                finally:
+                    await store.set_meta("scheduler_actual_state", "stopped")
+                    await store.set_meta("scheduler_active", False)
+        else:
+            # combined mode: old inline behavior
+            print(">> Scheduler started")
+            with tracer.start_as_current_span("scheduler-run") as span:
+                span.set_attribute("max_workers", args.max_workers)
+                span.set_attribute("database_url", database_url)
+                span.set_attribute("mode", args.mode)
+                try:
+                    while True:
+                        with tracer.start_as_current_span("scheduler-tick") as tick_span:
+                            ready = await scheduler.tick(enqueued_ids)
+                            ticks += 1
+                            tick_span.set_attribute("tick", ticks)
+                            tick_span.set_attribute("enqueued_count", len(ready))
+                            if ready:
+                                idle_count = 0
+                                print(f"   Tick {ticks}: enqueued {len(ready)} task(s) — {', '.join(t['id'] for t in ready)}")
+                            else:
+                                idle_count += 1
+                                qsize = await queue.size()
+                                if qsize == 0 and idle_count >= max_idle_ticks:
+                                    pending = len(await store.list_tasks(status="pending"))
+                                    running = len(await store.list_tasks(status="running"))
+                                    tick_span.set_attribute("pending", pending)
+                                    tick_span.set_attribute("running", running)
+                                    if pending == 0 and running == 0:
+                                        break
+                                await asyncio.sleep(0.2)
+                except KeyboardInterrupt:
+                    print("\n[STOP] Interrupted by user")
+
+    if args.mode == "combined":
+        await pool.stop()
         await scheduler.mark_global_completed()
+
+    if args.mode == "scheduler":
+        await scheduler.mark_global_completed()
+
     await store.close()
     await queue.close()
 

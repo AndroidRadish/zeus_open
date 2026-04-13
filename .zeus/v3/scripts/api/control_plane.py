@@ -1,13 +1,13 @@
 """
 Control plane for ZeusOpen v3 Dashboard.
 
-Manages scheduler and worker subprocesses, plus in-process operations
-like tick_once and task import.
+Option B (watch-mode state machine):
+- API only writes scheduler_meta.
+- scheduler/worker processes watch DB state and self-manage lifecycle.
 """
 from __future__ import annotations
 
-import subprocess
-import sys
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -20,7 +20,7 @@ from task_queue.memory_queue import MemoryTaskQueue
 
 
 class ControlPlane:
-    """Manages scheduler/worker lifecycle and one-shot operations."""
+    """State-machine control plane: no subprocess management."""
 
     def __init__(
         self,
@@ -33,66 +33,26 @@ class ControlPlane:
         self.bus = bus
         self.project_root = project_root
         self.database_url = database_url
-        self._scheduler_proc: subprocess.Popen | None = None
-        self._worker_procs: list[subprocess.Popen] = []
 
-    def _run_py_path(self) -> Path:
-        return Path(__file__).resolve().parent.parent / "run.py"
-
-    def spawn_scheduler(self) -> int:
-        if self._scheduler_proc is not None and self._scheduler_proc.poll() is None:
+    async def spawn_scheduler(self) -> int:
+        current = await self.store.get_meta("scheduler_target_state", "stopped")
+        if current == "running":
             raise RuntimeError("Scheduler already running")
-        cmd = [
-            sys.executable,
-            str(self._run_py_path()),
-            "--project-root",
-            str(self.project_root),
-            "--database-url",
-            self.database_url,
-            "--mode",
-            "scheduler",
-        ]
-        self._scheduler_proc = subprocess.Popen(cmd)
-        return self._scheduler_proc.pid
+        await self.store.set_meta("scheduler_target_state", "running")
+        # Return the current PID placeholder for backward compatibility
+        return await self.store.get_meta("scheduler_pid", 0)
 
-    def stop_scheduler(self) -> None:
-        if self._scheduler_proc is not None and self._scheduler_proc.poll() is None:
-            self._scheduler_proc.terminate()
-            try:
-                self._scheduler_proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self._scheduler_proc.kill()
-        self._scheduler_proc = None
+    async def stop_scheduler(self) -> None:
+        await self.store.set_meta("scheduler_target_state", "stopped")
+        await self.store.set_meta("scheduler_actual_state", "stopped")
+        await self.store.set_meta("scheduler_active", False)
 
-    def spawn_workers(self, count: int) -> list[int]:
-        self.stop_workers()
-        run_py = self._run_py_path()
-        pids: list[int] = []
-        for _ in range(count):
-            cmd = [
-                sys.executable,
-                str(run_py),
-                "--project-root",
-                str(self.project_root),
-                "--database-url",
-                self.database_url,
-                "--mode",
-                "worker",
-            ]
-            proc = subprocess.Popen(cmd)
-            self._worker_procs.append(proc)
-            pids.append(proc.pid)
-        return pids
+    async def spawn_workers(self, count: int) -> list[int]:
+        await self.store.set_meta("worker_target_count", count)
+        return []
 
-    def stop_workers(self) -> None:
-        for proc in self._worker_procs:
-            if proc.poll() is None:
-                proc.terminate()
-                try:
-                    proc.wait(timeout=5)
-                except subprocess.TimeoutExpired:
-                    proc.kill()
-        self._worker_procs.clear()
+    async def stop_workers(self) -> None:
+        await self.store.set_meta("worker_target_count", 0)
 
     async def tick_once(self) -> dict[str, Any]:
         queue = MemoryTaskQueue()
@@ -110,26 +70,29 @@ class ControlPlane:
 
     async def global_run(self) -> dict[str, Any]:
         import_result = await self.import_tasks()
-        scheduler_pid = self.spawn_scheduler()
-        worker_pids = self.spawn_workers(3)
+        await self.spawn_scheduler()
+        await self.spawn_workers(3)
         return {
             "imported_tasks": import_result["imported_tasks"],
-            "scheduler_pid": scheduler_pid,
-            "worker_pids": worker_pids,
+            "scheduler_pid": await self.store.get_meta("scheduler_pid", 0),
+            "worker_pids": [],
         }
 
     async def status(self) -> dict[str, Any]:
-        scheduler_running = (
-            self._scheduler_proc is not None and self._scheduler_proc.poll() is None
-        )
-        scheduler_pid = self._scheduler_proc.pid if scheduler_running else None
-        alive_workers = [p for p in self._worker_procs if p.poll() is None]
-        worker_pids = [p.pid for p in alive_workers]
+        target = await self.store.get_meta("scheduler_target_state", "stopped")
+        actual = await self.store.get_meta("scheduler_actual_state", "unknown")
+        # If actual is unknown but target is running, reflect target optimistically
+        running = (actual == "running" or actual == "unknown") and target == "running"
+        scheduler_pid = await self.store.get_meta("scheduler_pid", None)
+        worker_target = await self.store.get_meta("worker_target_count", 0)
+        worker_actual = await self.store.get_meta("worker_actual_count", None)
+        if worker_actual is None:
+            worker_actual = worker_target
         queue_size = await self.store.get_meta("queue_size", 0)
         last_import_at = await self.store.get_meta("last_import_at", None)
         return {
-            "scheduler": {"running": scheduler_running, "pid": scheduler_pid},
-            "workers": {"count": len(worker_pids), "pids": worker_pids},
+            "scheduler": {"running": running, "pid": scheduler_pid, "state": actual},
+            "workers": {"count": worker_actual, "pids": [], "target": worker_target},
             "queue_size": queue_size,
             "last_import_at": last_import_at,
         }

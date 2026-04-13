@@ -135,3 +135,21 @@
     - 新增队列长度 / 上次导入时间等辅助信息
   - ✅ `i18n/locales/{zh,en}.json`：新增 `lastImport`、`unavailableTitle`、`unavailableDesc`、`globalHint` 文案
   - ✅ 67/67 v3 测试全绿，Dashboard 构建成功
+
+- **已完成（T-V3-003）**：v3 ControlPlane 进程管理 Option B 预研
+  - ✅ `api/control_plane.py`：移除 `subprocess.Popen` 子进程管理，改为纯 `SchedulerMeta` 读写模式
+    - `spawn_scheduler` -> 写 `scheduler_target_state="running"`
+    - `stop_scheduler` -> 写 `scheduler_target_state="stopped"`
+    - `spawn_workers` -> 写 `worker_target_count`
+    - `stop_workers` -> 写 `worker_target_count=0`
+    - `status` -> 从 meta 读取 `actual/target` 状态组合返回
+  - ✅ `api/server.py`：所有 control plane 端点增加 `await`，适配异步 meta 操作
+  - ✅ `core/worker_pool.py`：新增 `scale_to(count)` 方法，支持动态扩缩容并清理已完成的 task
+  - ✅ `run.py`：
+    - `--mode scheduler` 增加 watch-mode：每轮检查 `scheduler_target_state`，仅当 `"running"` 时执行 tick，否则优雅退出
+    - `--mode worker` 增加 watch-mode：每 2 秒检查 `worker_target_count`，调用 `pool.scale_to(target)` 动态调整，目标为 0 或无任务时退出
+    - `--mode combined` 保持原有内联行为不变
+    - 顺手修复 `--queue-backend redis` 时 `config` 变量未定义的 bug
+  - ✅ `tests/test_v3_control.py`：移除 `FakePopen` mock，改为验证 `scheduler_meta` 的读写结果
+  - ✅ `tests/test_v3_watch_mode.py`：新增 3 个集成测试，覆盖 scheduler watch 启停与 worker pool 动态扩缩容
+  - ✅ 70/70 v3 测试全绿，Dashboard 构建成功

@@ -230,7 +230,7 @@ def create_app(
     async def control_scheduler_start() -> dict[str, Any]:
         _ensure_control_plane()
         try:
-            pid = control_plane.spawn_scheduler()
+            pid = await control_plane.spawn_scheduler()
             return {"success": True, "pid": pid}
         except RuntimeError as e:
             raise HTTPException(status_code=409, detail=str(e))
@@ -238,7 +238,7 @@ def create_app(
     @app.post("/control/scheduler/stop")
     async def control_scheduler_stop() -> dict[str, Any]:
         _ensure_control_plane()
-        control_plane.stop_scheduler()
+        await control_plane.stop_scheduler()
         return {"success": True}
 
     @app.post("/control/scheduler/tick")
@@ -250,13 +250,13 @@ def create_app(
     @app.post("/control/workers/scale")
     async def control_workers_scale(body: ScaleWorkersRequest) -> dict[str, Any]:
         _ensure_control_plane()
-        pids = control_plane.spawn_workers(body.count)
+        pids = await control_plane.spawn_workers(body.count)
         return {"success": True, "pids": pids}
 
     @app.post("/control/workers/stop")
     async def control_workers_stop() -> dict[str, Any]:
         _ensure_control_plane()
-        control_plane.stop_workers()
+        await control_plane.stop_workers()
         return {"success": True}
 
     @app.post("/control/import")

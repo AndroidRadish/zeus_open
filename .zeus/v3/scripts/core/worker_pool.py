@@ -51,6 +51,31 @@ class WorkerPool:
             t = asyncio.create_task(worker.run())
             self._tasks.add(t)
 
+    async def scale_to(self, count: int) -> None:
+        """Dynamically adjust the number of active workers."""
+        done = {t for t in self._tasks if t.done()}
+        self._tasks -= done
+
+        current = len(self._workers)
+        if count > current:
+            for i in range(current, count):
+                worker = ZeusWorker(
+                    worker_id=f"worker-{i}",
+                    store=self.store,
+                    queue=self.queue,
+                    dispatcher=self.dispatcher,
+                    workspace_manager=self.workspace_manager,
+                    bus=self.bus,
+                )
+                self._workers.append(worker)
+                t = asyncio.create_task(worker.run())
+                self._tasks.add(t)
+        elif count < current:
+            excess = self._workers[count:]
+            self._workers = self._workers[:count]
+            for w in excess:
+                w.stop()
+
     async def stop(self, timeout: float = 10.0) -> None:
         """Signal all workers to stop and await their exit."""
         self._stop = True
