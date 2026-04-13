@@ -9,9 +9,12 @@ import argparse
 from contextlib import asynccontextmanager
 from typing import Any
 
+import pathlib
+
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from api.bus import EventBus
@@ -37,6 +40,14 @@ def create_app(store: SQLiteStateStore, bus: EventBus | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    static_dir = pathlib.Path(__file__).resolve().parent / "static"
+    if static_dir.exists():
+        app.mount("/dashboard", StaticFiles(directory=str(static_dir), html=True), name="dashboard")
+
+    @app.get("/")
+    async def root():
+        return {"message": "ZeusOpen v3 API", "dashboard": "/dashboard"}
 
     @app.get("/health")
     async def health() -> dict[str, Any]:

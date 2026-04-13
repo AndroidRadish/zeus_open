@@ -206,3 +206,22 @@ async def test_event_bus_subscribe():
 
     assert any("task.started" in c for c in chunks)
     assert any("task.completed" in c for c in chunks)
+
+
+@pytest.mark.asyncio
+async def test_dashboard_serves_index(api_client):
+    client, _ = api_client
+    resp = await client.get("/dashboard/")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers.get("content-type", "")
+    assert "ZeusOpen v3 Dashboard" in resp.text
+
+
+@pytest.mark.asyncio
+async def test_root_redirects_info(api_client):
+    client, _ = api_client
+    resp = await client.get("/")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "dashboard" in data
+    assert data["dashboard"] == "/dashboard"
