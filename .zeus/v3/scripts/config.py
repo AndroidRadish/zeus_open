@@ -46,5 +46,9 @@ class ZeusConfig:
         default = ["AGENTS.md", "USER.md", "IDENTITY.md", "SOUL.md"]
         return self.subagent.get("bootstrap", {}).get("files", default)
 
+    @property
+    def workspace_backend(self) -> str:
+        return self._data.get("workspace", {}).get("backend", "copytree")
+
     def raw(self) -> dict[str, Any]:
         return self._data

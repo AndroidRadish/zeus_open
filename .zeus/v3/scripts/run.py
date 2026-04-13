@@ -31,7 +31,7 @@ from importer import import_tasks_from_json
 from store.sqlite_store import SQLiteStateStore
 from task_queue.memory_queue import MemoryTaskQueue
 from task_queue.sqlite_queue import SqliteTaskQueue
-from workspace.manager import WorkspaceManager
+from workspace import build_workspace_manager
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -115,7 +115,7 @@ async def main(argv: list[str] | None = None) -> int:
     dispatcher = build_dispatcher(dispatcher_cfg)
 
     bus = EventBus()
-    workspace_manager = WorkspaceManager(project_root, version)
+    workspace_manager = build_workspace_manager(project_root, version)
     scheduler = ZeusScheduler(store, queue, bus)
     pool = WorkerPool(store, queue, dispatcher, workspace_manager, max_workers=args.max_workers, bus=bus)
 

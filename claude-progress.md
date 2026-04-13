@@ -70,7 +70,8 @@
 | **A1 CLI** | `run.py` CLI entrypoint (`import → schedule → pool → report`) | ✅ 已完成 (`49d5199`) |
 | **A1 Tests** | Stress tests (12 tasks / 4 workers), subprocess ARP integration, dispatcher tests | ✅ 已完成 (`49d5199`) |
 | **P2 M-004** | FastAPI server + SSE `/events/stream` + EventBus + metrics summary | ✅ 已完成 (`e7ce198`) |
-| **P2 M-005** | MetricsCollector (tasks, bottleneck, blocked chains) + OpenTelemetry tracing | ✅ 已完成 |
+| **P2 M-005** | MetricsCollector (tasks, bottleneck, blocked chains) + OpenTelemetry tracing | ✅ 已完成 (`6525dd5`) |
+| **P2 M-006** | Git worktree workspace backend (zero-copy isolation) | ✅ 已完成 |
 
 ### v3 已修复关键问题
 - **Windows subprocess ARP 路径转义**: `repr(str(path))` 保证 `python -c` 中的字符串字面量安全
