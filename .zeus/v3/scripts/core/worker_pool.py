@@ -6,11 +6,12 @@ Manages a dynamic number of ZeusWorker coroutines.
 from __future__ import annotations
 
 import asyncio
-from typing import Any
 
-from core.worker import ZeusWorker, Dispatcher
-from task_queue.base import TaskQueue
+from core.worker import ZeusWorker
+from dispatcher.base import SubagentDispatcher
 from store.base import AsyncStateStore
+from task_queue.base import TaskQueue
+from workspace.manager import WorkspaceManager
 
 
 class WorkerPool:
@@ -20,13 +21,15 @@ class WorkerPool:
         self,
         store: AsyncStateStore,
         queue: TaskQueue,
+        dispatcher: SubagentDispatcher,
+        workspace_manager: WorkspaceManager,
         max_workers: int = 3,
-        dispatcher: Dispatcher | None = None,
     ) -> None:
         self.store = store
         self.queue = queue
-        self.max_workers = max_workers
         self.dispatcher = dispatcher
+        self.workspace_manager = workspace_manager
+        self.max_workers = max_workers
         self._workers: list[ZeusWorker] = []
         self._tasks: set[asyncio.Task] = set()
         self._stop = False
@@ -39,6 +42,7 @@ class WorkerPool:
                 store=self.store,
                 queue=self.queue,
                 dispatcher=self.dispatcher,
+                workspace_manager=self.workspace_manager,
             )
             self._workers.append(worker)
             t = asyncio.create_task(worker.run())
