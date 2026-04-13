@@ -32,7 +32,7 @@
         ".zeus/v3/web/src/components/ControlCenter.vue",
         ".zeus/v3/web/src/components/Dashboard.vue"
       ],
-      "passes": false,
+      "passes": true,
       "created_at": "2026-04-13T08:00:00Z"
     },
     {

@@ -77,7 +77,11 @@
     "running": "运行中",
     "stopped": "已停止",
     "current": "当前",
-    "target": "目标"
+    "target": "目标",
+    "lastImport": "上次导入",
+    "unavailableTitle": "控制中心未启用",
+    "unavailableDesc": "当前 API server 未启用 Control Plane。如需使用调度器与工作进程管理，请以支持 Control Plane 的模式启动服务。",
+    "globalHint": "一键导入任务并启动调度器 + 3 个工作进程"
   },
   "feedback": {
     "success": "成功",

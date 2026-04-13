@@ -77,7 +77,11 @@
     "running": "Running",
     "stopped": "Stopped",
     "current": "Current",
-    "target": "Target"
+    "target": "Target",
+    "lastImport": "Last import",
+    "unavailableTitle": "Control Center unavailable",
+    "unavailableDesc": "The API server is running without Control Plane enabled. Start the server with Control Plane support to manage the scheduler and workers.",
+    "globalHint": "Import tasks and start scheduler + 3 workers in one click"
   },
   "feedback": {
     "success": "Success",

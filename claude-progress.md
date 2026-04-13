@@ -119,3 +119,19 @@
   - ✅ `tests/test_v3_api.py`：新增 HTTP 进度上报端点测试（200 + 404 + event + bus emit 验证）
   - ✅ `tests/test_v3_core.py`：新增 Worker heartbeat 扫描 `progress.jsonl` 及去重逻辑测试
   - ✅ 67/67 v3 测试全绿，Dashboard 构建成功
+
+- **已完成（T-V3-002）**：Dashboard Control Center 体验优化
+  - ✅ `api/server.py`：
+    - 新增 `_auto_detect_project_root`，支持从 `.zeus/v3/scripts/api/` 自动探测项目根目录
+    - 模块级别暴露 `app = main([])`，使 `uvicorn api.server:app` 可直接启动
+    - 自动创建 `.zeus/v3/` 数据库目录，避免首次启动时 `unable to open database file`
+  - ✅ `web/package.json`：安装 `lucide-vue-next` 图标库
+  - ✅ `ControlCenter.vue` 全面重构：
+    - 引入 lucide 图标（Upload / Play / Square / Clock / Users / Rocket / Activity / CircleOff / Loader2 / AlertCircle / Info）
+    - 紧凑 Bento 布局：2×2 Grid + Global 跨列卡片
+    - 503 禁用状态：顶部显示不可用 Banner，整个面板置灰
+    - 错误状态：顶部 Error Banner，支持一键关闭
+    - 加载状态：所有操作按钮内置旋转 Spinner
+    - 新增队列长度 / 上次导入时间等辅助信息
+  - ✅ `i18n/locales/{zh,en}.json`：新增 `lastImport`、`unavailableTitle`、`unavailableDesc`、`globalHint` 文案
+  - ✅ 67/67 v3 测试全绿，Dashboard 构建成功

@@ -284,6 +284,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _auto_detect_project_root(fallback: pathlib.Path, version: str = "v3") -> pathlib.Path:
+    """If server.py is inside .zeus/<version>/scripts/api/, detect project root."""
+    this_file = pathlib.Path(__file__).resolve()
+    if (
+        this_file.name == "server.py"
+        and this_file.parent.name == "api"
+        and this_file.parent.parent.name == "scripts"
+    ):
+        candidate = this_file.parent.parent.parent.parent
+        if (candidate / ".zeus" / version / "task.json").exists():
+            return candidate
+    return fallback
+
+
 async def ensure_schema(database_url: str) -> None:
     engine = make_async_engine(database_url)
     async with engine.begin() as conn:
@@ -293,9 +307,18 @@ async def ensure_schema(database_url: str) -> None:
 
 def main(argv: list[str] | None = None) -> FastAPI:
     args = parse_args(argv)
-    import pathlib
     project_root = pathlib.Path(args.project_root).resolve()
-    database_url = args.database_url or f"sqlite+aiosqlite:///{project_root / '.zeus' / args.version / 'state.db'}"
+    version = args.version
+
+    if not (project_root / ".zeus" / version / "task.json").exists():
+        project_root = _auto_detect_project_root(project_root, version)
+
+    if not args.database_url:
+        db_file = project_root / ".zeus" / version / "state.db"
+        db_file.parent.mkdir(parents=True, exist_ok=True)
+        database_url = f"sqlite+aiosqlite:///{db_file}"
+    else:
+        database_url = args.database_url
 
     import asyncio
     asyncio.run(ensure_schema(database_url))
@@ -311,8 +334,12 @@ def main(argv: list[str] | None = None) -> FastAPI:
     return app
 
 
+# Expose default app for direct uvicorn usage: uvicorn api.server:app
+# Use empty argv so import-time creation does not accidentally consume pytest args.
+app = main([])
+
+
 if __name__ == "__main__":
     import uvicorn
     args = parse_args()
-    app = main()
     uvicorn.run(app, host=args.host, port=args.port)
