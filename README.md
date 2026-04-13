@@ -59,6 +59,10 @@ python .zeus/scripts/zeus_runner.py
 python .zeus/scripts/zeus_runner.py --plan
 ```
 
+#### v3 Multi-Agent Framework (Beta)
+
+For the new database-backed, horizontally-scalable execution engine with real-time dashboard and Docker Compose support, see [`.zeus/v3/README.md`](.zeus/v3/README.md).
+
 #### v2 Parallel Mode with Web Dashboard
 
 For parallel wave execution and a visual dashboard, start the v2 backend and open the zero-build Web UI:
