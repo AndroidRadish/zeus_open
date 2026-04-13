@@ -15,9 +15,10 @@ from store.base import AsyncStateStore
 class ZeusScheduler:
     """Dependency-aware scheduler that enqueues ready tasks without executing them."""
 
-    def __init__(self, store: AsyncStateStore, queue: TaskQueue) -> None:
+    def __init__(self, store: AsyncStateStore, queue: TaskQueue, bus=None) -> None:
         self.store = store
         self.queue = queue
+        self.bus = bus
 
     def _build_graph(self, tasks: list[dict[str, Any]]) -> dict[str, list[str]]:
         return {t["id"]: t.get("depends_on", []) for t in tasks if t.get("id")}
@@ -71,6 +72,11 @@ class ZeusScheduler:
                 wave=task.get("wave"),
                 payload={"depends_on": task.get("depends_on", [])},
             )
+            if self.bus:
+                self.bus.emit(
+                    "task.enqueued",
+                    {"task_id": task["id"], "wave": task.get("wave"), "depends_on": task.get("depends_on", [])},
+                )
         return ready
 
     async def run_once(self) -> dict[str, Any]:
@@ -90,3 +96,5 @@ class ZeusScheduler:
             agent_id="zeus-scheduler",
             payload={},
         )
+        if self.bus:
+            self.bus.emit("global.completed", {})

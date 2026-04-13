@@ -18,6 +18,8 @@ import asyncio
 import sys
 from pathlib import Path
 
+from api.bus import EventBus
+from api.server import create_app
 from config import ZeusConfig
 from core.scheduler import ZeusScheduler
 from core.worker_pool import WorkerPool
@@ -40,6 +42,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--queue-backend", default="memory", choices=["memory", "sqlite"], help="Task queue backend")
     parser.add_argument("--dispatcher", default=None, choices=["mock", "kimi", "claude", "auto"], help="Override dispatcher mode")
     parser.add_argument("--import-only", action="store_true", help="Only import task.json and exit")
+    parser.add_argument("--serve", action="store_true", help="Start the API server instead of running the scheduler")
+    parser.add_argument("--host", default="127.0.0.1", help="API server host")
+    parser.add_argument("--port", type=int, default=8000, help="API server port")
     return parser.parse_args(argv)
 
 
@@ -83,7 +88,18 @@ async def main(argv: list[str] | None = None) -> int:
         print("✅ Import complete.")
         return 0
 
-    # 3. Prepare queue, dispatcher, workspace manager
+    # 3. API server mode
+    if args.serve:
+        bus = EventBus()
+        app = create_app(store, bus)
+        import uvicorn
+        print(f"🌐 Starting API server at http://{args.host}:{args.port}")
+        config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")
+        server = uvicorn.Server(config)
+        await server.serve()
+        return 0
+
+    # 4. Runner mode: prepare queue, dispatcher, workspace manager
     if args.queue_backend == "sqlite":
         queue = SqliteTaskQueue(str(project_root / ".zeus" / version / "queue.sqlite"))
     else:
@@ -95,11 +111,12 @@ async def main(argv: list[str] | None = None) -> int:
         dispatcher_cfg.setdefault("subagent", {})["dispatcher"] = args.dispatcher
     dispatcher = build_dispatcher(dispatcher_cfg)
 
+    bus = EventBus()
     workspace_manager = WorkspaceManager(project_root, version)
-    scheduler = ZeusScheduler(store, queue)
-    pool = WorkerPool(store, queue, dispatcher, workspace_manager, max_workers=args.max_workers)
+    scheduler = ZeusScheduler(store, queue, bus)
+    pool = WorkerPool(store, queue, dispatcher, workspace_manager, max_workers=args.max_workers, bus=bus)
 
-    # 4. Start workers and scheduling loop
+    # 5. Start workers and scheduling loop
     await pool.start()
     print("▶ Scheduler started")
 
@@ -132,7 +149,7 @@ async def main(argv: list[str] | None = None) -> int:
         await store.close()
         await queue.close()
 
-    # 5. Report
+    # 6. Report
     print("\n🏁 Run complete")
     print(f"   Total ticks : {ticks}")
     print(f"   Enqueued    : {len(enqueued_ids)}")

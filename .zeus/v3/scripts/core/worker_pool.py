@@ -24,12 +24,14 @@ class WorkerPool:
         dispatcher: SubagentDispatcher,
         workspace_manager: WorkspaceManager,
         max_workers: int = 3,
+        bus=None,
     ) -> None:
         self.store = store
         self.queue = queue
         self.dispatcher = dispatcher
         self.workspace_manager = workspace_manager
         self.max_workers = max_workers
+        self.bus = bus
         self._workers: list[ZeusWorker] = []
         self._tasks: set[asyncio.Task] = set()
         self._stop = False
@@ -43,6 +45,7 @@ class WorkerPool:
                 queue=self.queue,
                 dispatcher=self.dispatcher,
                 workspace_manager=self.workspace_manager,
+                bus=self.bus,
             )
             self._workers.append(worker)
             t = asyncio.create_task(worker.run())

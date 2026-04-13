@@ -2,10 +2,10 @@
 
 ## 当前状态
 - **项目**: zeus-open (通用 AI-CLI 版 Zeus 框架)
-- **版本**: v2 全部 41 个任务已完成，Wave 12 / US-011 Production Hardening 正式谢幕
-- **状态**: Validation pass | 96/96 v2 tests green | 41/41 completed
-- **最后提交**: `287ce5c` (T-037 Dockerfile + start scripts)
-- **当前阶段**: P-003 — v2 Global Orchestrator & Agent Collaboration（已完成），v2 正式谢幕，v3 规划已就绪
+- **版本**: v2 全部 41 个任务已完成；v3 Phase 1 A1 已完成
+- **状态**: v2 Validation pass | 26/26 v3 tests green
+- **最后提交**: `49d5199` (v3 Phase 1 A1: CLI runner, stress tests, subprocess ARP integration)
+- **当前阶段**: v3 Phase 1 — async state store, ARP schema, queue-worker, importer, dispatcher, workspace, CLI, stress/subprocess tests
 
 ## v2 已完成里程碑
 
@@ -61,11 +61,20 @@
 | **T-036-E** | 集成测试（shutdown-resume 周期）+ 文档更新 | ✅ 已完成 |
 | **T-037** | Dockerfile + 一键启动脚本 (start.sh / start.ps1) | ✅ 已完成 |
 
-## 会后增强 (Post-T-034)
-- **i18n 补全**: 里程碑、阶段、新标签页全部支持中英切换
-- **Agent ID 下拉框**: `GET /agent-ids` 服务 + Collaboration/Logs 标签页自动枚举所有历史 agent
-- **Web UI 精简**: 移除 `Agent 监控`、`Discussion`、`Graph` 三个低价值标签，从 9 个减至 6 个
-- **一键全局运行**: `POST /global/run` 端点 + Global Execution 页面启动按钮
+## v3 Phase 1 执行进度
+
+| 模块 | 标题 | 状态 |
+|------|------|------|
+| **Foundation** | Async DB (SQLite+Postgres), ARP schema, Queue-Worker, alembic | ✅ 已完成 (`634f6d9`) |
+| **Expansion** | task.json importer, dispatcher bridge, workspace manager, worker integration | ✅ 已完成 (`fc974e8`) |
+| **A1 CLI** | `run.py` CLI entrypoint (`import → schedule → pool → report`) | ✅ 已完成 (`49d5199`) |
+| **A1 Tests** | Stress tests (12 tasks / 4 workers), subprocess ARP integration, dispatcher tests | ✅ 已完成 (`49d5199`) |
+| **P2 M-004** | FastAPI server + SSE `/events/stream` + EventBus + metrics summary | ✅ 已完成 |
+
+### v3 已修复关键问题
+- **Windows subprocess ARP 路径转义**: `repr(str(path))` 保证 `python -c` 中的字符串字面量安全
+- **调度循环过早退出**: 现在仅在 `pending == 0 && running == 0 && queue.size == 0` 时才终止
+- **Worker 失败自动隔离**: 异常、无效 ARP、非 completed 状态均触发 quarantine
 
 ## 会话记录
 
@@ -77,3 +86,9 @@
 - 添加 `POST /global/run` 一键启动全局调度器能力
 - 同步外部知识库文档（Bit & Beat 工程知识库）
 - 创建 US-011 与 Wave 12 任务队列，准备进入 Production Hardening
+
+### 2026-04-13
+- v3 foundation 完成：数据库、迁移、队列、worker 基础架构 (`634f6d9`)
+- v3 Phase 1 expansion 完成：importer、dispatcher、workspace、worker 集成 (`fc974e8`)
+- v3 Phase 1 A1 完成：CLI runner、stress tests、subprocess 集成测试 (`49d5199`)
+- 26/26 v3 测试全部通过

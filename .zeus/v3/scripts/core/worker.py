@@ -29,12 +29,14 @@ class ZeusWorker:
         queue: TaskQueue,
         dispatcher: SubagentDispatcher,
         workspace_manager: WorkspaceManager,
+        bus=None,
     ) -> None:
         self.worker_id = worker_id
         self.store = store
         self.queue = queue
         self.dispatcher = dispatcher
         self.workspace_manager = workspace_manager
+        self.bus = bus
         self._stop = False
 
     async def run(self) -> None:
@@ -58,6 +60,8 @@ class ZeusWorker:
             wave=task.get("wave"),
             payload={},
         )
+        if self.bus:
+            self.bus.emit("task.started", {"task_id": tid, "worker_id": self.worker_id, "wave": task.get("wave")})
 
         workspace: Path | None = None
         try:
@@ -71,6 +75,8 @@ class ZeusWorker:
                 agent_id=self.worker_id,
                 payload={"error": str(exc)},
             )
+            if self.bus:
+                self.bus.emit("task.failed", {"task_id": tid, "worker_id": self.worker_id, "error": str(exc)})
             await self.store.update_task_status(tid, "failed", passes=False)
             if workspace:
                 await self.store.quarantine_task(tid, str(exc), workspace=str(workspace))
@@ -91,6 +97,8 @@ class ZeusWorker:
                 agent_id=self.worker_id,
                 payload={"error": f"invalid zeus-result.json: {exc}", "raw": zeus_result},
             )
+            if self.bus:
+                self.bus.emit("task.failed", {"task_id": tid, "worker_id": self.worker_id, "error": f"invalid zeus-result.json: {exc}"})
             await self.store.update_task_status(tid, "failed", passes=False)
             if workspace:
                 await self.store.quarantine_task(tid, f"invalid zeus-result.json: {exc}", workspace=str(workspace))
@@ -113,6 +121,8 @@ class ZeusWorker:
                     "test_summary": validated.test_summary.model_dump(),
                 },
             )
+            if self.bus:
+                self.bus.emit("task.completed", {"task_id": tid, "worker_id": self.worker_id, "commit_sha": validated.commit_sha})
             await self.queue.ack(tid)
         else:
             await self.store.update_task_status(tid, "failed", passes=False)
@@ -122,6 +132,8 @@ class ZeusWorker:
                 agent_id=self.worker_id,
                 payload={"status": validated.status, "artifacts": validated.artifacts},
             )
+            if self.bus:
+                self.bus.emit("task.failed", {"task_id": tid, "worker_id": self.worker_id, "status": validated.status})
             if workspace:
                 await self.store.quarantine_task(tid, validated.artifacts.get("error", "partial_or_failed"), workspace=str(workspace))
             await self.queue.nack(tid, reason=validated.artifacts.get("error", "partial_or_failed"))
