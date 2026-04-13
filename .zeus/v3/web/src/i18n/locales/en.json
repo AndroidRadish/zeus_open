@@ -1,0 +1,47 @@
+{
+  "app": {
+    "title": "ZeusOpen",
+    "version": "v3",
+    "subtitle": "Real-time Task Orchestrator"
+  },
+  "connection": {
+    "online": "Live",
+    "offline": "Disconnected"
+  },
+  "lang": {
+    "zh": "中",
+    "en": "EN"
+  },
+  "stats": {
+    "total": "Total",
+    "completed": "Completed",
+    "failed": "Failed",
+    "pending": "Pending",
+    "running": "Running",
+    "passRate": "Pass Rate"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "id": "Task ID",
+    "titleCol": "Title",
+    "wave": "Wave",
+    "status": "Status",
+    "result": "Result",
+    "unnamed": "Untitled Task",
+    "empty": "No tasks yet"
+  },
+  "status": {
+    "pending": "Pending",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed"
+  },
+  "result": {
+    "pass": "Pass",
+    "fail": "Fail"
+  },
+  "events": {
+    "title": "Live Events",
+    "empty": "Waiting for events…"
+  }
+}
