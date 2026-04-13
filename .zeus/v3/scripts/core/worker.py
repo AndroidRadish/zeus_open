@@ -72,6 +72,8 @@ class ZeusWorker:
                 payload={"error": str(exc)},
             )
             await self.store.update_task_status(tid, "failed", passes=False)
+            if workspace:
+                await self.store.quarantine_task(tid, str(exc), workspace=str(workspace))
             await self.queue.nack(tid, reason=str(exc))
             return
 
@@ -90,6 +92,8 @@ class ZeusWorker:
                 payload={"error": f"invalid zeus-result.json: {exc}", "raw": zeus_result},
             )
             await self.store.update_task_status(tid, "failed", passes=False)
+            if workspace:
+                await self.store.quarantine_task(tid, f"invalid zeus-result.json: {exc}", workspace=str(workspace))
             await self.queue.nack(tid, reason=f"invalid zeus-result.json: {exc}")
             return
 
@@ -118,6 +122,8 @@ class ZeusWorker:
                 agent_id=self.worker_id,
                 payload={"status": validated.status, "artifacts": validated.artifacts},
             )
+            if workspace:
+                await self.store.quarantine_task(tid, validated.artifacts.get("error", "partial_or_failed"), workspace=str(workspace))
             await self.queue.nack(tid, reason=validated.artifacts.get("error", "partial_or_failed"))
 
     def _read_zeus_result(self, workspace: Path | None) -> dict[str, Any] | None:
