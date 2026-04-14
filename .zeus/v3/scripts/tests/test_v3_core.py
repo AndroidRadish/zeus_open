@@ -136,6 +136,40 @@ async def test_import_preserves_extra_fields(sqlite_store, tmp_path):
     assert t["extra"]["custom_flag"] is True
 
 
+@pytest.mark.asyncio
+async def test_import_phases_and_milestones(sqlite_store, tmp_path):
+    store = sqlite_store
+    task_json = {
+        "meta": {},
+        "tasks": [
+            {"id": "T-201", "title": "Task 1", "status": "pending", "wave": 1, "milestone_id": "M-1"},
+        ],
+        "phases": [
+            {"id": "P-1", "title": "Phase 1", "title_en": "Phase 1", "title_zh": "阶段 1", "status": "completed", "progress_percent": 100, "milestone_ids": ["M-1"]},
+        ],
+        "milestones": [
+            {"id": "M-1", "title": "Milestone 1", "task_ids": ["T-201"], "status": "completed", "progress_percent": 100},
+        ],
+    }
+    path = tmp_path / "task.json"
+    path.write_text(json.dumps(task_json), encoding="utf-8")
+    result = await import_tasks_from_json(store, path)
+    assert result["imported_phases"] == 1
+    assert result["imported_milestones"] == 1
+
+    t = await store.get_task("T-201")
+    assert t["milestone_id"] == "M-1"
+
+    p = await store.get_phase("P-1")
+    assert p["title"] == "Phase 1"
+    assert p["title_zh"] == "阶段 1"
+    assert p["milestone_ids"] == ["M-1"]
+
+    m = await store.get_milestone("M-1")
+    assert m["title"] == "Milestone 1"
+    assert m["task_ids"] == ["T-201"]
+
+
 # ---------------------------------------------------------------------------
 # Workspace tests
 # ---------------------------------------------------------------------------

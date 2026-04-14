@@ -84,6 +84,43 @@
           }
         }
       }
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "title_en": { "type": "string" },
+          "title_zh": { "type": "string" },
+          "summary": { "type": "string" },
+          "summary_en": { "type": "string" },
+          "summary_zh": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "completed"], "default": "pending" },
+          "progress_percent": { "type": "integer", "default": 0 },
+          "milestone_ids": { "type": "array", "items": { "type": "string" } },
+          "wave_start": { "type": ["integer", "null"] },
+          "wave_end": { "type": ["integer", "null"] }
+        }
+      }
+    },
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "task_ids": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["pending", "in_progress", "completed"], "default": "pending" },
+          "progress_percent": { "type": "integer", "default": 0 },
+          "spec_ref": { "type": "string" },
+          "story_ids": { "type": "array", "items": { "type": "string" } }
+        }
+      }
     }
   }
 }

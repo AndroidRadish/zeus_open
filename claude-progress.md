@@ -180,3 +180,11 @@
   - ✅ `web/src/components/EventsPanel.vue`：新增 `RefreshCw` / `AlertCircle` 图标与青色/红色样式，热重载事件更易识别
   - ✅ `tests/test_v3_api.py`：新增 `test_hot_reload_task_json` 集成测试（含手动 `_LifespanManager` 适配 httpx 无 lifespan 版本）
   - ✅ 74/74 v3 API 测试全绿，Dashboard 构建成功
+
+- **规范补齐**：v3 `task.json` 正式支持 `phases` 与 `milestones`
+  - ✅ `.zeus/schemas/task.schema.json`：新增 `phases` 和 `milestones` 数组定义（含 `title_en` / `title_zh` 等双语字段）
+  - ✅ `.zeus/v3/task.json`：补充 3 个 Phase（Foundation / Platform / Ecosystem）+ 3 个 Milestone，全部带中英双语
+  - ✅ `.zeus/v3/scripts/importer.py`：导入 task 时同时写入 phases、milestones，并支持 `milestone_id` 字段
+  - ✅ `.zeus/v3/scripts/store/sqlalchemy_base.py`：`_taskstate_to_dict` 补回缺失的 `milestone_id`
+  - ✅ `tests/test_v3_core.py`：新增 `test_import_phases_and_milestones`
+  - ✅ 55/55 测试全绿，Dashboard Phases 面板现在有真实数据

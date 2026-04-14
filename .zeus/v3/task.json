@@ -1,6 +1,76 @@
 {
   "version": "v3",
   "updated_at": "2026-04-13T08:00:00Z",
+  "phases": [
+    {
+      "id": "P-V3-001",
+      "title": "Foundation",
+      "title_en": "Foundation",
+      "title_zh": "基础架构",
+      "summary": "Observable sub-agent execution",
+      "summary_en": "Observable sub-agent execution",
+      "summary_zh": "子 Agent 执行可观测化",
+      "status": "completed",
+      "progress_percent": 100,
+      "milestone_ids": ["M-V3-001"],
+      "wave_start": 1,
+      "wave_end": 1
+    },
+    {
+      "id": "P-V3-002",
+      "title": "Platform",
+      "title_en": "Platform",
+      "title_zh": "平台化",
+      "summary": "Dashboard experience and state-machine control plane",
+      "summary_en": "Dashboard experience and state-machine control plane",
+      "summary_zh": "Dashboard 体验优化与状态机控制平面",
+      "status": "completed",
+      "progress_percent": 100,
+      "milestone_ids": ["M-V3-002"],
+      "wave_start": 2,
+      "wave_end": 3
+    },
+    {
+      "id": "P-V3-003",
+      "title": "Ecosystem",
+      "title_en": "Ecosystem",
+      "title_zh": "生态扩展",
+      "summary": "Phase, Mailbox, and hot-reload capabilities",
+      "summary_en": "Phase, Mailbox, and hot-reload capabilities",
+      "summary_zh": "阶段、信箱与热重载能力",
+      "status": "completed",
+      "progress_percent": 100,
+      "milestone_ids": ["M-V3-003"],
+      "wave_start": 7,
+      "wave_end": 9
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M-V3-001",
+      "title": "Sub-agent Observability",
+      "task_ids": ["T-V3-001"],
+      "status": "completed",
+      "progress_percent": 100,
+      "story_ids": ["US-V3-001"]
+    },
+    {
+      "id": "M-V3-002",
+      "title": "Dashboard & ControlPlane Platform",
+      "task_ids": ["T-V3-002", "T-V3-003"],
+      "status": "completed",
+      "progress_percent": 100,
+      "story_ids": ["US-V3-002", "US-V3-003"]
+    },
+    {
+      "id": "M-V3-003",
+      "title": "Ecosystem Extensions",
+      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019"],
+      "status": "completed",
+      "progress_percent": 100,
+      "story_ids": ["US-V3-005", "US-V3-006", "US-V3-007"]
+    }
+  ],
   "tasks": [
     {
       "id": "T-V3-001",
@@ -9,6 +79,7 @@
       "title": "子 Agent 进度上报机制（A+B 方案）",
       "description": "解决子 Agent 黑盒执行不可见的问题。A 方案：Prompt 要求子 Agent 写入 progress.jsonl，Worker heartbeat 扫描并转发到 EventBus/EventLog；B 方案：提供 POST /tasks/{id}/progress HTTP 端点供子 Agent 主动上报。Dashboard Events 面板需展示进度事件。",
       "wave": 1,
+      "milestone_id": "M-V3-001",
       "depends_on": [],
       "files": [
         ".zeus/v3/scripts/workspace/base.py",
@@ -26,6 +97,7 @@
       "title": "Dashboard Control Center 体验优化",
       "description": "修复 uvicorn 直接启动时 ControlPlane 503 的防御逻辑；优化 Control Center 视觉层级：引入图标库、紧凑 Bento 布局、加载/错误/空状态处理。",
       "wave": 2,
+      "milestone_id": "M-V3-002",
       "depends_on": [],
       "files": [
         ".zeus/v3/scripts/api/server.py",
@@ -42,6 +114,7 @@
       "title": "v3 ControlPlane 进程管理 Option B 预研",
       "description": "将当前 Option A（子进程模式）升级为 Option B（watch-mode 状态机）。API 只写 scheduler_meta，scheduler/worker 进程通过 watch 数据库状态自行启停。目标是让 API server 完全无状态，适配 K8s。",
       "wave": 3,
+      "milestone_id": "M-V3-002",
       "depends_on": ["T-V3-002"],
       "files": [
         ".zeus/v3/scripts/core/scheduler.py",
@@ -59,6 +132,7 @@
       "title": "Phase & Milestone API and Dashboard panels",
       "description": "Implement REST endpoints for Phase and Milestone CRUD, plus a Dashboard Phases tab with milestone drill-down and task lists. Update i18n for EN/ZH.",
       "wave": 7,
+      "milestone_id": "M-V3-003",
       "depends_on": [],
       "files": [
         ".zeus/v3/scripts/db/models.py",
@@ -81,6 +155,7 @@
       "title": "AgentBus Mailbox API, DB model, and Dashboard panel",
       "description": "Add Mailbox SQLAlchemy model, CRUD methods in AsyncStateStore, REST endpoints for sending and reading messages, and a Dashboard Mailbox tab with unread filtering.",
       "wave": 8,
+      "milestone_id": "M-V3-003",
       "depends_on": [],
       "files": [
         ".zeus/v3/scripts/db/models.py",
@@ -103,6 +178,7 @@
       "title": "Config and task.json hot reload in serve mode",
       "description": "Add a background file watcher to the API server lifespan that monitors .zeus/v3/task.json and config.json for changes. On change, automatically re-import tasks and emit a config.reloaded event via EventBus. Protect against concurrent scheduler ticks during reload.",
       "wave": 9,
+      "milestone_id": "M-V3-003",
       "depends_on": [],
       "files": [
         ".zeus/v3/scripts/api/server.py",

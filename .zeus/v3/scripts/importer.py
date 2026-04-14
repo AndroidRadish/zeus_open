@@ -43,14 +43,23 @@ async def import_tasks_from_json(store: AsyncStateStore, task_json_path: Path | 
             "commit_sha": t.get("commit_sha"),
             "ai_log_ref": t.get("ai_log_ref"),
             "files": t.get("files"),
+            "milestone_id": t.get("milestone_id"),
             "extra": {k: v for k, v in t.items() if k not in {
                 "id", "story_id", "title", "description", "status", "passes",
                 "wave", "original_wave", "scheduled_wave", "rescheduled_from",
-                "depends_on", "commit_sha", "ai_log_ref", "files",
+                "depends_on", "commit_sha", "ai_log_ref", "files", "milestone_id",
             }},
         }
         await store.upsert_task(task_state)
         imported += 1
+
+    phases = data.get("phases", [])
+    for p in phases:
+        await store.upsert_phase(p)
+
+    milestones = data.get("milestones", [])
+    for m in milestones:
+        await store.upsert_milestone(m)
 
     for q in quarantine:
         await store.quarantine_task(
@@ -65,6 +74,8 @@ async def import_tasks_from_json(store: AsyncStateStore, task_json_path: Path | 
 
     return {
         "imported_tasks": imported,
+        "imported_phases": len(phases),
+        "imported_milestones": len(milestones),
         "quarantine_count": len(quarantine),
         "meta_keys": list(meta.keys()),
     }

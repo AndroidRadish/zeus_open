@@ -29,6 +29,7 @@ def _taskstate_to_dict(obj: TaskState) -> dict[str, Any]:
         "commit_sha": obj.commit_sha,
         "ai_log_ref": obj.ai_log_ref,
         "files": obj.files,
+        "milestone_id": obj.milestone_id,
         "extra": obj.extra,
         "worker_id": obj.worker_id,
         "heartbeat_at": obj.heartbeat_at.isoformat() if obj.heartbeat_at else None,
