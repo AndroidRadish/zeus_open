@@ -38,7 +38,7 @@ def create_app(
     control_plane: ControlPlane | None = None,
     embedded_runner: dict[str, Any] | None = None,
 ) -> FastAPI:
-    bus = bus or EventBus()
+    bus = bus or EventBus(store=store)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):

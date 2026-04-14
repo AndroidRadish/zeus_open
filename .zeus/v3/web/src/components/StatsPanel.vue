@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import {
+  Monitor,
+  CircleCheck,
+  CircleX,
+  Timer,
+  Loader2,
+} from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -28,88 +35,72 @@ const passRateCircumference = 2 * Math.PI * 18
 
 <template>
   <section class="stats-grid" v-if="metrics">
-    <div class="glass card">
+    <div class="glass-card card animate-fade-in-up animate-delay-1">
       <div class="card-top">
         <div>
           <div class="card-label">{{ t('stats.total') }}</div>
           <div class="card-value">{{ metrics.total_tasks }}</div>
         </div>
         <div class="icon-wrap icon-total">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect width="20" height="14" x="2" y="3" rx="2"/>
-            <line x1="8" x2="16" y1="21" y2="21"/>
-            <line x1="12" x2="12" y1="17" y2="21"/>
-          </svg>
+          <Monitor :size="22" />
         </div>
       </div>
       <div class="card-bar"><div class="bar-fill" :style="{ width: '100%' }"></div></div>
     </div>
 
-    <div class="glass card">
+    <div class="glass-card card animate-fade-in-up animate-delay-2">
       <div class="card-top">
         <div>
           <div class="card-label">{{ t('stats.completed') }}</div>
           <div class="card-value text-emerald">{{ metrics.completed }}</div>
         </div>
         <div class="icon-wrap icon-emerald">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
+          <CircleCheck :size="22" />
         </div>
       </div>
       <div class="card-bar"><div class="bar-fill bar-emerald" :style="{ width: (metrics.completed / totalTasksForPercent * 100) + '%' }"></div></div>
     </div>
 
-    <div class="glass card">
+    <div class="glass-card card animate-fade-in-up animate-delay-3">
       <div class="card-top">
         <div>
           <div class="card-label">{{ t('stats.failed') }}</div>
           <div class="card-value text-rose">{{ metrics.failed }}</div>
         </div>
         <div class="icon-wrap icon-rose">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="15" x2="9" y1="9" y2="15"/>
-            <line x1="9" x2="15" y1="9" y2="15"/>
-          </svg>
+          <CircleX :size="22" />
         </div>
       </div>
       <div class="card-bar"><div class="bar-fill bar-rose" :style="{ width: (metrics.failed / totalTasksForPercent * 100) + '%' }"></div></div>
     </div>
 
-    <div class="glass card">
+    <div class="glass-card card animate-fade-in-up animate-delay-4">
       <div class="card-top">
         <div>
           <div class="card-label">{{ t('stats.pending') }}</div>
           <div class="card-value text-amber">{{ metrics.pending }}</div>
         </div>
         <div class="icon-wrap icon-amber">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
+          <Timer :size="22" />
         </div>
       </div>
       <div class="card-bar"><div class="bar-fill bar-amber" :style="{ width: (metrics.pending / totalTasksForPercent * 100) + '%' }"></div></div>
     </div>
 
-    <div class="glass card">
+    <div class="glass-card card animate-fade-in-up animate-delay-5">
       <div class="card-top">
         <div>
           <div class="card-label">{{ t('stats.running') }}</div>
           <div class="card-value text-cyan">{{ metrics.running }}</div>
         </div>
         <div class="icon-wrap icon-cyan">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-          </svg>
+          <Loader2 :size="22" class="spin-slow" />
         </div>
       </div>
       <div class="card-bar"><div class="bar-fill bar-cyan" :style="{ width: (metrics.running / totalTasksForPercent * 100) + '%' }"></div></div>
     </div>
 
-    <div class="glass card">
+    <div class="glass-card card animate-fade-in-up animate-delay-6">
       <div class="card-top">
         <div>
           <div class="card-label">{{ t('stats.passRate') }}</div>
@@ -141,20 +132,7 @@ const passRateCircumference = 2 * Math.PI * 18
 }
 
 .card {
-  border-radius: 1rem;
   padding: 1.1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  background: rgba(255,255,255,0.045);
-  border-color: rgba(255,255,255,0.10);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
 }
 
 .card-top {
@@ -165,43 +143,49 @@ const passRateCircumference = 2 * Math.PI * 18
 
 .card-label {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--z-text-secondary);
   font-weight: 500;
 }
 
 .card-value {
   margin-top: 0.35rem;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #f8fafc;
+  font-size: 1.9rem;
+  font-weight: 600;
+  color: var(--z-text-primary);
+  font-family: var(--font-display);
 }
 
 .card-value small { font-size: 0.65rem; opacity: 0.8; margin-left: 2px; }
 
-.text-emerald { color: #34d399; }
-.text-rose { color: #fb7185; }
-.text-amber { color: #fbbf24; }
-.text-cyan { color: #22d3ee; }
+.text-emerald { color: var(--z-success); }
+.text-rose { color: var(--z-danger); }
+.text-amber { color: var(--z-warning); }
+.text-cyan { color: var(--z-accent-cyan); }
 
 .icon-wrap {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.85rem;
   display: grid;
   place-items: center;
 }
 
-.icon-wrap svg { width: 1.4rem; height: 1.4rem; }
+.icon-total { background: rgba(148,163,184,0.10); color: var(--z-text-secondary); }
+.icon-emerald { background: rgba(52,211,153,0.12); color: var(--z-success); }
+.icon-rose { background: rgba(251,113,133,0.12); color: var(--z-danger); }
+.icon-amber { background: rgba(251,191,36,0.12); color: var(--z-warning); }
+.icon-cyan { background: rgba(34,211,238,0.12); color: var(--z-accent-cyan); }
 
-.icon-total { background: rgba(148,163,184,0.10); color: #94a3b8; }
-.icon-emerald { background: rgba(52,211,153,0.10); color: #34d399; }
-.icon-rose { background: rgba(251,113,133,0.10); color: #fb7185; }
-.icon-amber { background: rgba(251,191,36,0.10); color: #fbbf24; }
-.icon-cyan { background: rgba(34,211,238,0.10); color: #22d3ee; }
+.spin-slow {
+  animation: spin 2.2s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 .card-bar {
   margin-top: 0.9rem;
-  height: 4px;
+  height: 5px;
   width: 100%;
   background: rgba(255,255,255,0.05);
   border-radius: 999px;
@@ -210,16 +194,16 @@ const passRateCircumference = 2 * Math.PI * 18
 
 .bar-fill {
   height: 100%;
-  background: #94a3b8;
+  background: var(--z-text-secondary);
   border-radius: 999px;
   transition: width 0.7s ease;
 }
 
-.bar-emerald { background: #34d399; }
-.bar-rose { background: #fb7185; }
-.bar-amber { background: #fbbf24; }
-.bar-cyan { background: #22d3ee; }
-.bar-violet { background: #a78bfa; }
+.bar-emerald { background: var(--z-success); }
+.bar-rose { background: var(--z-danger); }
+.bar-amber { background: var(--z-warning); }
+.bar-cyan { background: var(--z-accent-cyan); }
+.bar-violet { background: var(--z-violet); }
 
 .ring {
   position: relative;
@@ -241,7 +225,7 @@ const passRateCircumference = 2 * Math.PI * 18
 
 .ring .fill {
   fill: none;
-  stroke: #a78bfa;
+  stroke: var(--z-violet);
   stroke-width: 4;
   stroke-linecap: round;
   transition: stroke-dasharray 0.6s ease;

@@ -11,69 +11,54 @@ ZeusOpen v3 is a ground-up rewrite of the v2 execution engine, focused on:
 
 ---
 
-## Quick Start (Local)
+## Quick Start
 
-### 1. Install dependencies
+### One-liner: run everything locally
 
 ```bash
 cd .zeus/v3/scripts
-pip install -r requirements.txt
-```
-
-Required packages (already installed in this environment):
-- `fastapi`, `uvicorn`, `sse-starlette`
-- `sqlalchemy[asyncio]`, `aiosqlite`, `asyncpg`, `alembic`
-- `redis`, `pydantic-settings`
-- `opentelemetry-api`, `opentelemetry-sdk` (optional, for tracing)
-
-### 2. Ensure database schema
-
-```bash
-python -c "from db.engine import make_async_engine; from db.models import Base; import asyncio; e=make_async_engine('sqlite+aiosqlite:///./.zeus/v3/state.db'); asyncio.run(e.begin().__aenter__().conn.run_sync(Base.metadata.create_all))"
-```
-
-Or simply run `run.py` — it auto-creates the schema on first launch.
-
-### 3. Run the full pipeline (scheduler + workers)
-
-```bash
 python run.py --project-root . --max-workers 3
 ```
 
-This will:
-1. Import `task.json` into the database
-2. Start the worker pool
-3. Run the scheduler loop until all tasks complete
-4. Print a summary
+This imports `task.json`, starts the scheduler + worker pool, runs until completion, and prints a summary.
 
-### 4. Start the API server + Dashboard
+### Start the API server + Dashboard
 
 ```bash
 python run.py --mode serve --project-root . --host 0.0.0.0 --port 8000
 ```
 
-Open http://127.0.0.1:8000/dashboard in your browser.
+Open http://127.0.0.1:8000/dashboard
 
-The Dashboard now includes:
-- **Overview Tab** — Live stats, task list, and event stream
-- **Tasks Tab** — Task list with inline actions (Retry / Cancel / Pause / Resume / Quarantine)
-- **Events Tab** — Full-screen real-time event log
-- **Control Tab** — System control center for importing tasks, starting/stopping the scheduler, scaling workers, and one-click global run
+The dashboard includes:
+- **Overview** — live metrics, task list, and event stream
+- **Tasks** — inline actions (Retry / Cancel / Pause / Resume / Quarantine / Logs)
+- **Events** — real-time SSE event log with progress highlights
+- **Graph** — task dependency graph (SVG / Mermaid / ECharts)
+- **Phases** — phase & milestone progress with drill-down
+- **Mailbox** — AgentBus point-to-point message inbox
+- **Control** — scheduler / worker management and one-click global run
+
+### Check status without running
+
+```bash
+python run.py --status
+```
 
 ---
 
-## CLI Modes
+## Execution Modes
 
-`run.py` supports four execution modes via `--mode`:
+`run.py` supports four modes via `--mode`:
 
 | Mode | Description |
 |------|-------------|
-| `combined` (default) | Runs scheduler + worker pool in one process |
+| `combined` (default) | Scheduler + worker pool in one process |
 | `scheduler` | Scheduling loop only (enqueues ready tasks) |
 | `worker` | Worker pool only (consumes queue) |
 | `serve` | FastAPI server + SSE stream + Dashboard |
 
-### Multi-process example (memory queue)
+### Multi-process local example
 
 Terminal 1:
 ```bash
@@ -85,14 +70,14 @@ Terminal 2:
 python run.py --mode worker --max-workers 2
 ```
 
-### Multi-node example (Redis queue)
+### Redis-backed distributed example
 
 Terminal 1 (scheduler):
 ```bash
 python run.py --mode scheduler --queue-backend redis --redis-url redis://localhost:6379/0
 ```
 
-Terminal 2-3 (workers):
+Terminal 2-N (workers):
 ```bash
 python run.py --mode worker --max-workers 3 --queue-backend redis --redis-url redis://localhost:6379/0
 ```
@@ -102,8 +87,6 @@ python run.py --mode worker --max-workers 3 --queue-backend redis --redis-url re
 ## Task Configuration
 
 Tasks are defined in `.zeus/v3/task.json` (static plan) and imported into the database at runtime.
-
-Example task:
 
 ```json
 {
@@ -129,7 +112,7 @@ Run `python run.py --import-only` to import without executing.
 
 ## Workspace Backends
 
-Choose how agent workspaces are created:
+Choose how agent workspaces are created in `.zeus/v3/config.json`:
 
 | Backend | Config | Use case |
 |---------|--------|----------|
@@ -142,32 +125,62 @@ Choose how agent workspaces are created:
 
 Base URL: `http://127.0.0.1:8000`
 
+### Tasks
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | Health check |
-| GET | `/tasks` | List all tasks (filter by `?status=` or `?wave=`) |
-| GET | `/tasks/{id}` | Get single task details |
-| POST | `/tasks/{id}/retry` | Retry a failed/quarantined task |
-| POST | `/tasks/{id}/cancel` | Cancel a pending/running task |
-| POST | `/tasks/{id}/pause` | Pause a pending task |
-| POST | `/tasks/{id}/resume` | Resume a paused task |
-| POST | `/tasks/{id}/quarantine` | Manually quarantine a task |
-| POST | `/tasks/{id}/unquarantine` | Remove task from quarantine |
-| GET | `/events` | Query event log (paginated) |
-| GET | `/events/stream` | **SSE** real-time event stream |
+| GET | `/tasks` | List tasks (`?status=`, `?wave=`) |
+| GET | `/tasks/{id}` | Task details |
+| POST | `/tasks/{id}/retry` | Retry failed/quarantined task |
+| POST | `/tasks/{id}/cancel` | Cancel task |
+| POST | `/tasks/{id}/pause` | Pause pending task |
+| POST | `/tasks/{id}/resume` | Resume paused task |
+| POST | `/tasks/{id}/quarantine` | Manually quarantine |
+| POST | `/tasks/{id}/unquarantine` | Remove from quarantine |
+| POST | `/tasks/{id}/progress` | Progress report (HTTP) |
+
+### Events & Observability
+| GET | `/events` | Query event log |
+| GET | `/events/stream` | **SSE** real-time events |
+| GET | `/agents/{id}/logs` | Agent activity + reasoning logs |
+| GET | `/workflow/graph?format=svg\|mermaid\|echarts` | Dependency graph |
+
+### Metrics
 | GET | `/metrics/summary` | High-level metrics + pass rate |
-| GET | `/metrics/tasks` | Per-task duration and status |
+| GET | `/metrics/tasks` | Per-task duration/status |
 | GET | `/metrics/bottleneck` | Top-N slowest tasks |
-| GET | `/metrics/blocked` | Dependency chains blocked by failure/quarantine |
-| GET | `/control/status` | Control plane status (scheduler, workers, queue) |
+| GET | `/metrics/blocked` | Blocked dependency chains |
+
+### Phases & Milestones
+| GET | `/phases` | List phases |
+| GET | `/phases/{id}` | Phase details with milestones |
+| POST | `/phases` | Create phase |
+| PUT | `/phases/{id}` | Update phase |
+| DELETE | `/phases/{id}` | Delete phase |
+| GET | `/milestones` | List milestones |
+| GET | `/milestones/{id}` | Milestone details with tasks |
+| POST | `/milestones` | Create milestone |
+| PUT | `/milestones/{id}` | Update milestone |
+| DELETE | `/milestones/{id}` | Delete milestone |
+
+### AgentBus Mailbox
+| GET | `/mailbox?to_agent=&read=` | List messages |
+| POST | `/mailbox` | Send message (`{from_agent, to_agent, message}`) |
+| POST | `/mailbox/{id}/read` | Mark message as read |
+
+### Control Plane
+| GET | `/control/status` | Scheduler + worker + queue status |
 | POST | `/control/scheduler/start` | Start scheduler subprocess |
 | POST | `/control/scheduler/stop` | Stop scheduler subprocess |
 | POST | `/control/scheduler/tick` | Trigger one scheduler tick |
 | POST | `/control/workers/scale` | Scale workers (`{"count": 3}`) |
-| POST | `/control/workers/stop` | Stop all worker subprocesses |
+| POST | `/control/workers/stop` | Stop all workers |
 | POST | `/control/import` | Re-import `task.json` |
 | POST | `/control/global/run` | One-click import + scheduler + workers |
-| GET | `/dashboard/` | Vue 3 SPA dashboard |
+| POST | `/control/project/switch` | Switch project without restart |
+
+### Dashboard
+| GET | `/dashboard/` | Vue 3 SPA |
 
 ---
 
@@ -210,7 +223,7 @@ Components:
 - `zeus-worker` — Deployment with HPA (2-10 replicas, CPU 70%)
 - `zeus-state-pvc` — Shared SQLite state volume (ReadWriteMany)
 
-> **Note:** `ReadWriteMany` requires a CSI driver that supports it (e.g., NFS, EFS, Azure Files). For single-node clusters (kind/minikube), use `hostPath` or switch to a single-replica SQLite setup.
+> **Note:** `ReadWriteMany` requires a CSI driver that supports it (e.g., NFS, EFS, Azure Files). For single-node clusters, use `hostPath` or switch to a single-replica SQLite setup.
 
 ---
 
@@ -220,11 +233,11 @@ When running the API server locally (`--mode serve`), an embedded `ControlPlane`
 
 To disable it (recommended for Docker/K8s where orchestration is external):
 ```bash
-set ZEUS_CONTROL_PLANE_ENABLED=false  # Windows
-export ZEUS_CONTROL_PLANE_ENABLED=false  # Linux/macOS
+# Windows
+set ZEUS_CONTROL_PLANE_ENABLED=false
+# Linux/macOS
+export ZEUS_CONTROL_PLANE_ENABLED=false
 ```
-
-When disabled, the Dashboard hides the Control Tab and the API returns `503` for `/control/*` requests.
 
 ---
 
@@ -240,7 +253,7 @@ Configured in `.zeus/v3/config.json` under `subagent.dispatcher`:
 | `docker` | Runs a Docker container with writable workspace mount |
 | `auto` | Detects `kimi` → `claude` → falls back to `mock` |
 
-Docker dispatcher config example:
+Docker dispatcher example:
 
 ```json
 {
@@ -254,6 +267,22 @@ Docker dispatcher config example:
   }
 }
 ```
+
+---
+
+## AgentBus Mailbox
+
+v3 includes point-to-point messaging for cross-agent collaboration:
+
+```python
+# From a worker or dispatcher
+await bus.post(task_id="T-1", agent_id="zeus-agent-T-1", message="Need file X", to_agent="zeus-agent-T-2")
+
+# Receive (with optional timeout)
+msg = await bus.recv("zeus-agent-T-2", timeout=5.0)
+```
+
+Messages are persisted in the database and browsable via the Dashboard **Mailbox** tab.
 
 ---
 
@@ -288,29 +317,30 @@ cd .zeus/v3/scripts
 python -m pytest tests/ -v
 ```
 
+Current status: **73/73 tests passing**.
+
 ---
 
 ## Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│  task.json  │────▶│  Importer    │────▶│  State DB   │
-│  (static)   │     │              │     │ (SQLite/PG) │
-└─────────────┘     └──────────────┘     └──────┬──────┘
-                                                 │
-    ┌─────────────┐    ┌─────────────┐    ┌────▼──────┐
-    │   Worker    │◄───│  TaskQueue  │◄───│ Scheduler │
-    │   Pool      │    │(Memory/Redis│    │           │
-    └──────┬──────┘    │ /SQLite)    │    └───────────┘
+┌─────────────┐    ┌──────────────┐    ┌─────────────┐
+│  task.json  │───▶│   Importer   │───▶│   State DB  │
+│  (static)   │    │              │    │(SQLite/PG)  │
+└─────────────┘    └──────────────┘    └──────┬──────┘
+                                                │
+    ┌─────────────┐   ┌─────────────┐   ┌─────▼─────┐
+    │   Worker    │◄──│  TaskQueue  │◄──│ Scheduler │
+    │    Pool     │    │Memory/Redis/│   │           │
+    └──────┬──────┘    │   SQLite    │   └───────────┘
            │            └─────────────┘
-           ▼
-    ┌─────────────┐
-    │  Workspace  │────▶ zeus-result.json
-    │  Manager    │
-    └─────────────┘
            │
-           ▼
-    ┌─────────────┐
+    ┌──────▼──────┐
+    │  Workspace  │────▶ zeus-result.json
+    │   Manager   │
+    └──────┬──────┘
+           │
+    ┌──────▼──────┐
     │  Dispatcher │
     │(mock/kimi/  │
     │claude/docker)│

@@ -362,13 +362,13 @@ onMounted(() => {
 .control-root {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .control-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.85rem;
+  gap: 0.9rem;
 }
 
 @media (min-width: 768px) {
@@ -381,18 +381,22 @@ onMounted(() => {
 }
 
 .control-grid.disabled {
-  opacity: 0.65;
+  opacity: 0.6;
   pointer-events: none;
 }
 
 .card {
-  border-radius: 0.875rem;
+  border-radius: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: opacity 0.2s ease;
+  background: var(--z-bg-panel);
+  border: 1px solid var(--z-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.card:hover {
+  background: var(--z-bg-hover);
+  border-color: var(--z-border-hover);
 }
 
 .card-head {
@@ -409,11 +413,12 @@ onMounted(() => {
   gap: 0.4rem;
   font-size: 0.95rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--z-text-primary);
+  font-family: var(--font-display);
 }
 
 .head-icon {
-  color: #22d3ee;
+  color: var(--z-accent-cyan);
   opacity: 0.9;
 }
 
@@ -430,17 +435,17 @@ onMounted(() => {
   font-size: 0.72rem;
   padding: 0.25rem 0.55rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--z-border);
   background: rgba(255, 255, 255, 0.03);
 }
 
 .status-pill.online {
-  color: #34d399;
+  color: var(--z-success);
   border-color: rgba(52, 211, 153, 0.25);
   background: rgba(52, 211, 153, 0.08);
 }
 .status-pill.offline {
-  color: #fb7185;
+  color: var(--z-danger);
   border-color: rgba(251, 113, 133, 0.25);
   background: rgba(251, 113, 133, 0.08);
 }
@@ -451,7 +456,7 @@ onMounted(() => {
   border-radius: 0.375rem;
   background: rgba(255, 255, 255, 0.06);
   color: #e2e8f0;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--z-border);
 }
 
 .card-body {
@@ -472,7 +477,7 @@ onMounted(() => {
   justify-content: space-between;
   width: 100%;
   font-size: 0.8rem;
-  color: #94a3b8;
+  color: var(--z-text-secondary);
 }
 
 .meta-value {
@@ -492,34 +497,34 @@ onMounted(() => {
   flex-direction: column;
   gap: 0.3rem;
   flex: 1;
-  color: #94a3b8;
+  color: var(--z-text-secondary);
   font-size: 0.8rem;
 }
 
 .slider-label b {
-  color: #f8fafc;
+  color: var(--z-text-primary);
 }
 
 .slider {
   width: 100%;
-  accent-color: #22d3ee;
+  accent-color: var(--z-accent-cyan);
 }
 
 .hint {
   margin: 0;
   font-size: 0.8rem;
-  color: #94a3b8;
+  color: var(--z-text-secondary);
 }
 
 button {
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--z-border);
   background: rgba(255, 255, 255, 0.04);
   color: #e2e8f0;
   font-size: 0.8rem;
   font-weight: 500;
-  padding: 0.4rem 0.75rem;
-  border-radius: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 0.55rem;
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
@@ -533,35 +538,35 @@ button:disabled {
 }
 
 .btn-large {
-  padding: 0.55rem 1rem;
+  padding: 0.6rem 1.1rem;
   font-size: 0.9rem;
 }
 
 .btn-primary {
-  color: #22d3ee;
-  border-color: rgba(34, 211, 238, 0.15);
+  color: var(--z-accent-cyan);
+  border-color: rgba(34, 211, 238, 0.18);
 }
 .btn-primary:hover:not(:disabled) {
   background: rgba(34, 211, 238, 0.12);
-  border-color: rgba(34, 211, 238, 0.3);
+  border-color: rgba(34, 211, 238, 0.35);
 }
 
 .btn-warn {
-  color: #fbbf24;
-  border-color: rgba(251, 191, 36, 0.15);
+  color: var(--z-warning);
+  border-color: rgba(251, 191, 36, 0.18);
 }
 .btn-warn:hover:not(:disabled) {
   background: rgba(251, 191, 36, 0.12);
-  border-color: rgba(251, 191, 36, 0.3);
+  border-color: rgba(251, 191, 36, 0.35);
 }
 
 .btn-secondary {
-  color: #94a3b8;
-  border-color: rgba(148, 163, 184, 0.15);
+  color: var(--z-text-secondary);
+  border-color: rgba(148, 163, 184, 0.18);
 }
 .btn-secondary:hover:not(:disabled) {
   background: rgba(148, 163, 184, 0.12);
-  border-color: rgba(148, 163, 184, 0.3);
+  border-color: rgba(148, 163, 184, 0.35);
 }
 
 .spinner {
@@ -583,7 +588,7 @@ button:disabled {
   border-radius: 0.625rem;
   background: rgba(251, 113, 133, 0.12);
   border: 1px solid rgba(251, 113, 133, 0.25);
-  color: #fb7185;
+  color: var(--z-danger);
   font-size: 0.85rem;
 }
 
@@ -616,7 +621,7 @@ button:disabled {
   padding: 0.85rem 1rem;
   border-radius: 0.625rem;
   background: rgba(148, 163, 184, 0.1);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.22);
   color: #e2e8f0;
 }
 
@@ -646,25 +651,25 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.55rem 0.85rem;
-  border-radius: 0.625rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--z-border);
   font-size: 0.85rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--z-bg-panel);
   color: #e2e8f0;
 }
 .health-banner.ok {
-  border-color: rgba(52, 211, 153, 0.2);
-  background: rgba(52, 211, 153, 0.06);
+  border-color: rgba(52, 211, 153, 0.22);
+  background: rgba(52, 211, 153, 0.07);
 }
 .health-banner.warn {
-  border-color: rgba(251, 191, 36, 0.25);
-  background: rgba(251, 191, 36, 0.08);
-  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.28);
+  background: rgba(251, 191, 36, 0.07);
+  color: var(--z-warning);
 }
 .health-banner.neutral {
-  border-color: rgba(148, 163, 184, 0.2);
-  background: rgba(148, 163, 184, 0.08);
+  border-color: rgba(148, 163, 184, 0.22);
+  background: rgba(148, 163, 184, 0.07);
 }
 .health-row {
   display: flex;
@@ -679,21 +684,21 @@ button:disabled {
 }
 .health-label {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--z-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 .health-value {
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--z-text-primary);
 }
 .health-meta {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--z-text-secondary);
 }
 .health-warn {
   font-size: 0.75rem;
-  color: #fbbf24;
+  color: var(--z-warning);
   font-weight: 500;
 }
 .health-dot {
@@ -721,10 +726,15 @@ button:disabled {
 }
 
 .worker-card {
-  border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.85rem;
+  background: var(--z-bg-panel);
+  border: 1px solid var(--z-border);
   overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.worker-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.28);
 }
 
 .worker-head {
@@ -739,8 +749,8 @@ button:disabled {
 .worker-id {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #22d3ee;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--z-accent-cyan);
+  font-family: var(--font-mono);
 }
 
 .worker-badge {

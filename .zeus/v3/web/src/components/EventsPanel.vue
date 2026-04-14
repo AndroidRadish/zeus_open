@@ -1,5 +1,18 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import {
+  Info,
+  Play,
+  CheckCircle2,
+  XCircle,
+  PauseCircle,
+  RotateCcw,
+  ShieldAlert,
+  ShieldCheck,
+  Activity,
+  Mail,
+  Layers,
+} from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -26,10 +39,34 @@ function stepColor(step: string) {
 function stepLabel(step: string) {
   return step || 'progress'
 }
+
+function eventIcon(event: string) {
+  if (event.includes('started')) return Play
+  if (event.includes('completed')) return CheckCircle2
+  if (event.includes('failed')) return XCircle
+  if (event.includes('recovered')) return RotateCcw
+  if (event.includes('quarantine')) return ShieldAlert
+  if (event.includes('unquarantine')) return ShieldCheck
+  if (event.includes('pause')) return PauseCircle
+  if (event.includes('progress')) return Activity
+  if (event.includes('mailbox')) return Mail
+  if (event.includes('phase') || event.includes('milestone')) return Layers
+  return Info
+}
+
+function eventColor(event: string) {
+  if (event.includes('started')) return 'var(--z-accent-cyan)'
+  if (event.includes('completed')) return 'var(--z-success)'
+  if (event.includes('failed')) return 'var(--z-danger)'
+  if (event.includes('recovered')) return 'var(--z-violet)'
+  if (event.includes('quarantine')) return 'var(--z-danger)'
+  if (event.includes('progress')) return 'var(--z-accent-cyan)'
+  return 'var(--z-text-secondary)'
+}
 </script>
 
 <template>
-  <section class="glass panel events-panel">
+  <section class="glass-card panel events-panel">
     <div class="panel-head">
       <h2>{{ t('events.title') }}</h2>
     </div>
@@ -52,7 +89,10 @@ function stepLabel(step: string) {
           <template v-else>
             <div class="event-meta">
               <span class="timestamp">{{ ev.time }}</span>
-              <span class="event-name">{{ ev.event }}</span>
+              <span class="event-badge" :style="{ color: eventColor(ev.event), borderColor: eventColor(ev.event) + '33', background: eventColor(ev.event) + '12' }">
+                <component :is="eventIcon(ev.event)" :size="12" />
+                <span>{{ ev.event }}</span>
+              </span>
             </div>
             <div class="event-data">{{ JSON.stringify(ev.data) }}</div>
           </template>
@@ -67,12 +107,7 @@ function stepLabel(step: string) {
 
 <style scoped>
 .panel {
-  border-radius: 1rem;
   overflow: hidden;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .panel-head {
@@ -80,14 +115,15 @@ function stepLabel(step: string) {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--z-border);
 }
 
 .panel-head h2 {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--z-text-primary);
+  font-family: var(--font-display);
 }
 
 .events-body {
@@ -102,16 +138,20 @@ function stepLabel(step: string) {
   margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.55rem;
 }
 
 .event-row {
-  padding: 0.6rem 0.75rem;
-  border-radius: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.65rem;
   background: rgba(255,255,255,0.02);
   border: 1px solid rgba(255,255,255,0.04);
   font-size: 0.8rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
+  transition: background 0.2s ease;
+}
+.event-row:hover {
+  background: rgba(255,255,255,0.03);
 }
 
 .event-row.progress-row {
@@ -123,14 +163,22 @@ function stepLabel(step: string) {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.3rem;
+  flex-wrap: wrap;
 }
 
-.timestamp { color: #94a3b8; white-space: nowrap; }
+.timestamp { color: var(--z-text-secondary); white-space: nowrap; }
 
-.event-name {
-  color: #22d3ee;
+.event-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-weight: 600;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+  border: 1px solid;
+  font-family: var(--font-mono);
 }
 
 .event-data {
@@ -151,7 +199,7 @@ function stepLabel(step: string) {
   padding: 0.15rem 0.4rem;
   border-radius: 0.25rem;
   background: rgba(255,255,255,0.06);
-  color: #94a3b8;
+  color: var(--z-text-secondary);
 }
 
 .progress-content {
@@ -166,7 +214,7 @@ function stepLabel(step: string) {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.55rem;
-  border-radius: 0.35rem;
+  border-radius: 0.4rem;
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -181,13 +229,13 @@ function stepLabel(step: string) {
 
 .progress-task {
   font-size: 0.7rem;
-  color: #64748b;
+  color: var(--z-text-muted);
 }
 
 .empty-events {
   padding: 2.5rem;
   text-align: center;
-  color: #64748b;
+  color: var(--z-text-muted);
   font-size: 0.9rem;
 }
 
@@ -195,12 +243,10 @@ function stepLabel(step: string) {
 .ev-leave-active {
   transition: all 0.25s ease;
 }
-
 .ev-enter-from {
   opacity: 0;
   transform: translateY(-10px);
 }
-
 .ev-leave-to {
   opacity: 0;
   transform: translateX(10px);

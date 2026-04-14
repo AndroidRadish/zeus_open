@@ -7,11 +7,36 @@ html, body {
   padding: 0;
 }
 
+:root {
+  /* Deep space background */
+  --z-bg-deep: #020617;
+  --z-bg-panel: rgba(255, 255, 255, 0.028);
+  --z-bg-hover: rgba(255, 255, 255, 0.045);
+  --z-border: rgba(255, 255, 255, 0.07);
+  --z-border-hover: rgba(255, 255, 255, 0.14);
+
+  --z-text-primary: #f8fafc;
+  --z-text-secondary: #94a3b8;
+  --z-text-muted: #64748b;
+
+  --z-accent-cyan: #22d3ee;
+  --z-accent-indigo: #818cf8;
+  --z-success: #34d399;
+  --z-warning: #fbbf24;
+  --z-danger: #fb7185;
+  --z-violet: #a78bfa;
+
+  --font-display: 'Outfit', 'Noto Sans SC', system-ui, sans-serif;
+  --font-body: 'DM Sans', 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
 body {
-  background: #020617;
-  color: #e2e8f0;
+  background: var(--z-bg-deep);
+  color: var(--z-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: var(--font-body);
 }
 
 #app {
@@ -19,27 +44,76 @@ body {
   width: 100%;
 }
 
-/* Smooth scrolling for the events panel and page */
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom scrollbar for WebKit */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-
 ::-webkit-scrollbar-track {
-  background: rgba(148, 163, 184, 0.08);
+  background: rgba(148, 163, 184, 0.06);
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(148, 163, 184, 0.22);
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.35);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.25); }
+  50% { box-shadow: 0 0 12px 2px rgba(34, 211, 238, 0.12); }
+}
+@keyframes orbital {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(12px, -16px); }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease both;
+}
+.animate-delay-1 { animation-delay: 0.08s; }
+.animate-delay-2 { animation-delay: 0.16s; }
+.animate-delay-3 { animation-delay: 0.24s; }
+.animate-delay-4 { animation-delay: 0.32s; }
+.animate-delay-5 { animation-delay: 0.40s; }
+.animate-delay-6 { animation-delay: 0.48s; }
+
+/* Glass card utility */
+.glass-card {
+  background: var(--z-bg-panel);
+  border: 1px solid var(--z-border);
+  border-radius: 1rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.glass-card:hover {
+  background: var(--z-bg-hover);
+  border-color: var(--z-border-hover);
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.35);
+}
+
+/* Focus rings for accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--z-accent-cyan);
+  outline-offset: 2px;
 }

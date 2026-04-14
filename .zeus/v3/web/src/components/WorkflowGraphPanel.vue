@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { GitGraph, Image as ImageIcon, FileCode, Share2 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -34,9 +35,9 @@ watch(format, fetchGraph, { immediate: true })
 </script>
 
 <template>
-  <section class="glass panel graph-panel">
+  <section class="glass-card panel graph-panel">
     <div class="panel-head">
-      <h2>{{ t('graph.title') }}</h2>
+      <h2><GitGraph :size="18" class="head-icon" /> {{ t('graph.title') }}</h2>
       <div class="format-switch">
         <button
           v-for="f in (['svg', 'mermaid', 'echarts'] as const)"
@@ -44,7 +45,10 @@ watch(format, fetchGraph, { immediate: true })
           :class="['fmt-btn', { active: format === f }]"
           @click="format = f"
         >
-          {{ f.toUpperCase() }}
+          <ImageIcon v-if="f === 'svg'" :size="13" />
+          <FileCode v-else-if="f === 'mermaid'" :size="13" />
+          <Share2 v-else :size="13" />
+          <span>{{ f.toUpperCase() }}</span>
         </button>
       </div>
     </div>
@@ -64,12 +68,7 @@ watch(format, fetchGraph, { immediate: true })
 
 <style scoped>
 .panel {
-  border-radius: 1rem;
   overflow: hidden;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
 }
 
 .panel-head {
@@ -77,15 +76,20 @@ watch(format, fetchGraph, { immediate: true })
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--z-border);
 }
 
 .panel-head h2 {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--z-text-primary);
+  font-family: var(--font-display);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
+.head-icon { color: var(--z-accent-cyan); opacity: 0.9; }
 
 .format-switch {
   display: inline-flex;
@@ -94,21 +98,24 @@ watch(format, fetchGraph, { immediate: true })
 
 .fmt-btn {
   appearance: none;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--z-border);
   background: rgba(255,255,255,0.04);
-  color: #94a3b8;
+  color: var(--z-text-secondary);
   font-size: 0.75rem;
   font-weight: 500;
-  padding: 0.3rem 0.6rem;
-  border-radius: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.45rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
-.fmt-btn:hover { color: #e2e8f0; }
+.fmt-btn:hover { color: #e2e8f0; background: rgba(255,255,255,0.07); }
 .fmt-btn.active {
   background: rgba(34,211,238,0.15);
-  color: #22d3ee;
+  color: var(--z-accent-cyan);
   border-color: rgba(34,211,238,0.3);
 }
 
@@ -125,28 +132,31 @@ watch(format, fetchGraph, { immediate: true })
 .graph-img {
   max-width: 100%;
   height: auto;
-  border-radius: 0.5rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--z-border);
 }
 
 .graph-code {
   width: 100%;
   margin: 0;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  background: rgba(0,0,0,0.25);
+  padding: 0.85rem 1.1rem;
+  border-radius: 0.6rem;
+  background: rgba(0,0,0,0.28);
   color: #e2e8f0;
   font-size: 0.8rem;
-  line-height: 1.5;
+  line-height: 1.55;
   overflow: auto;
   white-space: pre;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
+  border: 1px solid var(--z-border);
 }
 
 .graph-error {
   padding: 1rem;
-  border-radius: 0.5rem;
+  border-radius: 0.6rem;
   background: rgba(251,113,133,0.12);
-  color: #fb7185;
+  color: var(--z-danger);
   font-size: 0.9rem;
+  border: 1px solid rgba(251,113,133,0.2);
 }
 </style>

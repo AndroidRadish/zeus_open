@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Layers, Target } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -75,10 +76,10 @@ onMounted(fetchPhases)
 </script>
 
 <template>
-  <div class="phases-panel">
+  <div class="phases-panel glass-card">
     <div class="panel-head">
-      <h2>{{ t('phases.title') }}</h2>
-      <button class="btn-refresh" @click="fetchPhases">{{ t('feedback.success') }}</button>
+      <h2><Layers :size="18" class="head-icon" /> {{ t('phases.title') }}</h2>
+      <button class="btn-refresh" @click="fetchPhases">Refresh</button>
     </div>
 
     <div v-if="loading" class="empty">Loading…</div>
@@ -88,7 +89,7 @@ onMounted(fetchPhases)
       <div
         v-for="phase in phases"
         :key="phase.id"
-        class="phase-card"
+        class="phase-card glass-card"
         @click="openPhase(phase)"
       >
         <div class="phase-header">
@@ -96,7 +97,7 @@ onMounted(fetchPhases)
           <div class="phase-badge" :class="phase.status">{{ phase.status }}</div>
         </div>
         <div class="phase-meta">
-          <span>{{ (phase.milestone_ids || []).length }} {{ t('phases.milestones') }}</span>
+          <span><Target :size="12" /> {{ (phase.milestone_ids || []).length }} {{ t('phases.milestones') }}</span>
           <span class="phase-progress">{{ phase.progress_percent || 0 }}%</span>
         </div>
         <div class="progress-bar">
@@ -110,10 +111,10 @@ onMounted(fetchPhases)
       <div class="detail-card">
         <div class="detail-head">
           <h3>{{ selectedPhase.title || selectedPhase.id }}</h3>
-          <button class="detail-close" @click="closeDetail">×</button>
+          <button class="detail-close" @click="closeDetail" aria-label="Close">×</button>
         </div>
 
-        <div class="detail-body">
+        <div class="detail-body custom-scrollbar">
           <div v-if="!selectedMilestone" class="milestone-list">
             <div
               v-for="ms in (selectedPhase.milestones || [])"
@@ -154,63 +155,62 @@ onMounted(fetchPhases)
 
 <style scoped>
 .phases-panel {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 1rem;
   padding: 1rem;
 }
 .panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 .panel-head h2 {
   margin: 0;
   font-size: 1rem;
-  color: #f8fafc;
+  font-weight: 600;
+  color: var(--z-text-primary);
+  font-family: var(--font-display);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
 }
+.head-icon { color: var(--z-accent-cyan); opacity: 0.9; }
 .btn-refresh {
   appearance: none;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--z-border);
   background: rgba(255,255,255,0.04);
   color: #e2e8f0;
   font-size: 0.8rem;
+  font-weight: 500;
   padding: 0.35rem 0.7rem;
   border-radius: 0.4rem;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
+.btn-refresh:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); }
 .empty {
-  color: #94a3b8;
+  color: var(--z-text-muted);
   font-size: 0.9rem;
   padding: 1rem 0;
 }
 .phase-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 .phase-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 0.75rem;
-  padding: 0.9rem;
+  padding: 1rem;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.phase-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
 }
 .phase-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.55rem;
 }
 .phase-title {
   font-weight: 600;
-  color: #f8fafc;
+  color: var(--z-text-primary);
+  font-family: var(--font-display);
 }
 .phase-badge {
   font-size: 0.7rem;
@@ -221,16 +221,16 @@ onMounted(fetchPhases)
   background: rgba(255,255,255,0.08);
   color: #e2e8f0;
 }
-.phase-badge.completed { background: rgba(34,197,94,0.15); color: #4ade80; }
-.phase-badge.running { background: rgba(6,182,212,0.15); color: #22d3ee; }
-.phase-badge.failed { background: rgba(239,68,68,0.15); color: #f87171; }
-.phase-badge.pending { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.phase-badge.completed { background: rgba(52,211,153,0.15); color: var(--z-success); }
+.phase-badge.running { background: rgba(34,211,238,0.15); color: var(--z-accent-cyan); }
+.phase-badge.failed { background: rgba(251,113,133,0.15); color: var(--z-danger); }
+.phase-badge.pending { background: rgba(148,163,184,0.15); color: var(--z-text-secondary); }
 .phase-meta {
   display: flex;
   justify-content: space-between;
-  color: #94a3b8;
+  color: var(--z-text-secondary);
   font-size: 0.8rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.55rem;
 }
 .progress-bar {
   height: 6px;
@@ -240,7 +240,9 @@ onMounted(fetchPhases)
 }
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #06b6d4, #6366f1);
+  background: linear-gradient(90deg, var(--z-accent-cyan), var(--z-accent-indigo));
+  border-radius: 3px;
+  transition: width 0.5s ease;
 }
 
 /* Detail overlay */
@@ -249,7 +251,7 @@ onMounted(fetchPhases)
   inset: 0;
   z-index: 90;
   background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
   display: grid;
   place-items: center;
   padding: 1rem;
@@ -258,33 +260,43 @@ onMounted(fetchPhases)
   width: 100%;
   max-width: 640px;
   max-height: 80vh;
-  background: rgba(16,16,24,0.98);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(10,12,24,0.98);
+  border: 1px solid var(--z-border);
   border-radius: 1rem;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.55);
 }
 .detail-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--z-border);
 }
 .detail-head h3 {
   margin: 0;
   font-size: 1rem;
-  color: #f8fafc;
+  font-weight: 600;
+  color: var(--z-text-primary);
+  font-family: var(--font-display);
 }
 .detail-close {
   appearance: none;
   border: none;
   background: transparent;
-  color: #94a3b8;
+  color: var(--z-text-secondary);
   font-size: 1.5rem;
   cursor: pointer;
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.4rem;
+  transition: color 0.2s ease, background 0.2s ease;
 }
+.detail-close:hover { color: #e2e8f0; background: rgba(255,255,255,0.05); }
 .detail-body {
   padding: 1rem 1.25rem;
   overflow: auto;
@@ -294,25 +306,27 @@ onMounted(fetchPhases)
   gap: 0.6rem;
 }
 .milestone-item {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 0.6rem;
-  padding: 0.75rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 0.65rem;
+  padding: 0.85rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  transition: background 0.15s ease;
 }
+.milestone-item:hover { background: rgba(255,255,255,0.05); }
 .milestone-title {
   font-weight: 500;
-  color: #f8fafc;
+  color: var(--z-text-primary);
 }
 .milestone-meta {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: #94a3b8;
+  color: var(--z-text-secondary);
 }
 .milestone-badge {
   font-size: 0.7rem;
@@ -323,44 +337,46 @@ onMounted(fetchPhases)
   background: rgba(255,255,255,0.08);
   color: #e2e8f0;
 }
-.milestone-badge.completed { background: rgba(34,197,94,0.15); color: #4ade80; }
-.milestone-badge.running { background: rgba(6,182,212,0.15); color: #22d3ee; }
-.milestone-badge.failed { background: rgba(239,68,68,0.15); color: #f87171; }
-.milestone-badge.pending { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.milestone-badge.completed { background: rgba(52,211,153,0.15); color: var(--z-success); }
+.milestone-badge.running { background: rgba(34,211,238,0.15); color: var(--z-accent-cyan); }
+.milestone-badge.failed { background: rgba(251,113,133,0.15); color: var(--z-danger); }
+.milestone-badge.pending { background: rgba(148,163,184,0.15); color: var(--z-text-secondary); }
 .breadcrumb {
-  color: #22d3ee;
+  color: var(--z-accent-cyan);
   font-size: 0.85rem;
   margin-bottom: 0.75rem;
   cursor: pointer;
+  display: inline-flex;
 }
 .task-list {
   display: grid;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 .task-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 0.4rem;
-  padding: 0.5rem 0.7rem;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 0.45rem;
+  padding: 0.55rem 0.8rem;
 }
 .task-id {
   font-size: 0.85rem;
   color: #e2e8f0;
+  font-family: var(--font-mono);
 }
 .task-status {
   font-size: 0.7rem;
-  padding: 0.15rem 0.4rem;
+  padding: 0.15rem 0.45rem;
   border-radius: 999px;
   text-transform: uppercase;
   font-weight: 600;
   background: rgba(255,255,255,0.08);
   color: #e2e8f0;
 }
-.task-status.completed { background: rgba(34,197,94,0.15); color: #4ade80; }
-.task-status.running { background: rgba(6,182,212,0.15); color: #22d3ee; }
-.task-status.failed { background: rgba(239,68,68,0.15); color: #f87171; }
-.task-status.pending { background: rgba(148,163,184,0.15); color: #94a3b8; }
+.task-status.completed { background: rgba(52,211,153,0.15); color: var(--z-success); }
+.task-status.running { background: rgba(34,211,238,0.15); color: var(--z-accent-cyan); }
+.task-status.failed { background: rgba(251,113,133,0.15); color: var(--z-danger); }
+.task-status.pending { background: rgba(148,163,184,0.15); color: var(--z-text-secondary); }
 </style>
