@@ -12,6 +12,8 @@ import {
   Activity,
   Mail,
   Layers,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -51,6 +53,8 @@ function eventIcon(event: string) {
   if (event.includes('progress')) return Activity
   if (event.includes('mailbox')) return Mail
   if (event.includes('phase') || event.includes('milestone')) return Layers
+  if (event.includes('config.reload_failed')) return AlertCircle
+  if (event.includes('config.reloaded')) return RefreshCw
   return Info
 }
 
@@ -61,6 +65,8 @@ function eventColor(event: string) {
   if (event.includes('recovered')) return 'var(--z-violet)'
   if (event.includes('quarantine')) return 'var(--z-danger)'
   if (event.includes('progress')) return 'var(--z-accent-cyan)'
+  if (event.includes('config.reload_failed')) return 'var(--z-danger)'
+  if (event.includes('config.reloaded')) return 'var(--z-accent-cyan)'
   return 'var(--z-text-secondary)'
 }
 </script>

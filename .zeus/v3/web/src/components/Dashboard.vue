@@ -127,6 +127,10 @@ function connectSSE() {
         fetchTasks()
         fetchMetrics()
       }
+      if (msg.event === 'config.reloaded') {
+        fetchTasks()
+        fetchMetrics()
+      }
     } catch (e) {
       console.error('sse parse error', e)
     }

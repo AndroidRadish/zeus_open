@@ -171,3 +171,12 @@
   - ✅ `tests/test_v3_control.py`：移除 `FakePopen` mock，改为验证 `scheduler_meta` 的读写结果
   - ✅ `tests/test_v3_watch_mode.py`：新增 3 个集成测试，覆盖 scheduler watch 启停与 worker pool 动态扩缩容
   - ✅ 70/70 v3 测试全绿，Dashboard 构建成功
+
+- **已完成（T-V3-019）**：Config and task.json hot reload in serve mode
+  - ✅ `api/server.py`：lifespan 中新增后台文件 watcher，监控 `.zeus/v3/task.json` 与 `config.json`
+  - ✅ 文件变更时自动 `import_tasks_from_json`，并通过 EventBus 发射 `config.reloaded`
+  - ✅ reload 期间暂停 embedded scheduler（写 `scheduler_target_state="stopped"`），完成后恢复，保护并发 tick
+  - ✅ `web/src/components/Dashboard.vue`：SSE 监听 `config.reloaded`，自动刷新任务列表与指标
+  - ✅ `web/src/components/EventsPanel.vue`：新增 `RefreshCw` / `AlertCircle` 图标与青色/红色样式，热重载事件更易识别
+  - ✅ `tests/test_v3_api.py`：新增 `test_hot_reload_task_json` 集成测试（含手动 `_LifespanManager` 适配 httpx 无 lifespan 版本）
+  - ✅ 74/74 v3 API 测试全绿，Dashboard 构建成功

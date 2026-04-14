@@ -95,6 +95,27 @@
       "passes": true,
       "commit_sha": "db2aa0f",
       "created_at": "2026-04-14T14:00:00Z"
+    },
+    {
+      "id": "T-V3-019",
+      "story_id": "US-V3-007",
+      "type": "feat",
+      "title": "Config and task.json hot reload in serve mode",
+      "description": "Add a background file watcher to the API server lifespan that monitors .zeus/v3/task.json and config.json for changes. On change, automatically re-import tasks and emit a config.reloaded event via EventBus. Protect against concurrent scheduler ticks during reload.",
+      "wave": 9,
+      "depends_on": [],
+      "files": [
+        ".zeus/v3/scripts/api/server.py",
+        ".zeus/v3/scripts/api/control_plane.py",
+        ".zeus/v3/scripts/importer.py",
+        ".zeus/v3/scripts/store/sqlalchemy_base.py",
+        ".zeus/v3/web/src/components/Dashboard.vue",
+        ".zeus/v3/web/src/i18n/locales/en.json",
+        ".zeus/v3/web/src/i18n/locales/zh.json"
+      ],
+      "passes": true,
+      "created_at": "2026-04-14T16:00:00Z",
+      "completed_at": "2026-04-14T14:09:20Z"
     }
   ]
 }

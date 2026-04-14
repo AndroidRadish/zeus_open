@@ -502,3 +502,97 @@ async def test_mailbox(api_client, sqlite_store):
     # verify read
     msgs = await sqlite_store.list_messages(read=True)
     assert any(m["id"] == msg_id for m in msgs)
+
+
+@pytest.mark.asyncio
+async def test_hot_reload_task_json(sqlite_store, tmp_path):
+    from api.server import create_app
+
+    # Prepare initial files
+    task_json = tmp_path / ".zeus" / "v3" / "task.json"
+    task_json.parent.mkdir(parents=True)
+    task_json.write_text(
+        json.dumps({"version": "v3", "tasks": [{"id": "T-HOT-1", "status": "pending", "wave": 1}]}),
+        encoding="utf-8",
+    )
+    config_json = tmp_path / ".zeus" / "v3" / "config.json"
+    config_json.write_text(
+        json.dumps({"project": {"name": "hot-test"}}),
+        encoding="utf-8",
+    )
+
+    bus = EventBus()
+    emitted = _capture_emit(bus)
+    app = create_app(sqlite_store, bus, project_root=tmp_path)
+    transport = ASGITransport(app=app)
+
+    async with _LifespanManager(app):
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            # Wait for watcher to register initial mtime (1s sleep interval)
+            await asyncio.sleep(1.2)
+
+            # Mutate task.json
+            task_json.write_text(
+                json.dumps({"version": "v3", "tasks": [{"id": "T-HOT-2", "status": "running", "wave": 2}]}),
+                encoding="utf-8",
+            )
+
+            # Wait for watcher to detect change and reload
+            await asyncio.sleep(1.5)
+
+            resp = await client.get("/tasks/T-HOT-2")
+            assert resp.status_code == 200
+            assert resp.json()["id"] == "T-HOT-2"
+
+            # Also verify config.json change triggers reload
+            config_json.write_text(
+                json.dumps({"project": {"name": "hot-test-v2"}}),
+                encoding="utf-8",
+            )
+            await asyncio.sleep(1.5)
+
+    assert any(e == "config.reloaded" for e, _ in emitted)
+
+
+class _LifespanManager:
+    """Manual lifespan manager for httpx ASGITransport that doesn't support lifespan."""
+
+    def __init__(self, app):
+        self.app = app
+        self._task = None
+        self._startup_event = asyncio.Event()
+        self._shutdown_event = asyncio.Event()
+        self._messages = []
+
+    async def _run(self):
+        scope = {"type": "lifespan", "asgi": {"version": "3.0", "spec_version": "2.0"}}
+
+        async def receive():
+            while True:
+                if self._messages:
+                    return self._messages.pop(0)
+                await asyncio.sleep(0.01)
+
+        async def send(msg):
+            if msg.get("type") == "lifespan.startup.complete":
+                self._startup_event.set()
+            if msg.get("type") == "lifespan.shutdown.complete":
+                self._shutdown_event.set()
+
+        await self.app(scope, receive, send)
+
+    async def __aenter__(self):
+        self._task = asyncio.create_task(self._run())
+        self._messages.append({"type": "lifespan.startup"})
+        await asyncio.wait_for(self._startup_event.wait(), timeout=5)
+        return self
+
+    async def __aexit__(self, *args):
+        self._messages.append({"type": "lifespan.shutdown"})
+        await asyncio.wait_for(self._shutdown_event.wait(), timeout=5)
+        if not self._task.done():
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass

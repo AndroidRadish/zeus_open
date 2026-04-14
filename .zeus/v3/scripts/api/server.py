@@ -37,15 +37,20 @@ def create_app(
     bus: EventBus | None = None,
     control_plane: ControlPlane | None = None,
     embedded_runner: dict[str, Any] | None = None,
+    project_root: pathlib.Path | None = None,
 ) -> FastAPI:
     bus = bus or EventBus(store=store)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        import asyncio
+
         scheduler_task = None
         worker_watch_task = None
+        watch_task = None
         pool = None
         queue = None
+        reload_lock = asyncio.Lock() if project_root else None
 
         # Recover any tasks stuck in 'running' from a previous scheduler crash
         recovered = await recover_running_tasks(app.state.store)
@@ -57,6 +62,88 @@ def create_app(
                 payload={"recovered_count": len(recovered), "task_ids": recovered},
             )
 
+        if project_root and reload_lock:
+            version = embedded_runner.get("version", "v3") if embedded_runner else "v3"
+            task_json_path = project_root / ".zeus" / version / "task.json"
+            config_json_path = project_root / ".zeus" / version / "config.json"
+
+            async def _watch_files():
+                mtimes: dict[str, float] = {}
+                from importer import import_tasks_from_json
+
+                async def _do_reload():
+                    # Pause embedded scheduler to protect concurrent ticks
+                    if scheduler_task and not scheduler_task.done():
+                        await app.state.store.set_meta("scheduler_target_state", "stopped")
+                        for _ in range(50):
+                            actual = await app.state.store.get_meta("scheduler_actual_state", "unknown")
+                            if actual == "stopped":
+                                break
+                            await asyncio.sleep(0.1)
+
+                    try:
+                        if task_json_path.exists():
+                            await import_tasks_from_json(app.state.store, task_json_path)
+                    except Exception as exc:
+                        await app.state.store.log_event(
+                            event_type="config.reload_failed",
+                            task_id="global",
+                            agent_id="api-server",
+                            payload={"error": str(exc), "file": str(task_json_path)},
+                        )
+                        bus.emit("config.reload_failed", {"error": str(exc)})
+                        # Resume scheduler even on failure so it doesn't stay dead
+                        if scheduler_task and not scheduler_task.done():
+                            await app.state.store.set_meta("scheduler_target_state", "running")
+                        return
+
+                    await app.state.store.log_event(
+                        event_type="config.reloaded",
+                        task_id="global",
+                        agent_id="api-server",
+                        payload={
+                            "task_json": str(task_json_path) if task_json_path.exists() else None,
+                            "config_json": str(config_json_path) if config_json_path.exists() else None,
+                        },
+                    )
+                    bus.emit("config.reloaded", {})
+
+                    if scheduler_task and not scheduler_task.done():
+                        await app.state.store.set_meta("scheduler_target_state", "running")
+
+                while True:
+                    try:
+                        await asyncio.sleep(1)
+                        changed = False
+                        for p in [task_json_path, config_json_path]:
+                            if p.exists():
+                                mtime = p.stat().st_mtime
+                                key = str(p)
+                                old = mtimes.get(key)
+                                if old is not None and mtime != old:
+                                    changed = True
+                                mtimes[key] = mtime
+
+                        if changed:
+                            async with reload_lock:
+                                await _do_reload()
+                    except asyncio.CancelledError:
+                        break
+                    except Exception as exc:
+                        # Log and continue; don't crash the watcher
+                        try:
+                            await app.state.store.log_event(
+                                event_type="config.watcher_error",
+                                task_id="global",
+                                agent_id="api-server",
+                                payload={"error": str(exc)},
+                            )
+                        except Exception:
+                            pass
+                        await asyncio.sleep(2)
+
+            watch_task = asyncio.create_task(_watch_files())
+
         if embedded_runner:
             import asyncio
             from core.scheduler import ZeusScheduler
@@ -67,15 +154,15 @@ def create_app(
             from task_queue.memory_queue import MemoryTaskQueue
             from task_queue.sqlite_queue import SqliteTaskQueue
 
-            project_root = pathlib.Path(embedded_runner["project_root"]).resolve()
+            runner_root = pathlib.Path(embedded_runner["project_root"]).resolve()
             version = embedded_runner.get("version", "v3")
             max_workers = embedded_runner.get("max_workers", 3)
             queue_backend = embedded_runner.get("queue_backend", "memory")
             redis_url = embedded_runner.get("redis_url")
-            dispatcher_cfg = embedded_runner.get("config", ZeusConfig(project_root, version).raw())
+            dispatcher_cfg = embedded_runner.get("config", ZeusConfig(runner_root, version).raw())
 
             if queue_backend == "sqlite":
-                queue = SqliteTaskQueue(str(project_root / ".zeus" / version / "queue.sqlite"))
+                queue = SqliteTaskQueue(str(runner_root / ".zeus" / version / "queue.sqlite"))
             elif queue_backend == "redis" and redis_url:
                 from task_queue.redis_queue import RedisTaskQueue
                 queue = RedisTaskQueue(redis_url)
@@ -83,7 +170,7 @@ def create_app(
                 queue = MemoryTaskQueue()
 
             dispatcher = build_dispatcher(dispatcher_cfg)
-            workspace_manager = build_workspace_manager(project_root, version)
+            workspace_manager = build_workspace_manager(runner_root, version)
             scheduler = ZeusScheduler(app.state.store, queue, bus)
             pool = WorkerPool(app.state.store, queue, dispatcher, workspace_manager, max_workers=max_workers, bus=bus)
 
@@ -157,6 +244,12 @@ def create_app(
                 worker_watch_task.cancel()
                 try:
                     await worker_watch_task
+                except asyncio.CancelledError:
+                    pass
+            if watch_task:
+                watch_task.cancel()
+                try:
+                    await watch_task
                 except asyncio.CancelledError:
                     pass
             if pool:
@@ -655,7 +748,7 @@ def main(argv: list[str] | None = None) -> FastAPI:
             "redis_url": os.environ.get("ZEUS_EMBEDDED_REDIS_URL"),
         }
 
-    app = create_app(store, bus, control_plane, embedded_runner)
+    app = create_app(store, bus, control_plane, embedded_runner, project_root=project_root)
     return app
 
 
