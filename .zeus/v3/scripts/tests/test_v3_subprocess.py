@@ -30,7 +30,7 @@ class PythonSubagentDispatcher(SubagentDispatcher):
     The subprocess writes zeus-result.json into the workspace and exits.
     """
 
-    async def run(self, task: dict, workspace: Path, prompt: str) -> dict:
+    async def run(self, task: dict, workspace: Path, prompt: str, bus=None) -> dict:
         tid = task["id"]
         result = {
             "status": "completed",

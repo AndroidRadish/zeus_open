@@ -17,6 +17,7 @@ class SubagentDispatcher(abc.ABC):
         task: dict[str, Any],
         workspace: Path,
         prompt: str,
+        bus=None,
     ) -> dict[str, Any]:
         """
         Execute the task and return a dict compatible with ZeusResult.

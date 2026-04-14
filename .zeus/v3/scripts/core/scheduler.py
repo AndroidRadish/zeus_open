@@ -9,6 +9,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import json
+
 from task_queue.base import TaskQueue
 from store.base import AsyncStateStore
 
@@ -25,13 +27,22 @@ class ZeusScheduler:
     def _build_graph(self, tasks: list[dict[str, Any]]) -> dict[str, list[str]]:
         return {t["id"]: t.get("depends_on", []) for t in tasks if t.get("id")}
 
-    def _get_ready_tasks(
+    @staticmethod
+    def _task_original_wave(task: dict[str, Any]) -> int:
+        return task.get("original_wave") or task.get("wave", 1)
+
+    @staticmethod
+    def _task_effective_wave(task: dict[str, Any]) -> int:
+        return task.get("scheduled_wave") or task.get("wave", 1)
+
+    def _get_global_ready_tasks(
         self,
         tasks: list[dict[str, Any]],
         pass_map: dict[str, bool],
         quarantined_ids: set[str],
         enqueued_ids: set[str],
     ) -> list[dict[str, Any]]:
+        """Return globally ready tasks sorted by (original_wave, id)."""
         ready: list[dict[str, Any]] = []
         for t in tasks:
             tid = t["id"]
@@ -49,8 +60,27 @@ class ZeusScheduler:
             if any(d in quarantined_ids for d in deps):
                 continue
             ready.append(t)
-        ready.sort(key=lambda t: (t.get("wave", 1), t["id"]))
+        ready.sort(key=lambda t: (self._task_original_wave(t), t["id"]))
         return ready
+
+    def _get_blocked_waves(
+        self,
+        tasks: list[dict[str, Any]],
+        pass_map: dict[str, bool],
+        quarantined_ids: set[str],
+    ) -> set[int]:
+        """Return waves that are blocked by failed, paused, or quarantined tasks."""
+        blocked: set[int] = set()
+        for t in tasks:
+            tid = t["id"]
+            if pass_map.get(tid, False):
+                continue
+            if t.get("status") in ("completed", "cancelled"):
+                continue
+            wave = self._task_effective_wave(t)
+            if t.get("status") in ("failed", "paused") or tid in quarantined_ids:
+                blocked.add(wave)
+        return blocked
 
     async def _recover_expired_leases(self, tasks: list[dict[str, Any]]) -> list[str]:
         now = datetime.now(timezone.utc)
@@ -78,9 +108,10 @@ class ZeusScheduler:
         return recovered
 
     async def tick(self, enqueued_ids: set[str]) -> list[dict[str, Any]]:
-        """Evaluate once and enqueue all newly ready tasks.
+        """Evaluate once and enqueue all globally ready tasks.
 
-        Returns the list of tasks that were enqueued in this tick.
+        Supports adaptive wave rescheduling: if a wave is blocked, downstream
+        ready tasks are rescheduled into the earliest blocked wave.
         """
         tasks = await self.store.list_tasks()
         await self._recover_expired_leases(tasks)
@@ -90,7 +121,51 @@ class ZeusScheduler:
         quarantine = await self.store.list_quarantine()
         quarantined_ids = {q["task_id"] for q in quarantine}
 
-        ready = self._get_ready_tasks(tasks, pass_map, quarantined_ids, enqueued_ids)
+        ready = self._get_global_ready_tasks(tasks, pass_map, quarantined_ids, enqueued_ids)
+
+        # Adaptive reschedule: if a wave is blocked, pull ready tasks forward
+        blocked_waves = self._get_blocked_waves(tasks, pass_map, quarantined_ids)
+        if blocked_waves and ready:
+            min_blocked = min(blocked_waves)
+            for task in ready:
+                eff_wave = self._task_effective_wave(task)
+                if eff_wave > min_blocked:
+                    orig_wave = self._task_original_wave(task)
+                    updates = {
+                        "scheduled_wave": min_blocked,
+                        "rescheduled_from": eff_wave,
+                    }
+                    await self.store.update_task_status(
+                        task["id"], task.get("status", "pending"), **updates
+                    )
+                    await self.store.log_event(
+                        event_type="task.rescheduled",
+                        task_id=task["id"],
+                        agent_id="zeus-scheduler",
+                        payload={
+                            "original_wave": orig_wave,
+                            "new_wave": min_blocked,
+                            "previous_wave": eff_wave,
+                            "reason": "wave_blocked_adaptive",
+                        },
+                    )
+                    if self.bus:
+                        self.bus.emit(
+                            "task.rescheduled",
+                            {
+                                "task_id": task["id"],
+                                "original_wave": orig_wave,
+                                "new_wave": min_blocked,
+                                "previous_wave": eff_wave,
+                            },
+                        )
+            # Re-read tasks after reschedule
+            tasks = await self.store.list_tasks()
+            pass_map = {t["id"]: t.get("passes", False) for t in tasks}
+            quarantine = await self.store.list_quarantine()
+            quarantined_ids = {q["task_id"] for q in quarantine}
+            ready = self._get_global_ready_tasks(tasks, pass_map, quarantined_ids, enqueued_ids)
+
         for task in ready:
             await self.store.update_task_status(task["id"], "running")
             await self.queue.enqueue(task)
@@ -107,6 +182,7 @@ class ZeusScheduler:
                     "task.enqueued",
                     {"task_id": task["id"], "wave": task.get("wave"), "depends_on": task.get("depends_on", [])},
                 )
+        await self.store.set_meta("last_scheduler_tick_at", datetime.now(timezone.utc).isoformat())
         return ready
 
     async def run_once(self) -> dict[str, Any]:

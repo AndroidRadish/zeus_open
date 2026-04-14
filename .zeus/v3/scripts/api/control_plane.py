@@ -35,10 +35,30 @@ class ControlPlane:
         self.database_url = database_url
 
     async def spawn_scheduler(self) -> int:
-        current = await self.store.get_meta("scheduler_target_state", "stopped")
-        if current == "running":
+        target = await self.store.get_meta("scheduler_target_state", "stopped")
+        actual = await self.store.get_meta("scheduler_actual_state", "unknown")
+        if target == "running" and actual == "running":
             raise RuntimeError("Scheduler already running")
+        # Ghost state recovery: if target says running but actual is dead, reset first
+        if target == "running" and actual != "running":
+            await self.store.set_meta("scheduler_target_state", "stopped")
+            await self.store.set_meta("scheduler_actual_state", "stopped")
+            await self.store.set_meta("scheduler_active", False)
+            await self.store.log_event(
+                event_type="scheduler.ghost.recovered",
+                task_id="global",
+                agent_id="control-plane",
+                payload={"previous_actual": actual},
+            )
         await self.store.set_meta("scheduler_target_state", "running")
+        await self.store.set_meta("scheduler_actual_state", "running")
+        await self.store.set_meta("scheduler_active", True)
+        await self.store.log_event(
+            event_type="scheduler.started",
+            task_id="global",
+            agent_id="control-plane",
+            payload={},
+        )
         # Return the current PID placeholder for backward compatibility
         return await self.store.get_meta("scheduler_pid", 0)
 
@@ -70,12 +90,48 @@ class ControlPlane:
 
     async def global_run(self) -> dict[str, Any]:
         import_result = await self.import_tasks()
+        # Reset passes=true for any task that is not completed so scheduler will pick them up
+        tasks = await self.store.list_tasks()
+        reset_count = 0
+        for t in tasks:
+            if t.get("passes") and t.get("status") != "completed":
+                await self.store.update_task_status(t["id"], t.get("status", "pending"), passes=False, worker_id=None)
+                reset_count += 1
+
+        # Compute skipped reasons before starting scheduler
+        tasks = await self.store.list_tasks()
+        quarantine = await self.store.list_quarantine()
+        quarantined_ids = {q["task_id"] for q in quarantine}
+        pass_map = {t["id"]: t.get("passes", False) for t in tasks}
+        skipped_reasons: dict[str, str] = {}
+        for t in tasks:
+            tid = t["id"]
+            if pass_map.get(tid, False):
+                skipped_reasons[tid] = "already passed"
+                continue
+            status = t.get("status", "pending")
+            if status in ("paused", "cancelled"):
+                skipped_reasons[tid] = f"status is {status}"
+                continue
+            if tid in quarantined_ids:
+                skipped_reasons[tid] = "quarantined"
+                continue
+            deps = t.get("depends_on", [])
+            if not all(pass_map.get(d, False) for d in deps):
+                skipped_reasons[tid] = "dependencies not satisfied"
+                continue
+            if any(d in quarantined_ids for d in deps):
+                skipped_reasons[tid] = "dependency quarantined"
+                continue
+
         await self.spawn_scheduler()
         await self.spawn_workers(3)
         return {
             "imported_tasks": import_result["imported_tasks"],
+            "reset_passes_count": reset_count,
             "scheduler_pid": await self.store.get_meta("scheduler_pid", 0),
             "worker_pids": [],
+            "skipped_reasons": skipped_reasons,
         }
 
     async def status(self) -> dict[str, Any]:
@@ -90,9 +146,17 @@ class ControlPlane:
             worker_actual = worker_target
         queue_size = await self.store.get_meta("queue_size", 0)
         last_import_at = await self.store.get_meta("last_import_at", None)
+        last_tick = await self.store.get_meta("last_scheduler_tick_at", None)
+
+        recent_events = await self.store.query_events(limit=1)
+        last_event_at = recent_events[0]["ts"] if recent_events else None
+        running_tasks = await self.store.list_tasks(status="running")
+
         return {
-            "scheduler": {"running": running, "pid": scheduler_pid, "state": actual},
+            "scheduler": {"running": running, "pid": scheduler_pid, "state": actual, "last_tick_at": last_tick},
             "workers": {"count": worker_actual, "pids": [], "target": worker_target},
             "queue_size": queue_size,
             "last_import_at": last_import_at,
+            "last_event_at": last_event_at,
+            "running_tasks": running_tasks,
         }

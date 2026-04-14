@@ -71,7 +71,7 @@ async def test_stress_12_tasks_4_workers(sqlite_store, workspace_manager):
     # Slow mock dispatcher to expose concurrency bottlenecks
     original_run = MockSubagentDispatcher.run
 
-    async def slow_run(self, task, workspace, prompt):
+    async def slow_run(self, task, workspace, prompt, bus=None):
         await asyncio.sleep(0.15)
         return await original_run(self, task, workspace, prompt)
 
@@ -133,10 +133,10 @@ async def test_stress_quarantine_unblocks_independent_branch(sqlite_store, works
     import dispatcher.mock as dm
     original_run = dm.MockSubagentDispatcher.run
 
-    async def flaky_run(self, task, workspace, prompt):
+    async def flaky_run(self, task, workspace, prompt, bus=None):
         if task["id"] == "T-101":
             raise RuntimeError("simulated failure")
-        return await original_run(self, task, workspace, prompt)
+        return await original_run(self, task, workspace, prompt, bus=bus)
 
     dm.MockSubagentDispatcher.run = flaky_run
 

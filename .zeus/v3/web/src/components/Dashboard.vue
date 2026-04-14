@@ -5,6 +5,9 @@ import StatsPanel from './StatsPanel.vue'
 import TasksPanel from './TasksPanel.vue'
 import EventsPanel from './EventsPanel.vue'
 import ControlCenter from './ControlCenter.vue'
+import WorkflowGraphPanel from './WorkflowGraphPanel.vue'
+import PhasesPanel from './PhasesPanel.vue'
+import MailboxPanel from './MailboxPanel.vue'
 import type { Task } from './TasksPanel.vue'
 
 const { t, locale } = useI18n()
@@ -22,7 +25,54 @@ const tasks = ref<Task[]>([])
 const metrics = ref<Metrics | null>(null)
 const events = ref<{ time: string; event: string; data: any }[]>([])
 const connected = ref(false)
-const activeTab = ref<'overview' | 'tasks' | 'events' | 'control'>('overview')
+const activeTab = ref<'overview' | 'tasks' | 'events' | 'graph' | 'phases' | 'mailbox' | 'control'>('overview')
+
+const logsModal = ref<{ open: boolean; taskId: string; activity: string; loading: boolean }>({
+  open: false,
+  taskId: '',
+  activity: '',
+  loading: false,
+})
+
+const projectRoot = ref('')
+const recentProjects = ref<string[]>([])
+
+async function switchProject() {
+  if (!projectRoot.value.trim()) return
+  try {
+    const res = await fetch('/control/project/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_root: projectRoot.value.trim() }),
+    })
+    if (!res.ok) throw new Error(`${res.status}`)
+    const list = JSON.parse(localStorage.getItem('zeus-recent-projects') || '[]') as string[]
+    const updated = [projectRoot.value.trim(), ...list.filter(p => p !== projectRoot.value.trim())].slice(0, 5)
+    localStorage.setItem('zeus-recent-projects', JSON.stringify(updated))
+    recentProjects.value = updated
+    await fetchMetrics()
+    await fetchTasks()
+    projectRoot.value = ''
+  } catch (e: any) {
+    console.error('switch project error', e)
+  }
+}
+
+function selectRecentProject(path: string) {
+  projectRoot.value = path
+  switchProject()
+}
+
+onMounted(() => {
+  fetchMetrics()
+  fetchTasks()
+  connectSSE()
+  recentProjects.value = JSON.parse(localStorage.getItem('zeus-recent-projects') || '[]')
+  pollTimer = window.setInterval(() => {
+    fetchMetrics()
+    fetchTasks()
+  }, 5000)
+})
 
 let es: EventSource | null = null
 let pollTimer: number | null = null
@@ -112,6 +162,23 @@ function onControlRefresh() {
   fetchTasks()
   fetchMetrics()
 }
+
+async function onViewLogs(taskId: string) {
+  logsModal.value = { open: true, taskId, activity: '', loading: true }
+  try {
+    const res = await fetch(`/agents/zeus-agent-${taskId}/logs`)
+    const data = await res.json()
+    logsModal.value.activity = data.activity || ''
+  } catch (e: any) {
+    logsModal.value.activity = `Error: ${e?.message || String(e)}`
+  } finally {
+    logsModal.value.loading = false
+  }
+}
+
+function closeLogsModal() {
+  logsModal.value.open = false
+}
 </script>
 
 <template>
@@ -128,6 +195,22 @@ function onControlRefresh() {
         </div>
 
         <div class="header-right">
+          <!-- Project switch -->
+          <div class="project-switch">
+            <input
+              v-model="projectRoot"
+              type="text"
+              class="project-input"
+              placeholder="Switch project root..."
+              @keydown.enter="switchProject"
+            />
+            <button class="project-btn" @click="switchProject">Switch</button>
+            <select v-if="recentProjects.length" v-model="projectRoot" class="project-select" @change="selectRecentProject(projectRoot)">
+              <option value="" disabled>Recent projects</option>
+              <option v-for="p in recentProjects" :key="p" :value="p">{{ p }}</option>
+            </select>
+          </div>
+
           <!-- Lang switch -->
           <div class="lang-switch">
             <button
@@ -153,7 +236,7 @@ function onControlRefresh() {
       <!-- Tabs -->
       <nav class="tab-bar">
         <button
-          v-for="tab in (['overview', 'tasks', 'events', 'control'] as const)"
+          v-for="tab in (['overview', 'tasks', 'events', 'graph', 'phases', 'mailbox', 'control'] as const)"
           :key="tab"
           :class="['tab-btn', { active: activeTab === tab }]"
           @click="activeTab = tab"
@@ -172,6 +255,7 @@ function onControlRefresh() {
             @resume="onResume"
             @quarantine="onQuarantine"
             @unquarantine="onUnquarantine"
+            @view-logs="onViewLogs"
           />
           <EventsPanel :events="events" />
         </div>
@@ -187,6 +271,7 @@ function onControlRefresh() {
           @resume="onResume"
           @quarantine="onQuarantine"
           @unquarantine="onUnquarantine"
+          @view-logs="onViewLogs"
         />
       </template>
 
@@ -195,11 +280,40 @@ function onControlRefresh() {
         <EventsPanel :events="events" />
       </template>
 
+      <!-- Graph -->
+      <template v-if="activeTab === 'graph'">
+        <WorkflowGraphPanel />
+      </template>
+
+      <!-- Phases -->
+      <template v-if="activeTab === 'phases'">
+        <PhasesPanel />
+      </template>
+
+      <!-- Mailbox -->
+      <template v-if="activeTab === 'mailbox'">
+        <MailboxPanel />
+      </template>
+
       <!-- Control -->
       <template v-if="activeTab === 'control'">
         <ControlCenter @refresh="onControlRefresh" />
       </template>
     </main>
+
+    <!-- Logs Modal -->
+    <div v-if="logsModal.open" class="modal-overlay" @click.self="closeLogsModal">
+      <div class="modal-content">
+        <div class="modal-head">
+          <h3>Logs: {{ logsModal.taskId }}</h3>
+          <button class="modal-close" @click="closeLogsModal">×</button>
+        </div>
+        <div class="modal-body custom-scrollbar">
+          <div v-if="logsModal.loading" class="modal-loading">Loading...</div>
+          <pre v-else class="modal-pre">{{ logsModal.activity || 'No logs available.' }}</pre>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -276,6 +390,51 @@ function onControlRefresh() {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+.project-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.project-input {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  min-width: 180px;
+}
+
+.project-input::placeholder { color: #64748b; }
+
+.project-btn {
+  appearance: none;
+  border: 1px solid rgba(34,211,238,0.2);
+  background: rgba(34,211,238,0.1);
+  color: #22d3ee;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.project-select {
+  appearance: none;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  padding: 0.35rem 1.5rem 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.35rem center;
+  background-repeat: no-repeat;
+  background-size: 1rem;
 }
 
 .lang-switch {
@@ -383,4 +542,80 @@ function onControlRefresh() {
 @media (min-width: 1024px) {
   .workspace { grid-template-columns: 1.4fr 0.6fr; gap: 1.25rem; }
 }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 800px;
+  max-height: 80vh;
+  background: rgba(16,16,24,0.95);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 1rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.modal-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.modal-close {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-close:hover { color: #e2e8f0; }
+
+.modal-body {
+  padding: 1rem 1.25rem;
+  overflow: auto;
+  flex: 1;
+}
+
+.modal-pre {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+}
+
+.modal-loading {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.20); }
 </style>

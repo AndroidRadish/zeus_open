@@ -96,7 +96,10 @@ class DockerSubagentDispatcher(SubagentDispatcher):
             path = parent
         return path
 
-    async def run(self, task: dict[str, Any], workspace: Path, prompt: str) -> dict[str, Any]:
+    async def run(self, task: dict[str, Any], workspace: Path, prompt: str, bus=None) -> dict[str, Any]:
+        tid = task["id"]
+        if bus:
+            bus.emit("task.started", {"task_id": tid, "agent_name": "docker"})
         cmd = self._build_cmd(task, workspace, prompt)
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -110,12 +113,18 @@ class DockerSubagentDispatcher(SubagentDispatcher):
         except asyncio.TimeoutError:
             proc.kill()
             await proc.wait()
+            if bus:
+                bus.emit("task.failed", {"task_id": tid, "agent_name": "docker", "error": "docker dispatcher timeout"})
             return {"status": "failed", "error": "docker dispatcher timeout"}
 
         if proc.returncode != 0:
+            if bus:
+                bus.emit("task.failed", {"task_id": tid, "agent_name": "docker", "error": f"exit code {proc.returncode}"})
             return {
                 "status": "failed",
                 "exit_code": proc.returncode,
                 "stderr": stderr.decode("utf-8", errors="replace")[:2000],
             }
+        if bus:
+            bus.emit("task.completed", {"task_id": tid, "agent_name": "docker"})
         return {"status": "completed"}

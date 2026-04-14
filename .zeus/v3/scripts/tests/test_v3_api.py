@@ -393,3 +393,112 @@ async def test_task_action_404(api_client):
     for action in ("retry", "cancel", "pause", "resume", "quarantine", "unquarantine"):
         resp = await client.post(f"/tasks/NOT-FOUND/{action}")
         assert resp.status_code == 404, f"Action {action} should 404"
+
+
+@pytest.mark.asyncio
+async def test_phase_crud(api_client, sqlite_store):
+    client, _ = api_client
+
+    # create
+    resp = await client.post("/phases", json={"id": "P-001", "title": "Foundation", "status": "pending", "progress_percent": 0})
+    assert resp.status_code == 200
+    assert resp.json()["success"] is True
+
+    # list
+    resp = await client.get("/phases")
+    assert resp.status_code == 200
+    phases = resp.json()
+    assert any(p["id"] == "P-001" for p in phases)
+
+    # get detail (with milestones hydrated)
+    resp = await client.get("/phases/P-001")
+    assert resp.status_code == 200
+    phase = resp.json()
+    assert phase["title"] == "Foundation"
+    assert "milestones" in phase
+
+    # update
+    resp = await client.put("/phases/P-001", json={"title": "Foundation v2", "progress_percent": 50})
+    assert resp.status_code == 200
+    phase = await sqlite_store.get_phase("P-001")
+    assert phase["title"] == "Foundation v2"
+    assert phase["progress_percent"] == 50
+
+    # delete
+    resp = await client.delete("/phases/P-001")
+    assert resp.status_code == 200
+    assert await sqlite_store.get_phase("P-001") is None
+
+
+@pytest.mark.asyncio
+async def test_milestone_crud(api_client, sqlite_store):
+    client, _ = api_client
+
+    # create milestone
+    resp = await client.post("/milestones", json={"id": "M-001", "title": "Setup", "status": "pending", "task_ids": ["T-1"]})
+    assert resp.status_code == 200
+
+    # list
+    resp = await client.get("/milestones")
+    assert resp.status_code == 200
+    milestones = resp.json()
+    assert any(m["id"] == "M-001" for m in milestones)
+
+    # insert task with milestone_id
+    await sqlite_store.upsert_task({"id": "T-1", "status": "pending", "wave": 1, "milestone_id": "M-001"})
+
+    # get detail with tasks
+    resp = await client.get("/milestones/M-001")
+    assert resp.status_code == 200
+    ms = resp.json()
+    assert ms["title"] == "Setup"
+    assert any(t["id"] == "T-1" for t in ms["tasks"])
+
+    # update
+    resp = await client.put("/milestones/M-001", json={"title": "Setup v2"})
+    assert resp.status_code == 200
+    ms = await sqlite_store.get_milestone("M-001")
+    assert ms["title"] == "Setup v2"
+
+    # delete
+    resp = await client.delete("/milestones/M-001")
+    assert resp.status_code == 200
+    assert await sqlite_store.get_milestone("M-001") is None
+
+
+@pytest.mark.asyncio
+async def test_mailbox(api_client, sqlite_store):
+    client, bus = api_client
+
+    # send message
+    resp = await client.post("/mailbox", json={"from_agent": "agent-a", "to_agent": "agent-b", "message": "hello"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    msg_id = data["id"]
+
+    # list all
+    resp = await client.get("/mailbox")
+    assert resp.status_code == 200
+    msgs = resp.json()
+    assert any(m["id"] == msg_id for m in msgs)
+
+    # filter by to_agent
+    resp = await client.get("/mailbox?to_agent=agent-b")
+    assert resp.status_code == 200
+    msgs = resp.json()
+    assert all(m["to_agent"] == "agent-b" for m in msgs)
+
+    # filter unread
+    resp = await client.get("/mailbox?read=false")
+    assert resp.status_code == 200
+    msgs = resp.json()
+    assert any(m["id"] == msg_id for m in msgs)
+
+    # mark read
+    resp = await client.post(f"/mailbox/{msg_id}/read")
+    assert resp.status_code == 200
+
+    # verify read
+    msgs = await sqlite_store.list_messages(read=True)
+    assert any(m["id"] == msg_id for m in msgs)

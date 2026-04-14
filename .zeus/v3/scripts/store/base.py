@@ -81,6 +81,63 @@ class AsyncStateStore(abc.ABC):
         raise NotImplementedError
 
     # ------------------------------------------------------------------
+    # Phase
+    # ------------------------------------------------------------------
+    @abc.abstractmethod
+    async def upsert_phase(self, phase: dict[str, Any]) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_phase(self, phase_id: str) -> dict[str, Any] | None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def list_phases(self) -> list[dict[str, Any]]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def delete_phase(self, phase_id: str) -> None:
+        raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Milestone
+    # ------------------------------------------------------------------
+    @abc.abstractmethod
+    async def upsert_milestone(self, milestone: dict[str, Any]) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def get_milestone(self, milestone_id: str) -> dict[str, Any] | None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def list_milestones(self) -> list[dict[str, Any]]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def delete_milestone(self, milestone_id: str) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def list_tasks_by_milestone(self, milestone_id: str) -> list[dict[str, Any]]:
+        raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Mailbox
+    # ------------------------------------------------------------------
+    @abc.abstractmethod
+    async def send_message(self, message: dict[str, Any]) -> int:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def list_messages(self, to_agent: str | None = None, read: bool | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def mark_message_read(self, message_id: int, read: bool = True) -> None:
+        raise NotImplementedError
+
+    # ------------------------------------------------------------------
     # EventLog
     # ------------------------------------------------------------------
     @abc.abstractmethod

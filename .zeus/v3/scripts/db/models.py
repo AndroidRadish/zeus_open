@@ -20,6 +20,41 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+class Phase(Base):
+    """Delivery phase grouping milestones."""
+
+    __tablename__ = "phase"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(Text, default="")
+    title_en: Mapped[str | None] = mapped_column(Text, nullable=True)
+    title_zh: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary_en: Mapped[str | None] = mapped_column(Text, nullable=True)
+    summary_zh: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    progress_percent: Mapped[int] = mapped_column(Integer, default=0)
+    milestone_ids: Mapped[list[str]] = mapped_column(JSON, default=list)
+    wave_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    wave_end: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    extra: Mapped[Any] = mapped_column(JSON, nullable=True)
+
+
+class Milestone(Base):
+    """Milestone grouping tasks."""
+
+    __tablename__ = "milestone"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    title: Mapped[str] = mapped_column(Text, default="")
+    task_ids: Mapped[list[str]] = mapped_column(JSON, default=list)
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    progress_percent: Mapped[int] = mapped_column(Integer, default=0)
+    spec_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
+    story_ids: Mapped[list[str]] = mapped_column(JSON, default=list)
+    extra: Mapped[Any] = mapped_column(JSON, nullable=True)
+
+
 class TaskState(Base):
     """Mutable runtime state for each task."""
 
@@ -39,6 +74,7 @@ class TaskState(Base):
     commit_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
     ai_log_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
     files: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    milestone_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     extra: Mapped[Any] = mapped_column(JSON, nullable=True)
     worker_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     heartbeat_at: Mapped[datetime | None] = mapped_column(
@@ -85,6 +121,20 @@ class SchedulerMeta(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+
+class Mailbox(Base):
+    """AgentBus message persistence."""
+
+    __tablename__ = "mailbox"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    task_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    from_agent: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    to_agent: Mapped[str | None] = mapped_column(String(64), index=True)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    read: Mapped[bool] = mapped_column(default=False)
 
 
 class EventLog(Base):

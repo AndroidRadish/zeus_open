@@ -117,6 +117,24 @@
   - ✅ `dispatcher/mock.py`：Mock dispatcher 分阶段模拟写入 `progress.jsonl`
   - ✅ `EventsPanel.vue`：Dashboard 对 `task.progress` 事件进行彩色 step 标签展示
   - ✅ `tests/test_v3_api.py`：新增 HTTP 进度上报端点测试（200 + 404 + event + bus emit 验证）
+
+### 2026-04-14
+- **已完成（T-V3-015）**：Phase & Milestone API 与 Dashboard 面板
+  - ✅ `db/models.py`：补全 `Phase`、`Milestone` 模型（已有 groundwork）
+  - ✅ `store/base.py` / `sqlalchemy_base.py`：新增 Phase/Milestone 的 CRUD 抽象与实现
+  - ✅ `api/server.py`：新增 `/phases`、`/milestones` REST 端点（CRUD + 嵌套任务查询）
+  - ✅ `web/src/components/PhasesPanel.vue`：Dashboard Phase 卡片列表 + Milestone 钻取 + 任务列表
+  - ✅ `web/src/i18n/locales/*.json`：新增 `phases.*` 翻译键（EN/ZH）
+  - ✅ `tests/test_v3_api.py`：新增 `test_phase_crud`、`test_milestone_crud`
+- **已完成（T-V3-018）**：AgentBus Mailbox API、DB 模型与 Dashboard 面板
+  - ✅ `db/models.py`：新增 `Mailbox` 表（`id`, `ts`, `from_agent`, `to_agent`, `message`, `read`）
+  - ✅ `store/base.py` / `sqlalchemy_base.py`：新增 Mailbox `send_message`、`list_messages`、`mark_message_read`
+  - ✅ `api/server.py`：新增 `GET /mailbox`、`POST /mailbox`、`POST /mailbox/{id}/read`
+  - ✅ `web/src/components/MailboxPanel.vue`：Dashboard 消息列表、未读过滤、标记已读
+  - ✅ `web/src/i18n/locales/*.json`：新增 `mailbox.*` 翻译键（EN/ZH）
+  - ✅ `tests/test_v3_api.py`：新增 `test_mailbox`
+- **测试状态**：73/73 v3 测试全绿（新增 3 个 API 集成测试）
+- **构建状态**：Vue Dashboard `npm run build` 零错误产出静态资源
   - ✅ `tests/test_v3_core.py`：新增 Worker heartbeat 扫描 `progress.jsonl` 及去重逻辑测试
   - ✅ 67/67 v3 测试全绿，Dashboard 构建成功
 

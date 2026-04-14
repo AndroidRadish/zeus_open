@@ -57,10 +57,13 @@ class _BaseCliDispatcher(SubagentDispatcher):
         except (json.JSONDecodeError, OSError):
             return None
 
-    async def run(self, task: dict[str, Any], workspace: Path, prompt: str) -> dict[str, Any]:
+    async def run(self, task: dict[str, Any], workspace: Path, prompt: str, bus=None) -> dict[str, Any]:
         tid = task["id"]
         stdout_path = workspace / f"{tid}-stdout.txt"
         cmd = self.build_command(task, workspace, prompt)
+
+        if bus:
+            bus.emit("task.started", {"task_id": tid, "agent_name": self.agent_name(), "command": cmd})
 
         proc = await asyncio.create_subprocess_exec(
             *cmd,
@@ -75,22 +78,30 @@ class _BaseCliDispatcher(SubagentDispatcher):
         except asyncio.TimeoutError:
             proc.kill()
             await proc.wait()
-            return {
+            result = {
                 "status": "failed",
                 "changed_files": [],
                 "test_summary": {"passed": 0, "failed": 0, "skipped": 0},
                 "commit_sha": None,
                 "artifacts": {"error": "subagent timeout", "stdout_path": str(stdout_path)},
             }
+            if bus:
+                bus.emit("task.failed", {"task_id": tid, "agent_name": self.agent_name(), "error": "subagent timeout"})
+            return result
 
         # v3 PRIMARY check: read zeus-result.json
         zeus_result = self._read_zeus_result(workspace)
         if zeus_result is not None:
+            if bus:
+                if zeus_result.get("status") == "completed":
+                    bus.emit("task.completed", {"task_id": tid, "agent_name": self.agent_name(), "commit_sha": zeus_result.get("commit_sha")})
+                else:
+                    bus.emit("task.failed", {"task_id": tid, "agent_name": self.agent_name(), "error": zeus_result.get("artifacts", {}).get("error", "dispatcher_failed")})
             return zeus_result
 
         # Fallback: exit_code (with stdout-crash tolerance)
         if exit_code != 0 and self._is_stdout_crash_only(stdout_path):
-            return {
+            result = {
                 "status": "completed",
                 "changed_files": [],
                 "test_summary": {"passed": 0, "failed": 0, "skipped": 0},
@@ -101,9 +112,12 @@ class _BaseCliDispatcher(SubagentDispatcher):
                     "stdout_path": str(stdout_path),
                 },
             }
+            if bus:
+                bus.emit("task.completed", {"task_id": tid, "agent_name": self.agent_name(), "warning": "stdout encoding crash"})
+            return result
 
         if exit_code != 0:
-            return {
+            result = {
                 "status": "failed",
                 "changed_files": [],
                 "test_summary": {"passed": 0, "failed": 0, "skipped": 0},
@@ -113,15 +127,21 @@ class _BaseCliDispatcher(SubagentDispatcher):
                     "stdout_path": str(stdout_path),
                 },
             }
+            if bus:
+                bus.emit("task.failed", {"task_id": tid, "agent_name": self.agent_name(), "error": f"non-zero exit code {exit_code}"})
+            return result
 
         # Exit code 0 but no zeus-result.json -> treat as completed with empty result
-        return {
+        result = {
             "status": "completed",
             "changed_files": [],
             "test_summary": {"passed": 0, "failed": 0, "skipped": 0},
             "commit_sha": None,
             "artifacts": {"warning": "no zeus-result.json found"},
         }
+        if bus:
+            bus.emit("task.completed", {"task_id": tid, "agent_name": self.agent_name(), "warning": "no zeus-result.json found"})
+        return result
 
 
 class KimiSubagentDispatcher(_BaseCliDispatcher):
@@ -158,14 +178,14 @@ class AutoSubagentDispatcher(SubagentDispatcher):
     def __init__(self, timeout_seconds: float = 600.0):
         self.timeout_seconds = timeout_seconds
 
-    async def run(self, task: dict[str, Any], workspace: Path, prompt: str) -> dict[str, Any]:
+    async def run(self, task: dict[str, Any], workspace: Path, prompt: str, bus=None) -> dict[str, Any]:
         if shutil.which("kimi"):
             dispatcher = KimiSubagentDispatcher(timeout_seconds=self.timeout_seconds)
         elif shutil.which("claude"):
             dispatcher = ClaudeSubagentDispatcher(timeout_seconds=self.timeout_seconds)
         else:
             dispatcher = __import__("dispatcher.mock", fromlist=["MockSubagentDispatcher"]).MockSubagentDispatcher()
-        return await dispatcher.run(task, workspace, prompt)
+        return await dispatcher.run(task, workspace, prompt, bus=bus)
 
 
 def build_dispatcher(config: dict[str, Any] | None = None) -> SubagentDispatcher:

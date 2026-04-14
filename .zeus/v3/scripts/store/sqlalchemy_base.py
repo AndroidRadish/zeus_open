@@ -9,7 +9,7 @@ from typing import Any
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from db.models import EventLog, Quarantine, SchedulerMeta, TaskState
+from db.models import EventLog, Mailbox, Milestone, Phase, Quarantine, SchedulerMeta, TaskState
 from store.base import AsyncStateStore
 
 
@@ -56,6 +56,49 @@ def _eventlog_to_dict(obj: EventLog) -> dict[str, Any]:
         "agent_id": obj.agent_id,
         "wave": obj.wave,
         "payload": obj.payload,
+    }
+
+
+def _phase_to_dict(obj: Phase) -> dict[str, Any]:
+    return {
+        "id": obj.id,
+        "title": obj.title,
+        "title_en": obj.title_en,
+        "title_zh": obj.title_zh,
+        "summary": obj.summary,
+        "summary_en": obj.summary_en,
+        "summary_zh": obj.summary_zh,
+        "status": obj.status,
+        "progress_percent": obj.progress_percent,
+        "milestone_ids": obj.milestone_ids,
+        "wave_start": obj.wave_start,
+        "wave_end": obj.wave_end,
+        "extra": obj.extra,
+    }
+
+
+def _milestone_to_dict(obj: Milestone) -> dict[str, Any]:
+    return {
+        "id": obj.id,
+        "title": obj.title,
+        "task_ids": obj.task_ids,
+        "status": obj.status,
+        "progress_percent": obj.progress_percent,
+        "spec_ref": obj.spec_ref,
+        "story_ids": obj.story_ids,
+        "extra": obj.extra,
+    }
+
+
+def _mailbox_to_dict(obj: Mailbox) -> dict[str, Any]:
+    return {
+        "id": obj.id,
+        "ts": obj.ts.isoformat() if obj.ts else None,
+        "task_id": obj.task_id,
+        "from_agent": obj.from_agent,
+        "to_agent": obj.to_agent,
+        "message": obj.message,
+        "read": obj.read,
     }
 
 
@@ -164,6 +207,98 @@ class _SqlAlchemyStateStore(AsyncStateStore):
     async def delete_meta(self, key: str) -> None:
         async with self._session_factory() as session:
             await session.execute(delete(SchedulerMeta).where(SchedulerMeta.key == key))
+            await session.commit()
+
+    # Phase ------------------------------------------------------------
+    async def upsert_phase(self, phase: dict[str, Any]) -> None:
+        async with self._session_factory() as session:
+            existing = await session.get(Phase, phase["id"])
+            if existing:
+                for k, v in phase.items():
+                    if hasattr(existing, k) and k != "id":
+                        setattr(existing, k, v)
+            else:
+                session.add(Phase(**phase))
+            await session.commit()
+
+    async def get_phase(self, phase_id: str) -> dict[str, Any] | None:
+        async with self._session_factory() as session:
+            obj = await session.get(Phase, phase_id)
+            return _phase_to_dict(obj) if obj else None
+
+    async def list_phases(self) -> list[dict[str, Any]]:
+        async with self._session_factory() as session:
+            result = await session.execute(select(Phase))
+            return [_phase_to_dict(r) for r in result.scalars().all()]
+
+    async def delete_phase(self, phase_id: str) -> None:
+        async with self._session_factory() as session:
+            await session.execute(delete(Phase).where(Phase.id == phase_id))
+            await session.commit()
+
+    # Milestone --------------------------------------------------------
+    async def upsert_milestone(self, milestone: dict[str, Any]) -> None:
+        async with self._session_factory() as session:
+            existing = await session.get(Milestone, milestone["id"])
+            if existing:
+                for k, v in milestone.items():
+                    if hasattr(existing, k) and k != "id":
+                        setattr(existing, k, v)
+            else:
+                session.add(Milestone(**milestone))
+            await session.commit()
+
+    async def get_milestone(self, milestone_id: str) -> dict[str, Any] | None:
+        async with self._session_factory() as session:
+            obj = await session.get(Milestone, milestone_id)
+            return _milestone_to_dict(obj) if obj else None
+
+    async def list_milestones(self) -> list[dict[str, Any]]:
+        async with self._session_factory() as session:
+            result = await session.execute(select(Milestone))
+            return [_milestone_to_dict(r) for r in result.scalars().all()]
+
+    async def delete_milestone(self, milestone_id: str) -> None:
+        async with self._session_factory() as session:
+            await session.execute(delete(Milestone).where(Milestone.id == milestone_id))
+            await session.commit()
+
+    async def list_tasks_by_milestone(self, milestone_id: str) -> list[dict[str, Any]]:
+        async with self._session_factory() as session:
+            stmt = select(TaskState).where(TaskState.milestone_id == milestone_id)
+            result = await session.execute(stmt)
+            return [_taskstate_to_dict(r) for r in result.scalars().all()]
+
+    # Mailbox ----------------------------------------------------------
+    async def send_message(self, message: dict[str, Any]) -> int:
+        async with self._session_factory() as session:
+            obj = Mailbox(
+                task_id=message.get("task_id"),
+                from_agent=message.get("from_agent"),
+                to_agent=message.get("to_agent"),
+                message=message.get("message"),
+                read=message.get("read", False),
+            )
+            session.add(obj)
+            await session.commit()
+            return obj.id
+
+    async def list_messages(self, to_agent: str | None = None, read: bool | None = None, limit: int = 100) -> list[dict[str, Any]]:
+        async with self._session_factory() as session:
+            stmt = select(Mailbox)
+            if to_agent is not None:
+                stmt = stmt.where(Mailbox.to_agent == to_agent)
+            if read is not None:
+                stmt = stmt.where(Mailbox.read == read)
+            stmt = stmt.order_by(Mailbox.id.desc()).limit(limit)
+            result = await session.execute(stmt)
+            return [_mailbox_to_dict(r) for r in result.scalars().all()]
+
+    async def mark_message_read(self, message_id: int, read: bool = True) -> None:
+        async with self._session_factory() as session:
+            await session.execute(
+                update(Mailbox).where(Mailbox.id == message_id).values(read=read)
+            )
             await session.commit()
 
     # EventLog ---------------------------------------------------------

@@ -24,6 +24,7 @@ const emit = defineEmits<{
   (e: 'resume', id: string): void
   (e: 'quarantine', id: string): void
   (e: 'unquarantine', id: string): void
+  (e: 'viewLogs', id: string): void
 }>()
 
 const statusList = ['pending', 'running', 'completed', 'failed', 'paused'] as const
@@ -53,6 +54,7 @@ function onPause(id: string) { emit('pause', id) }
 function onResume(id: string) { emit('resume', id) }
 function onQuarantine(id: string) { emit('quarantine', id) }
 function onUnquarantine(id: string) { emit('unquarantine', id) }
+function onViewLogs(id: string) { emit('viewLogs', id) }
 </script>
 
 <template>
@@ -98,17 +100,21 @@ function onUnquarantine(id: string) { emit('unquarantine', id) }
                 <template v-else-if="task.status === 'pending'">
                   <button class="btn-action btn-warn" @click="onPause(task.id)">{{ t('actions.pause') }}</button>
                   <button class="btn-action btn-danger" @click="onQuarantine(task.id)">{{ t('actions.quarantine') }}</button>
+                  <button class="btn-action btn-secondary" @click="onViewLogs(task.id)">{{ t('actions.logs') }}</button>
                 </template>
                 <template v-else-if="task.status === 'paused'">
                   <button class="btn-action btn-primary" @click="onResume(task.id)">{{ t('actions.resume') }}</button>
                   <button class="btn-action btn-warn" @click="onCancel(task.id)">{{ t('actions.cancel') }}</button>
+                  <button class="btn-action btn-secondary" @click="onViewLogs(task.id)">{{ t('actions.logs') }}</button>
                 </template>
                 <template v-else-if="task.status === 'failed'">
                   <button class="btn-action btn-primary" @click="onRetry(task.id)">{{ t('actions.retry') }}</button>
                   <button class="btn-action btn-danger" @click="onUnquarantine(task.id)">{{ t('actions.unquarantine') }}</button>
+                  <button class="btn-action btn-secondary" @click="onViewLogs(task.id)">{{ t('actions.logs') }}</button>
                 </template>
                 <template v-else-if="task.status === 'completed'">
                   <button class="btn-action btn-danger" @click="onQuarantine(task.id)">{{ t('actions.quarantine') }}</button>
+                  <button class="btn-action btn-secondary" @click="onViewLogs(task.id)">{{ t('actions.logs') }}</button>
                 </template>
               </div>
             </td>

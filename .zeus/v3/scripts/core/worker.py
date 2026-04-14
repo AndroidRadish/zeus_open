@@ -103,7 +103,7 @@ class ZeusWorker:
                                 pass
 
             heartbeat_task = asyncio.create_task(_heartbeat_loop())
-            raw_result = await self.dispatcher.run(task, workspace, prompt)
+            raw_result = await self.dispatcher.run(task, workspace, prompt, bus=self.bus)
         except Exception as exc:
             await self.store.log_event(
                 event_type="task.failed",

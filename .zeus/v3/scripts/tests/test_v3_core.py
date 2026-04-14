@@ -329,7 +329,7 @@ async def test_worker_reads_zeus_result_json(sqlite_store, memory_queue, workspa
     await q.enqueue({"id": "T-506", "wave": 1})
 
     class FakeDispatcher:
-        async def run(self, task, workspace, prompt):
+        async def run(self, task, workspace, prompt, bus=None):
             # Sub-agent writes its own result
             result = {
                 "status": "completed",
@@ -361,7 +361,7 @@ async def test_worker_retries_and_eventually_fails(sqlite_store, memory_queue, w
     await q.enqueue({"id": "T-507", "wave": 1})
 
     class AlwaysFailDispatcher:
-        async def run(self, task, workspace, prompt):
+        async def run(self, task, workspace, prompt, bus=None):
             raise RuntimeError("always fails")
 
     pool = WorkerPool(store, q, AlwaysFailDispatcher(), workspace_manager, max_workers=1)
@@ -454,7 +454,7 @@ async def test_worker_heartbeat_scans_progress_jsonl(sqlite_store, memory_queue,
     real_sleep = asyncio.sleep
 
     class SlowDispatcher:
-        async def run(self, task, workspace, prompt):
+        async def run(self, task, workspace, prompt, bus=None):
             progress_path = workspace / "progress.jsonl"
             # Write first line
             progress_path.write_text(

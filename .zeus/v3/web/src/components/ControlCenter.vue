@@ -21,11 +21,21 @@ const emit = defineEmits<{
   (e: 'refresh'): void
 }>()
 
+interface Task {
+  id: string
+  title?: string
+  worker_id?: string
+  heartbeat_at?: string
+  wave?: number
+}
+
 interface ControlStatus {
-  scheduler: { running: boolean; pid?: number }
-  workers: { count: number; pids?: number[] }
+  scheduler: { running: boolean; pid?: number; state?: string; last_tick_at?: string | null }
+  workers: { count: number; pids?: number[]; target?: number }
   queue: { size: number }
   last_import_at?: string | null
+  last_event_at?: string | null
+  running_tasks?: Task[]
 }
 
 const status = ref<ControlStatus | null>(null)
@@ -93,9 +103,42 @@ function planImport() { apiPost('/control/import') }
 function globalRun() { apiPost('/control/global/run') }
 
 const schedulerRunning = computed(() => !!status.value?.scheduler?.running)
+const schedulerState = computed(() => status.value?.scheduler?.state ?? 'unknown')
 const workerCount = computed(() => status.value?.workers?.count ?? 0)
+const workerTarget = computed(() => status.value?.workers?.target ?? 0)
 const queueSize = computed(() => status.value?.queue?.size ?? 0)
 const lastImport = computed(() => status.value?.last_import_at || '-')
+const lastTick = computed(() => status.value?.scheduler?.last_tick_at || '-')
+const lastEvent = computed(() => status.value?.last_event_at || '-')
+const ghostState = computed(() => schedulerRunning.value && schedulerState.value !== 'running')
+const healthColor = computed(() => {
+  if (ghostState.value) return 'warn'
+  if (schedulerRunning.value) return 'ok'
+  return 'neutral'
+})
+
+const runningTasks = computed(() => status.value?.running_tasks || [])
+const workerCards = computed(() => {
+  const map = new Map<string, Task[]>()
+  for (const task of runningTasks.value) {
+    const wid = task.worker_id || 'unknown'
+    if (!map.has(wid)) map.set(wid, [])
+    map.get(wid)!.push(task)
+  }
+  return Array.from(map.entries()).map(([worker_id, tasks]) => ({ worker_id, tasks }))
+})
+
+function formatAgo(iso: string | null | undefined) {
+  if (!iso || iso === '-') return '-'
+  const diff = Date.now() - new Date(iso).getTime()
+  if (diff < 0) return 'just now'
+  const sec = Math.floor(diff / 1000)
+  if (sec < 60) return `${sec}s ago`
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min}m ago`
+  const hr = Math.floor(min / 60)
+  return `${hr}h ago`
+}
 
 onMounted(() => {
   fetchStatus()
@@ -109,6 +152,56 @@ onMounted(() => {
       <AlertCircle class="icon" :size="18" />
       <span class="error-text">{{ error }}</span>
       <button class="error-close" @click="error = null">×</button>
+    </div>
+
+    <!-- Health banner -->
+    <div v-if="available !== false && status" class="health-banner" :class="healthColor">
+      <div class="health-row">
+        <div class="health-item">
+          <span class="health-label">Scheduler</span>
+          <span class="health-dot" :class="schedulerRunning ? 'ok' : 'off'" />
+          <span class="health-value">{{ schedulerRunning ? 'Running' : 'Stopped' }}</span>
+          <span v-if="ghostState" class="health-warn">(ghost: {{ schedulerState }})</span>
+          <span v-else-if="schedulerState" class="health-meta">({{ schedulerState }})</span>
+        </div>
+        <div class="health-divider" />
+        <div class="health-item">
+          <span class="health-label">Workers</span>
+          <span class="health-value">{{ workerCount }} / {{ workerTarget }}</span>
+        </div>
+        <div class="health-divider" />
+        <div class="health-item">
+          <span class="health-label">Queue</span>
+          <span class="health-value">{{ queueSize }}</span>
+        </div>
+        <div class="health-divider" />
+        <div class="health-item">
+          <span class="health-label">Last Tick</span>
+          <span class="health-value" :title="lastTick">{{ formatAgo(lastTick) }}</span>
+        </div>
+        <div class="health-divider" />
+        <div class="health-item">
+          <span class="health-label">Last Event</span>
+          <span class="health-value" :title="lastEvent">{{ formatAgo(lastEvent) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Worker status cards -->
+    <div v-if="available !== false && workerCards.length" class="worker-cards">
+      <div v-for="card in workerCards" :key="card.worker_id" class="worker-card">
+        <div class="worker-head">
+          <span class="worker-id">{{ card.worker_id }}</span>
+          <span class="worker-badge">{{ card.tasks.length }} task{{ card.tasks.length > 1 ? 's' : '' }}</span>
+        </div>
+        <div class="worker-body">
+          <div v-for="task in card.tasks" :key="task.id" class="worker-task">
+            <span class="task-mono">{{ task.id }}</span>
+            <span class="task-title">{{ task.title || t('tasks.unnamed') }}</span>
+            <span class="task-hb" :title="task.heartbeat_at">HB {{ formatAgo(task.heartbeat_at) }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Unavailable notice -->
@@ -547,5 +640,146 @@ button:disabled {
 
 .error-banner .icon {
   flex-shrink: 0;
+}
+
+.health-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: #e2e8f0;
+}
+.health-banner.ok {
+  border-color: rgba(52, 211, 153, 0.2);
+  background: rgba(52, 211, 153, 0.06);
+}
+.health-banner.warn {
+  border-color: rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.08);
+  color: #fbbf24;
+}
+.health-banner.neutral {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(148, 163, 184, 0.08);
+}
+.health-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.health-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.health-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.health-value {
+  font-weight: 600;
+  color: #f8fafc;
+}
+.health-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+.health-warn {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  font-weight: 500;
+}
+.health-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #64748b;
+}
+.health-dot.ok {
+  background: #34d399;
+}
+.health-dot.off {
+  background: #fb7185;
+}
+.health-divider {
+  width: 1px;
+  height: 0.9rem;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.worker-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.worker-card {
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.worker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.worker-id {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #22d3ee;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.worker-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.worker-body {
+  padding: 0.5rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.worker-task {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+
+.task-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.task-title {
+  color: #cbd5e1;
+  flex: 1;
+}
+
+.task-hb {
+  font-size: 0.7rem;
+  color: #94a3b8;
 }
 </style>

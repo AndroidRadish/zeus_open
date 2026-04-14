@@ -48,7 +48,56 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--host", default="127.0.0.1", help="API server host")
     parser.add_argument("--port", type=int, default=8000, help="API server port")
     parser.add_argument("--trace", action="store_true", help="Enable OpenTelemetry console trace output")
+    parser.add_argument("--embedded-scheduler", action="store_true", default=True, help="Start embedded scheduler+workers in serve mode (default: True)")
+    parser.add_argument("--no-embedded-scheduler", action="store_true", default=False, help="Disable embedded scheduler in serve mode")
+    parser.add_argument("--status", action="store_true", help="Print human-readable project status and exit")
     return parser.parse_args(argv)
+
+
+async def _print_status(store: SQLiteStateStore, task_json_path: Path) -> None:
+    """Print human-readable project status from the DB."""
+    import json
+    tasks = await store.list_tasks()
+    total = len(tasks)
+    passed = sum(1 for t in tasks if t.get("passes"))
+    pending = total - passed
+    running = sum(1 for t in tasks if t.get("status") == "running")
+    failed = sum(1 for t in tasks if t.get("status") == "failed")
+    quarantined = len(await store.list_quarantine())
+
+    # Read config from task.json for project name / north star
+    project_name = "ZeusOpen Project"
+    north_star = "N/A"
+    try:
+        with open(task_json_path, "r", encoding="utf-8-sig") as f:
+            data = json.load(f)
+        meta = data.get("meta", {})
+        project_name = meta.get("project", {}).get("name", project_name)
+        north_star = meta.get("metrics", {}).get("north_star", north_star)
+        current_wave = meta.get("current_wave", 1)
+    except Exception:
+        current_wave = 1
+
+    print("\nZeusOpen v3 Status")
+    print(f"Project    : {project_name}")
+    print(f"North Star : {north_star}")
+    print(f"Current Wave: {current_wave}")
+    print(f"Tasks      : {passed}/{total} completed ({pending} pending, {running} running, {failed} failed)")
+    print(f"Quarantined: {quarantined}")
+
+    recent = [t for t in tasks if t.get("passes")][-5:]
+    if recent:
+        print("\nRecent completed:")
+        for t in recent:
+            sha = t.get("commit_sha", "N/A")
+            sha_short = sha[:7] if sha else "N/A"
+            print(f"  [OK] {t['id']}: {t.get('title', '')} -> {sha_short}")
+
+    wave_pending = [t for t in tasks if not t.get("passes", False) and t.get("wave") == current_wave]
+    print(f"\nPending in current wave ({current_wave}): {len(wave_pending)}")
+    for t in wave_pending[:5]:
+        print(f"  [WAIT] {t['id']}: {t.get('title', '')}")
+    print()
 
 
 async def ensure_schema(database_url: str) -> None:
@@ -89,24 +138,50 @@ async def main(argv: list[str] | None = None) -> int:
     # 1. Ensure schema
     await ensure_schema(database_url)
 
-    # 2. Import tasks
+    # 2. Import tasks (skip auto-import in serve mode to preserve runtime state)
     store = SQLiteStateStore(database_url)
-    import_result = await import_tasks_from_json(store, task_json_path)
-    print(f"[IMPORT] Imported {import_result['imported_tasks']} tasks, "
-          f"{import_result['quarantine_count']} quarantined, "
-          f"meta keys: {import_result['meta_keys']}")
 
-    if args.import_only:
+    if args.status:
+        await _print_status(store, task_json_path)
         await store.close()
-        print("[OK] Import complete.")
         return 0
+
+    # Cold-start auto-import if DB is empty
+    existing_tasks = await store.list_tasks()
+    if args.mode == "serve" and not existing_tasks:
+        import_result = await import_tasks_from_json(store, task_json_path)
+        print(f"[SERVE] Cold-start auto-import: {import_result['imported_tasks']} tasks imported")
+    elif args.mode != "serve":
+        import_result = await import_tasks_from_json(store, task_json_path)
+        print(f"[IMPORT] Imported {import_result['imported_tasks']} tasks, "
+              f"{import_result['quarantine_count']} quarantined, "
+              f"meta keys: {import_result['meta_keys']}")
+
+        if args.import_only:
+            await store.close()
+            print("[OK] Import complete.")
+            return 0
+    else:
+        import_result = {"imported_tasks": 0, "quarantine_count": 0, "meta_keys": []}
 
     # 3. API server mode
     if args.mode == "serve":
         from api.control_plane import ControlPlane
         bus = EventBus()
         control_plane = ControlPlane(store, bus, project_root, database_url)
-        app = create_app(store, bus, control_plane)
+        embedded = None
+        if args.embedded_scheduler and not args.no_embedded_scheduler:
+            config_obj = ZeusConfig(project_root, version)
+            embedded = {
+                "project_root": str(project_root),
+                "version": version,
+                "max_workers": args.max_workers,
+                "queue_backend": args.queue_backend,
+                "redis_url": args.redis_url,
+                "config": config_obj.raw(),
+            }
+            print(f"[SERVE] Embedded scheduler enabled with {args.max_workers} workers")
+        app = create_app(store, bus, control_plane, embedded)
         import uvicorn
         print(f"[SERVE] Starting API server at http://{args.host}:{args.port}")
         config = uvicorn.Config(app, host=args.host, port=args.port, log_level="info")

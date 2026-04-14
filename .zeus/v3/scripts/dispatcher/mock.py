@@ -12,9 +12,11 @@ from dispatcher.base import SubagentDispatcher
 class MockSubagentDispatcher(SubagentDispatcher):
     """Writes a mock zeus-result.json and returns immediately."""
 
-    async def run(self, task: dict[str, Any], workspace: Path, prompt: str) -> dict[str, Any]:
+    async def run(self, task: dict[str, Any], workspace: Path, prompt: str, bus=None) -> dict[str, Any]:
         import asyncio
         tid = task["id"]
+        if bus:
+            bus.emit("task.started", {"task_id": tid, "agent_name": "mock"})
         progress_path = workspace / "progress.jsonl"
         steps = [
             {"ts": "2026-04-13T15:30:00Z", "step": "planning", "message": "mock planning"},
@@ -34,4 +36,6 @@ class MockSubagentDispatcher(SubagentDispatcher):
         }
         (workspace / ".mock_done").write_text("done", encoding="utf-8")
         (workspace / "zeus-result.json").write_text(__import__("json").dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+        if bus:
+            bus.emit("task.completed", {"task_id": tid, "agent_name": "mock", "commit_sha": "mock"})
         return result
