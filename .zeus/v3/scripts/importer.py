@@ -25,13 +25,16 @@ async def import_tasks_from_json(store: AsyncStateStore, task_json_path: Path | 
 
     imported = 0
     for t in tasks:
+        passes = t.get("passes", False)
+        # Infer completion from passes: a passed task is considered completed
+        status = t.get("status", "completed" if passes else "pending")
         task_state = {
             "id": t["id"],
             "story_id": t.get("story_id"),
             "title": t.get("title", ""),
             "description": t.get("description"),
-            "status": t.get("status", "pending"),
-            "passes": t.get("passes", False),
+            "status": status,
+            "passes": passes,
             "wave": t.get("wave", 1),
             "original_wave": t.get("original_wave"),
             "scheduled_wave": t.get("scheduled_wave"),
