@@ -188,3 +188,16 @@
   - ✅ `.zeus/v3/scripts/store/sqlalchemy_base.py`：`_taskstate_to_dict` 补回缺失的 `milestone_id`
   - ✅ `tests/test_v3_core.py`：新增 `test_import_phases_and_milestones`
   - ✅ 55/55 测试全绿，Dashboard Phases 面板现在有真实数据
+
+### 2026-04-15
+- **已完成（T-V3-026）**：Dashboard Pinia 状态管理迁移
+  - ✅ `web/package.json`：安装 `pinia` 依赖
+  - ✅ `web/src/stores/taskStore.ts`：全局任务状态（tasks / metrics / health / connected）+ SSE 连接与轮询生命周期
+  - ✅ `web/src/stores/eventStore.ts`：全局事件状态（liveEvents / historyEvents / loading）
+  - ✅ `web/src/stores/uiStore.ts`：UI 状态（activeTab / logsModal / detailDrawer）
+  - ✅ `web/src/main.ts`：挂载 Pinia 到 Vue 应用
+  - ✅ `Dashboard.vue`：移除本地数据管理，全面消费 store；保持所有交互与视觉不变
+  - ✅ `TasksPanel.vue` / `EventsPanel.vue`：直接从 store 读取数据并调用 action，消除 props drilling
+  - ✅ `npm run build` 零错误，静态资源已重新生成
+  - ✅ 75/75 v3 测试全绿
+  - **Commit**: `33e0e94`
