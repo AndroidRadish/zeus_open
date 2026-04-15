@@ -38,3 +38,20 @@
 - **Rationale**: Core framework (main) is complete. Structural features (parallel orchestration, GUI dashboard, agent communication bus) require a new version track.
 - **Next**: zeus:brainstorm --full on v2 architecture.
 
+
+---
+
+## EVOLVE — 2026-04-15
+
+- **Event**: v3 Dashboard 功能补全与后端能力对齐 (T-V3-021)
+- **Version**: v3
+- **Deliverables**:
+  - 新增 MetricsPanel：Task Metrics / Bottleneck / Blocked Chains 分析视图
+  - 新增 TaskDetailDrawer：右侧滑出任务详情抽屉，展示完整字段
+  - PhasesPanel 增强：支持 Phase 与 Milestone 的创建、编辑、删除
+  - MailboxPanel 增强：支持发送跨 Agent 消息
+  - EventsPanel 增强：Live / History 双模式，支持历史事件过滤与分页
+  - Dashboard 新增 Health 状态徽章与 Metrics Tab
+  - 更新 i18n 双语文案，重新构建静态资源
+- **North star impact**: adoption_rate ↑↑ (Dashboard 完整度提升，可直接操作所有后端能力)
+- **Notes**: 75/75 tests passed. Build successful. Commit `e953375`.
