@@ -11,32 +11,12 @@ import {
   FileText,
   Info,
 } from 'lucide-vue-next'
+import { useTaskStore } from '../stores/taskStore'
+import { useUiStore } from '../stores/uiStore'
 
 const { t } = useI18n()
-
-export interface Task {
-  id: string
-  title?: string
-  wave?: number
-  status: string
-  passes: boolean
-  quarantined?: boolean
-}
-
-const props = defineProps<{
-  tasks: Task[]
-}>()
-
-const emit = defineEmits<{
-  (e: 'retry', id: string): void
-  (e: 'cancel', id: string): void
-  (e: 'pause', id: string): void
-  (e: 'resume', id: string): void
-  (e: 'quarantine', id: string): void
-  (e: 'unquarantine', id: string): void
-  (e: 'viewLogs', id: string): void
-  (e: 'viewDetail', id: string): void
-}>()
+const taskStore = useTaskStore()
+const uiStore = useUiStore()
 
 const statusList = ['pending', 'running', 'completed', 'failed', 'paused'] as const
 
@@ -52,28 +32,28 @@ function statusDotClass(status: string) {
 
 const sortedTasks = computed(() => {
   const order = ['running', 'pending', 'failed', 'paused', 'completed']
-  return [...props.tasks].sort((a, b) => {
+  return [...taskStore.tasks].sort((a, b) => {
     const ia = order.indexOf(a.status)
     const ib = order.indexOf(b.status)
     return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
   })
 })
 
-function onRetry(id: string) { emit('retry', id) }
-function onCancel(id: string) { emit('cancel', id) }
-function onPause(id: string) { emit('pause', id) }
-function onResume(id: string) { emit('resume', id) }
-function onQuarantine(id: string) { emit('quarantine', id) }
-function onUnquarantine(id: string) { emit('unquarantine', id) }
-function onViewLogs(id: string) { emit('viewLogs', id) }
-function onViewDetail(id: string) { emit('viewDetail', id) }
+function onRetry(id: string) { taskStore.taskAction('retry', id) }
+function onCancel(id: string) { taskStore.taskAction('cancel', id) }
+function onPause(id: string) { taskStore.taskAction('pause', id) }
+function onResume(id: string) { taskStore.taskAction('resume', id) }
+function onQuarantine(id: string) { taskStore.taskAction('quarantine', id) }
+function onUnquarantine(id: string) { taskStore.taskAction('unquarantine', id) }
+function onViewLogs(id: string) { uiStore.openLogs(id) }
+function onViewDetail(id: string) { uiStore.openDetail(id) }
 </script>
 
 <template>
   <section class="glass-card panel tasks-panel">
     <div class="panel-head">
       <h2>{{ t('tasks.title') }}</h2>
-      <span class="count-badge">{{ tasks.length }}</span>
+      <span class="count-badge">{{ taskStore.tasks.length }}</span>
     </div>
     <div class="table-wrap custom-scrollbar">
       <table class="data-table">
@@ -172,7 +152,7 @@ function onViewDetail(id: string) { emit('viewDetail', id) }
               </div>
             </td>
           </tr>
-          <tr v-if="tasks.length === 0">
+          <tr v-if="taskStore.tasks.length === 0">
             <td colspan="6" class="empty-cell">{{ t('tasks.empty') }}</td>
           </tr>
         </tbody>

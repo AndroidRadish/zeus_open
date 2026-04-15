@@ -2,25 +2,20 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Info, Play, CheckCircle2, XCircle, PauseCircle, RotateCcw, ShieldAlert, ShieldCheck, Activity, Mail, Layers, RefreshCw, AlertCircle, Search, Clock } from 'lucide-vue-next'
+import { useEventStore } from '../stores/eventStore'
 
 const { t } = useI18n()
+const eventStore = useEventStore()
 
-const props = defineProps<{
-  events: { time: string; event: string; data: any }[]
-}>()
-
-const historyEvents = ref<{ id: number; ts: string; event_type: string; agent_id: string | null; task_id: string | null; payload: any }[]>([])
 const filterType = ref('')
 const filterTask = ref('')
 const filterAgent = ref('')
-const historyLoading = ref(false)
 const historyOffset = ref(0)
 const historyLimit = 50
 const hasMore = ref(true)
 const showHistory = ref(false)
 
 async function fetchHistory(reset = true) {
-  historyLoading.value = true
   if (reset) {
     historyOffset.value = 0
     hasMore.value = true
@@ -32,19 +27,18 @@ async function fetchHistory(reset = true) {
   if (filterTask.value.trim()) params.set('task_id', filterTask.value.trim())
   if (filterAgent.value.trim()) params.set('agent_id', filterAgent.value.trim())
   try {
-    const res = await fetch(`/events?${params.toString()}`)
+    const base = import.meta.env.VITE_API_BASE || ''
+    const res = await fetch(`${base}/events?${params.toString()}`)
     const data = await res.json()
     if (reset) {
-      historyEvents.value = data
+      eventStore.historyEvents = data
     } else {
-      historyEvents.value.push(...data)
+      eventStore.historyEvents.push(...data)
     }
     if (data.length < historyLimit) hasMore.value = false
     historyOffset.value += data.length
   } catch (e) {
     console.error('fetch history error', e)
-  } finally {
-    historyLoading.value = false
   }
 }
 
@@ -130,7 +124,7 @@ onMounted(() => {
     <!-- Live stream -->
     <div v-if="!showHistory" class="events-body custom-scrollbar">
       <transition-group name="ev" tag="ul" class="events-list">
-        <li v-for="(ev, idx) in events" :key="idx" class="event-row" :class="{ 'progress-row': isProgress({ event_type: ev.event, payload: ev.data }) }">
+        <li v-for="(ev, idx) in eventStore.liveEvents" :key="idx" class="event-row" :class="{ 'progress-row': isProgress({ event_type: ev.event, payload: ev.data }) }">
           <template v-if="isProgress({ event_type: ev.event, payload: ev.data })">
             <div class="progress-meta">
               <span class="timestamp">{{ ev.time }}</span>
@@ -156,7 +150,7 @@ onMounted(() => {
           </template>
         </li>
       </transition-group>
-      <div v-if="events.length === 0" class="empty-events">
+      <div v-if="eventStore.liveEvents.length === 0" class="empty-events">
         <p>{{ t('events.empty') }}</p>
       </div>
     </div>
@@ -181,9 +175,9 @@ onMounted(() => {
         </button>
       </div>
 
-      <div v-if="historyLoading && historyEvents.length === 0" class="empty-events">Loading…</div>
+      <div v-if="eventStore.loading && eventStore.historyEvents.length === 0" class="empty-events">Loading…</div>
       <ul v-else class="events-list">
-        <li v-for="ev in historyEvents" :key="ev.id" class="event-row" :class="{ 'progress-row': isProgress(ev) }">
+        <li v-for="ev in eventStore.historyEvents" :key="ev.id" class="event-row" :class="{ 'progress-row': isProgress(ev) }">
           <template v-if="isProgress(ev)">
             <div class="progress-meta">
               <span class="timestamp">{{ formatTime(ev.ts) }}</span>
@@ -213,11 +207,11 @@ onMounted(() => {
           </template>
         </li>
       </ul>
-      <div v-if="historyEvents.length === 0" class="empty-events">
+      <div v-if="eventStore.historyEvents.length === 0" class="empty-events">
         <p>{{ t('events.empty') }}</p>
       </div>
       <div v-else-if="hasMore" class="load-more">
-        <button class="btn-more" :disabled="historyLoading" @click="loadMore">
+        <button class="btn-more" :disabled="eventStore.loading" @click="loadMore">
           {{ t('events.loadMore') }}
         </button>
       </div>

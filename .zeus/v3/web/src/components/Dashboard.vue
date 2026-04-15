@@ -12,6 +12,9 @@ import {
   BarChart3,
   HeartPulse,
 } from 'lucide-vue-next'
+import { useTaskStore } from '../stores/taskStore'
+import { useEventStore } from '../stores/eventStore'
+import { useUiStore } from '../stores/uiStore'
 import StatsPanel from './StatsPanel.vue'
 import TasksPanel from './TasksPanel.vue'
 import EventsPanel from './EventsPanel.vue'
@@ -21,39 +24,11 @@ import PhasesPanel from './PhasesPanel.vue'
 import MailboxPanel from './MailboxPanel.vue'
 import MetricsPanel from './MetricsPanel.vue'
 import TaskDetailDrawer from './TaskDetailDrawer.vue'
-import type { Task } from './TasksPanel.vue'
-import type { TaskDetail } from './TaskDetailDrawer.vue'
 
 const { t, locale } = useI18n()
-
-interface Metrics {
-  total_tasks: number
-  completed: number
-  failed: number
-  pending: number
-  running: number
-  pass_rate: number
-}
-
-const tasks = ref<Task[]>([])
-const metrics = ref<Metrics | null>(null)
-const events = ref<{ time: string; event: string; data: any }[]>([])
-const connected = ref(false)
-const activeTab = ref<'overview' | 'tasks' | 'events' | 'graph' | 'phases' | 'mailbox' | 'control' | 'metrics'>('overview')
-
-const logsModal = ref<{ open: boolean; taskId: string; activity: string; loading: boolean }>({
-  open: false,
-  taskId: '',
-  activity: '',
-  loading: false,
-})
-
-const detailDrawer = ref<{ open: boolean; task: TaskDetail | null }>({
-  open: false,
-  task: null,
-})
-
-const health = ref<{ status: string; store: string } | null>(null)
+const taskStore = useTaskStore()
+const eventStore = useEventStore()
+const uiStore = useUiStore()
 
 const projectRoot = ref('')
 const recentProjects = ref<string[]>([])
@@ -70,25 +45,13 @@ const tabs = [
 ] as const
 
 async function switchProject() {
-  if (!projectRoot.value.trim()) return
-  try {
-    const res = await fetch('/control/project/switch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ project_root: projectRoot.value.trim() }),
-    })
-    if (!res.ok) throw new Error(`${res.status}`)
-    const list = JSON.parse(localStorage.getItem('zeus-recent-projects') || '[]') as string[]
-    const updated = [projectRoot.value.trim(), ...list.filter(p => p !== projectRoot.value.trim())].slice(0, 5)
-    localStorage.setItem('zeus-recent-projects', JSON.stringify(updated))
-    recentProjects.value = updated
-    await fetchMetrics()
-    await fetchTasks()
-    await fetchHealth()
-    projectRoot.value = ''
-  } catch (e: any) {
-    console.error('switch project error', e)
-  }
+  const ok = await taskStore.switchProject(projectRoot.value)
+  if (!ok) return
+  const list = JSON.parse(localStorage.getItem('zeus-recent-projects') || '[]') as string[]
+  const updated = [projectRoot.value.trim(), ...list.filter(p => p !== projectRoot.value.trim())].slice(0, 5)
+  localStorage.setItem('zeus-recent-projects', JSON.stringify(updated))
+  recentProjects.value = updated
+  projectRoot.value = ''
 }
 
 function selectRecentProject(path: string) {
@@ -103,138 +66,24 @@ function setLang(lang: string) {
   }
 }
 
-async function fetchMetrics() {
-  try {
-    const res = await fetch('/metrics/summary')
-    metrics.value = await res.json()
-  } catch (e) {
-    console.error('fetch metrics error', e)
-  }
-}
-
-async function fetchTasks() {
-  try {
-    const res = await fetch('/tasks')
-    tasks.value = await res.json()
-  } catch (e) {
-    console.error('fetch tasks error', e)
-  }
-}
-
-async function fetchHealth() {
-  try {
-    const res = await fetch('/health')
-    health.value = await res.json()
-  } catch (e) {
-    health.value = null
-    console.error('fetch health error', e)
-  }
-}
-
-let es: EventSource | null = null
-let pollTimer: number | null = null
-let healthTimer: number | null = null
-
-function connectSSE() {
-  es = new EventSource('/events/stream')
-  es.onopen = () => { connected.value = true }
-  es.onerror = () => { connected.value = false }
-  es.onmessage = (ev) => {
-    try {
-      const msg = JSON.parse(ev.data)
-      events.value.unshift({
-        time: new Date().toLocaleTimeString(locale.value === 'zh' ? 'zh-CN' : 'en-US'),
-        event: msg.event,
-        data: msg.data,
-      })
-      if (events.value.length > 80) events.value.pop()
-      if (msg.event && msg.event.startsWith('task.')) {
-        fetchTasks()
-        fetchMetrics()
-      }
-      if (msg.event === 'config.reloaded') {
-        fetchTasks()
-        fetchMetrics()
-      }
-    } catch (e) {
-      console.error('sse parse error', e)
-    }
-  }
-}
-
 onMounted(() => {
-  fetchMetrics()
-  fetchTasks()
-  fetchHealth()
-  connectSSE()
+  taskStore.fetchMetrics()
+  taskStore.fetchTasks()
+  taskStore.fetchHealth()
+  taskStore.connectSSE(locale.value)
+  taskStore.startPolling()
+  eventStore.fetchHistory()
   recentProjects.value = JSON.parse(localStorage.getItem('zeus-recent-projects') || '[]')
-  pollTimer = window.setInterval(() => {
-    fetchMetrics()
-    fetchTasks()
-  }, 5000)
-  healthTimer = window.setInterval(() => {
-    fetchHealth()
-  }, 15000)
 })
 
 onUnmounted(() => {
-  es?.close()
-  if (pollTimer) clearInterval(pollTimer)
-  if (healthTimer) clearInterval(healthTimer)
+  taskStore.stopPolling()
 })
 
-async function taskAction(path: string, id: string) {
-  try {
-    const res = await fetch(`/tasks/${id}/${path}`, { method: 'POST' })
-    if (!res.ok) throw new Error(`${res.status}`)
-    await fetchTasks()
-    await fetchMetrics()
-  } catch (e) {
-    console.error(`taskAction ${path} error`, e)
-  }
-}
-
-function onRetry(id: string) { taskAction('retry', id) }
-function onCancel(id: string) { taskAction('cancel', id) }
-function onPause(id: string) { taskAction('pause', id) }
-function onResume(id: string) { taskAction('resume', id) }
-function onQuarantine(id: string) { taskAction('quarantine', id) }
-function onUnquarantine(id: string) { taskAction('unquarantine', id) }
 function onControlRefresh() {
-  fetchTasks()
-  fetchMetrics()
-  fetchHealth()
-}
-
-async function onViewLogs(taskId: string) {
-  logsModal.value = { open: true, taskId, activity: '', loading: true }
-  try {
-    const res = await fetch(`/agents/zeus-agent-${taskId}/logs`)
-    const data = await res.json()
-    logsModal.value.activity = data.activity || ''
-  } catch (e: any) {
-    logsModal.value.activity = `Error: ${e?.message || String(e)}`
-  } finally {
-    logsModal.value.loading = false
-  }
-}
-
-async function onViewDetail(taskId: string) {
-  try {
-    const res = await fetch(`/tasks/${taskId}`)
-    const data = await res.json()
-    detailDrawer.value = { open: true, task: data }
-  } catch (e: any) {
-    console.error('fetch task detail error', e)
-  }
-}
-
-function closeLogsModal() {
-  logsModal.value.open = false
-}
-
-function closeDetailDrawer() {
-  detailDrawer.value.open = false
+  taskStore.fetchTasks()
+  taskStore.fetchMetrics()
+  taskStore.fetchHealth()
 }
 </script>
 
@@ -260,9 +109,9 @@ function closeDetailDrawer() {
 
         <div class="header-right">
           <!-- Health -->
-          <div v-if="health" class="health-badge" :class="health.status === 'ok' ? 'ok' : 'error'">
+          <div v-if="taskStore.health" class="health-badge" :class="taskStore.health.status === 'ok' ? 'ok' : 'error'">
             <HeartPulse :size="14" />
-            <span>{{ health.status === 'ok' ? t('health.ok') : t('health.error') }}</span>
+            <span>{{ taskStore.health.status === 'ok' ? t('health.ok') : t('health.error') }}</span>
           </div>
 
           <!-- Project switch -->
@@ -293,9 +142,9 @@ function closeDetailDrawer() {
             >{{ t('lang.en') }}</button>
           </div>
 
-          <div class="connection" :class="connected ? 'online' : 'offline'">
+          <div class="connection" :class="taskStore.connected ? 'online' : 'offline'">
             <span class="pulse-dot"></span>
-            <span class="text">{{ connected ? t('connection.online') : t('connection.offline') }}</span>
+            <span class="text">{{ taskStore.connected ? t('connection.online') : t('connection.offline') }}</span>
           </div>
         </div>
       </div>
@@ -308,8 +157,8 @@ function closeDetailDrawer() {
         <button
           v-for="tab in tabs"
           :key="tab.key"
-          :class="['tab-btn', { active: activeTab === tab.key }]"
-          @click="activeTab = tab.key"
+          :class="['tab-btn', { active: uiStore.activeTab === tab.key }]"
+          @click="uiStore.setTab(tab.key)"
         >
           <component :is="tab.icon" class="tab-icon" :size="16" />
           <span>{{ tab.label }}</span>
@@ -317,81 +166,61 @@ function closeDetailDrawer() {
       </nav>
 
       <!-- Overview -->
-      <section v-if="activeTab === 'overview'" class="animate-fade-in-up">
-        <StatsPanel :metrics="metrics" />
+      <section v-if="uiStore.activeTab === 'overview'" class="animate-fade-in-up">
+        <StatsPanel :metrics="taskStore.metrics" />
         <div class="workspace">
-          <TasksPanel
-            :tasks="tasks"
-            @retry="onRetry"
-            @cancel="onCancel"
-            @pause="onPause"
-            @resume="onResume"
-            @quarantine="onQuarantine"
-            @unquarantine="onUnquarantine"
-            @view-logs="onViewLogs"
-            @view-detail="onViewDetail"
-          />
-          <EventsPanel :events="events" />
+          <TasksPanel />
+          <EventsPanel />
         </div>
       </section>
 
       <!-- Tasks -->
-      <section v-if="activeTab === 'tasks'" class="animate-fade-in-up">
-        <TasksPanel
-          :tasks="tasks"
-          @retry="onRetry"
-          @cancel="onCancel"
-          @pause="onPause"
-          @resume="onResume"
-          @quarantine="onQuarantine"
-          @unquarantine="onUnquarantine"
-          @view-logs="onViewLogs"
-          @view-detail="onViewDetail"
-        />
+      <section v-if="uiStore.activeTab === 'tasks'" class="animate-fade-in-up">
+        <TasksPanel />
       </section>
 
       <!-- Events -->
-      <section v-if="activeTab === 'events'" class="animate-fade-in-up">
-        <EventsPanel :events="events" />
+      <section v-if="uiStore.activeTab === 'events'" class="animate-fade-in-up">
+        <EventsPanel />
       </section>
 
       <!-- Graph -->
-      <section v-if="activeTab === 'graph'" class="animate-fade-in-up">
+      <section v-if="uiStore.activeTab === 'graph'" class="animate-fade-in-up">
         <WorkflowGraphPanel />
       </section>
 
       <!-- Phases -->
-      <section v-if="activeTab === 'phases'" class="animate-fade-in-up">
+      <section v-if="uiStore.activeTab === 'phases'" class="animate-fade-in-up">
         <PhasesPanel />
       </section>
 
       <!-- Mailbox -->
-      <section v-if="activeTab === 'mailbox'" class="animate-fade-in-up">
+      <section v-if="uiStore.activeTab === 'mailbox'" class="animate-fade-in-up">
         <MailboxPanel />
       </section>
 
       <!-- Metrics -->
-      <section v-if="activeTab === 'metrics'" class="animate-fade-in-up">
+      <section v-if="uiStore.activeTab === 'metrics'" class="animate-fade-in-up">
         <MetricsPanel />
       </section>
 
       <!-- Control -->
-      <section v-if="activeTab === 'control'" class="animate-fade-in-up">
+      <section v-if="uiStore.activeTab === 'control'" class="animate-fade-in-up">
         <ControlCenter @refresh="onControlRefresh" />
       </section>
     </main>
 
     <!-- Logs Modal -->
     <Transition name="modal">
-      <div v-if="logsModal.open" class="modal-overlay" @click.self="closeLogsModal">
+      <div v-if="uiStore.logsModal.open" class="modal-overlay" @click.self="uiStore.closeLogs()">
         <div class="modal-content">
           <div class="modal-head">
-            <h3>Logs: {{ logsModal.taskId }}</h3>
-            <button class="modal-close" @click="closeLogsModal" aria-label="Close">×</button>
+            <h3>Logs: {{ uiStore.logsModal.taskId }}</h3>
+            <button class="modal-close" @click="uiStore.closeLogs()" aria-label="Close">×</button>
           </div>
           <div class="modal-body custom-scrollbar">
-            <div v-if="logsModal.loading" class="modal-loading">Loading…</div>
-            <pre v-else class="modal-pre">{{ logsModal.activity || 'No logs available.' }}</pre>
+            <div v-if="uiStore.logsModal.loading" class="modal-loading">Loading…</div>
+            <pre v-else class="modal-pre">{{ uiStore.logsModal.activity || 'No logs available.' }}</pre>
           </div>
         </div>
       </div>
@@ -399,9 +228,9 @@ function closeDetailDrawer() {
 
     <!-- Task Detail Drawer -->
     <TaskDetailDrawer
-      :open="detailDrawer.open"
-      :task="detailDrawer.task"
-      @close="closeDetailDrawer"
+      :open="uiStore.detailDrawer.open"
+      :task="uiStore.detailDrawer.task"
+      @close="uiStore.closeDetail()"
     />
   </div>
 </template>
