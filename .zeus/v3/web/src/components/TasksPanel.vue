@@ -9,6 +9,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   FileText,
+  Info,
 } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -34,6 +35,7 @@ const emit = defineEmits<{
   (e: 'quarantine', id: string): void
   (e: 'unquarantine', id: string): void
   (e: 'viewLogs', id: string): void
+  (e: 'viewDetail', id: string): void
 }>()
 
 const statusList = ['pending', 'running', 'completed', 'failed', 'paused'] as const
@@ -64,6 +66,7 @@ function onResume(id: string) { emit('resume', id) }
 function onQuarantine(id: string) { emit('quarantine', id) }
 function onUnquarantine(id: string) { emit('unquarantine', id) }
 function onViewLogs(id: string) { emit('viewLogs', id) }
+function onViewDetail(id: string) { emit('viewDetail', id) }
 </script>
 
 <template>
@@ -109,6 +112,9 @@ function onViewLogs(id: string) { emit('viewLogs', id) }
                   <button class="btn-action btn-danger" @click="onQuarantine(task.id)">
                     <ShieldAlert :size="13" /> {{ t('actions.quarantine') }}
                   </button>
+                  <button class="btn-action btn-secondary" @click="onViewDetail(task.id)">
+                    <Info :size="13" /> {{ t('tasks.detail') }}
+                  </button>
                 </template>
                 <template v-else-if="task.status === 'pending'">
                   <button class="btn-action btn-warn" @click="onPause(task.id)">
@@ -119,6 +125,9 @@ function onViewLogs(id: string) { emit('viewLogs', id) }
                   </button>
                   <button class="btn-action btn-secondary" @click="onViewLogs(task.id)">
                     <FileText :size="13" /> {{ t('actions.logs') }}
+                  </button>
+                  <button class="btn-action btn-secondary" @click="onViewDetail(task.id)">
+                    <Info :size="13" /> {{ t('tasks.detail') }}
                   </button>
                 </template>
                 <template v-else-if="task.status === 'paused'">
@@ -131,6 +140,9 @@ function onViewLogs(id: string) { emit('viewLogs', id) }
                   <button class="btn-action btn-secondary" @click="onViewLogs(task.id)">
                     <FileText :size="13" /> {{ t('actions.logs') }}
                   </button>
+                  <button class="btn-action btn-secondary" @click="onViewDetail(task.id)">
+                    <Info :size="13" /> {{ t('tasks.detail') }}
+                  </button>
                 </template>
                 <template v-else-if="task.status === 'failed'">
                   <button class="btn-action btn-primary" @click="onRetry(task.id)">
@@ -142,6 +154,9 @@ function onViewLogs(id: string) { emit('viewLogs', id) }
                   <button class="btn-action btn-secondary" @click="onViewLogs(task.id)">
                     <FileText :size="13" /> {{ t('actions.logs') }}
                   </button>
+                  <button class="btn-action btn-secondary" @click="onViewDetail(task.id)">
+                    <Info :size="13" /> {{ t('tasks.detail') }}
+                  </button>
                 </template>
                 <template v-else-if="task.status === 'completed'">
                   <button class="btn-action btn-danger" @click="onQuarantine(task.id)">
@@ -149,6 +164,9 @@ function onViewLogs(id: string) { emit('viewLogs', id) }
                   </button>
                   <button class="btn-action btn-secondary" @click="onViewLogs(task.id)">
                     <FileText :size="13" /> {{ t('actions.logs') }}
+                  </button>
+                  <button class="btn-action btn-secondary" @click="onViewDetail(task.id)">
+                    <Info :size="13" /> {{ t('tasks.detail') }}
                   </button>
                 </template>
               </div>

@@ -19,7 +19,8 @@
     "graph": "依赖图",
     "phases": "阶段",
     "mailbox": "信箱",
-    "control": "控制"
+    "control": "控制",
+    "metrics": "指标"
   },
   "stats": {
     "total": "总任务",
@@ -38,7 +39,17 @@
     "result": "结果",
     "actions": "操作",
     "unnamed": "未命名任务",
-    "empty": "暂无任务数据"
+    "empty": "暂无任务数据",
+    "detail": "详情",
+    "dependsOn": "依赖",
+    "files": "文件",
+    "commitSha": "提交",
+    "worker": "工作进程",
+    "heartbeat": "心跳",
+    "scheduledWave": "调度 wave",
+    "rescheduledFrom": "从 wave 调整",
+    "milestone": "里程碑",
+    "description": "描述"
   },
   "status": {
     "pending": "等待中",
@@ -58,11 +69,24 @@
     "resume": "恢复",
     "quarantine": "隔离",
     "unquarantine": "解除隔离",
-    "logs": "日志"
+    "logs": "日志",
+    "create": "创建",
+    "edit": "编辑",
+    "delete": "删除",
+    "save": "保存",
+    "close": "关闭",
+    "send": "发送",
+    "refresh": "刷新",
+    "search": "搜索"
   },
   "events": {
     "title": "实时事件流",
-    "empty": "等待事件…"
+    "history": "历史事件",
+    "empty": "等待事件…",
+    "filterType": "事件类型",
+    "filterTask": "任务 ID",
+    "filterAgent": "Agent ID",
+    "loadMore": "加载更多"
   },
   "control": {
     "title": "控制中心",
@@ -94,14 +118,43 @@
     "title": "阶段与里程碑",
     "empty": "暂无阶段",
     "milestones": "里程碑",
-    "tasks": "任务"
+    "tasks": "任务",
+    "createPhase": "创建阶段",
+    "editPhase": "编辑阶段",
+    "createMilestone": "创建里程碑",
+    "editMilestone": "编辑里程碑",
+    "name": "名称",
+    "status": "状态",
+    "progress": "进度",
+    "selectTasks": "选择任务",
+    "confirmDelete": "确定要删除此项吗？"
   },
   "mailbox": {
     "title": "Agent 信箱",
     "empty": "暂无消息",
     "to": "收件人",
     "from": "发件人",
-    "markRead": "标记已读"
+    "markRead": "标记已读",
+    "sendMessage": "发送消息",
+    "message": "消息内容"
+  },
+  "metrics": {
+    "title": "指标",
+    "taskMetrics": "任务指标",
+    "bottleneck": "瓶颈分析",
+    "blocked": "阻塞链路",
+    "duration": "耗时",
+    "avgDuration": "平均",
+    "minDuration": "最小",
+    "maxDuration": "最大",
+    "calls": "调用次数",
+    "blockedBy": "阻塞源",
+    "noData": "暂无数据"
+  },
+  "health": {
+    "title": "健康",
+    "ok": "健康",
+    "error": "异常"
   },
   "feedback": {
     "success": "成功",

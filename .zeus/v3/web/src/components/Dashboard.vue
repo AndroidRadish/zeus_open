@@ -9,6 +9,8 @@ import {
   Layers,
   Mail,
   SlidersHorizontal,
+  BarChart3,
+  HeartPulse,
 } from 'lucide-vue-next'
 import StatsPanel from './StatsPanel.vue'
 import TasksPanel from './TasksPanel.vue'
@@ -17,7 +19,10 @@ import ControlCenter from './ControlCenter.vue'
 import WorkflowGraphPanel from './WorkflowGraphPanel.vue'
 import PhasesPanel from './PhasesPanel.vue'
 import MailboxPanel from './MailboxPanel.vue'
+import MetricsPanel from './MetricsPanel.vue'
+import TaskDetailDrawer from './TaskDetailDrawer.vue'
 import type { Task } from './TasksPanel.vue'
+import type { TaskDetail } from './TaskDetailDrawer.vue'
 
 const { t, locale } = useI18n()
 
@@ -34,7 +39,7 @@ const tasks = ref<Task[]>([])
 const metrics = ref<Metrics | null>(null)
 const events = ref<{ time: string; event: string; data: any }[]>([])
 const connected = ref(false)
-const activeTab = ref<'overview' | 'tasks' | 'events' | 'graph' | 'phases' | 'mailbox' | 'control'>('overview')
+const activeTab = ref<'overview' | 'tasks' | 'events' | 'graph' | 'phases' | 'mailbox' | 'control' | 'metrics'>('overview')
 
 const logsModal = ref<{ open: boolean; taskId: string; activity: string; loading: boolean }>({
   open: false,
@@ -42,6 +47,13 @@ const logsModal = ref<{ open: boolean; taskId: string; activity: string; loading
   activity: '',
   loading: false,
 })
+
+const detailDrawer = ref<{ open: boolean; task: TaskDetail | null }>({
+  open: false,
+  task: null,
+})
+
+const health = ref<{ status: string; store: string } | null>(null)
 
 const projectRoot = ref('')
 const recentProjects = ref<string[]>([])
@@ -53,6 +65,7 @@ const tabs = [
   { key: 'graph', label: t('tabs.graph'), icon: GitGraph },
   { key: 'phases', label: t('tabs.phases'), icon: Layers },
   { key: 'mailbox', label: t('tabs.mailbox'), icon: Mail },
+  { key: 'metrics', label: t('tabs.metrics'), icon: BarChart3 },
   { key: 'control', label: t('tabs.control'), icon: SlidersHorizontal },
 ] as const
 
@@ -71,6 +84,7 @@ async function switchProject() {
     recentProjects.value = updated
     await fetchMetrics()
     await fetchTasks()
+    await fetchHealth()
     projectRoot.value = ''
   } catch (e: any) {
     console.error('switch project error', e)
@@ -107,8 +121,19 @@ async function fetchTasks() {
   }
 }
 
+async function fetchHealth() {
+  try {
+    const res = await fetch('/health')
+    health.value = await res.json()
+  } catch (e) {
+    health.value = null
+    console.error('fetch health error', e)
+  }
+}
+
 let es: EventSource | null = null
 let pollTimer: number | null = null
+let healthTimer: number | null = null
 
 function connectSSE() {
   es = new EventSource('/events/stream')
@@ -140,17 +165,22 @@ function connectSSE() {
 onMounted(() => {
   fetchMetrics()
   fetchTasks()
+  fetchHealth()
   connectSSE()
   recentProjects.value = JSON.parse(localStorage.getItem('zeus-recent-projects') || '[]')
   pollTimer = window.setInterval(() => {
     fetchMetrics()
     fetchTasks()
   }, 5000)
+  healthTimer = window.setInterval(() => {
+    fetchHealth()
+  }, 15000)
 })
 
 onUnmounted(() => {
   es?.close()
   if (pollTimer) clearInterval(pollTimer)
+  if (healthTimer) clearInterval(healthTimer)
 })
 
 async function taskAction(path: string, id: string) {
@@ -170,10 +200,10 @@ function onPause(id: string) { taskAction('pause', id) }
 function onResume(id: string) { taskAction('resume', id) }
 function onQuarantine(id: string) { taskAction('quarantine', id) }
 function onUnquarantine(id: string) { taskAction('unquarantine', id) }
-
 function onControlRefresh() {
   fetchTasks()
   fetchMetrics()
+  fetchHealth()
 }
 
 async function onViewLogs(taskId: string) {
@@ -189,8 +219,22 @@ async function onViewLogs(taskId: string) {
   }
 }
 
+async function onViewDetail(taskId: string) {
+  try {
+    const res = await fetch(`/tasks/${taskId}`)
+    const data = await res.json()
+    detailDrawer.value = { open: true, task: data }
+  } catch (e: any) {
+    console.error('fetch task detail error', e)
+  }
+}
+
 function closeLogsModal() {
   logsModal.value.open = false
+}
+
+function closeDetailDrawer() {
+  detailDrawer.value.open = false
 }
 </script>
 
@@ -215,6 +259,12 @@ function closeLogsModal() {
         </div>
 
         <div class="header-right">
+          <!-- Health -->
+          <div v-if="health" class="health-badge" :class="health.status === 'ok' ? 'ok' : 'error'">
+            <HeartPulse :size="14" />
+            <span>{{ health.status === 'ok' ? t('health.ok') : t('health.error') }}</span>
+          </div>
+
           <!-- Project switch -->
           <div class="project-switch">
             <input
@@ -279,6 +329,7 @@ function closeLogsModal() {
             @quarantine="onQuarantine"
             @unquarantine="onUnquarantine"
             @view-logs="onViewLogs"
+            @view-detail="onViewDetail"
           />
           <EventsPanel :events="events" />
         </div>
@@ -295,6 +346,7 @@ function closeLogsModal() {
           @quarantine="onQuarantine"
           @unquarantine="onUnquarantine"
           @view-logs="onViewLogs"
+          @view-detail="onViewDetail"
         />
       </section>
 
@@ -318,6 +370,11 @@ function closeLogsModal() {
         <MailboxPanel />
       </section>
 
+      <!-- Metrics -->
+      <section v-if="activeTab === 'metrics'" class="animate-fade-in-up">
+        <MetricsPanel />
+      </section>
+
       <!-- Control -->
       <section v-if="activeTab === 'control'" class="animate-fade-in-up">
         <ControlCenter @refresh="onControlRefresh" />
@@ -339,6 +396,13 @@ function closeLogsModal() {
         </div>
       </div>
     </Transition>
+
+    <!-- Task Detail Drawer -->
+    <TaskDetailDrawer
+      :open="detailDrawer.open"
+      :task="detailDrawer.task"
+      @close="closeDetailDrawer"
+    />
   </div>
 </template>
 
@@ -461,6 +525,27 @@ function closeLogsModal() {
   gap: 0.75rem;
 }
 
+.health-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--z-border);
+}
+.health-badge.ok {
+  background: rgba(52,211,153,0.1);
+  color: var(--z-success);
+  border-color: rgba(52,211,153,0.25);
+}
+.health-badge.error {
+  background: rgba(251,113,133,0.1);
+  color: var(--z-danger);
+  border-color: rgba(251,113,133,0.25);
+}
+
 .project-switch {
   display: flex;
   align-items: center;
@@ -481,6 +566,7 @@ function closeLogsModal() {
 .project-input:focus {
   border-color: rgba(34, 211, 238, 0.35);
   box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.08);
+  outline: none;
 }
 .project-input::placeholder { color: var(--z-text-muted); }
 

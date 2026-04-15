@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Mail, Eye, Search } from 'lucide-vue-next'
+import { Mail, Eye, Search, Send, Loader2 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -18,6 +18,13 @@ const messages = ref<Message[]>([])
 const filterTo = ref('')
 const filterUnread = ref(false)
 const loading = ref(false)
+const sendLoading = ref(false)
+
+const sendForm = ref({
+  from_agent: '',
+  to_agent: '',
+  message: '',
+})
 
 async function fetchMessages() {
   loading.value = true
@@ -44,6 +51,30 @@ async function markRead(id: number) {
   }
 }
 
+async function sendMessage() {
+  if (!sendForm.value.from_agent.trim() || !sendForm.value.to_agent.trim() || !sendForm.value.message.trim()) return
+  sendLoading.value = true
+  try {
+    const res = await fetch('/mailbox', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from_agent: sendForm.value.from_agent.trim(),
+        to_agent: sendForm.value.to_agent.trim(),
+        message: sendForm.value.message.trim(),
+      }),
+    })
+    if (res.ok) {
+      sendForm.value = { from_agent: '', to_agent: '', message: '' }
+      await fetchMessages()
+    }
+  } catch (e) {
+    console.error('send message error', e)
+  } finally {
+    sendLoading.value = false
+  }
+}
+
 onMounted(fetchMessages)
 </script>
 
@@ -66,7 +97,35 @@ onMounted(fetchMessages)
           <input v-model="filterUnread" type="checkbox" @change="fetchMessages" />
           Unread only
         </label>
-        <button class="btn-refresh" @click="fetchMessages">Refresh</button>
+        <button class="btn-refresh" @click="fetchMessages">{{ t('actions.refresh') }}</button>
+      </div>
+    </div>
+
+    <!-- Send form -->
+    <div class="send-section">
+      <div class="send-title"><Send :size="14" /> {{ t('mailbox.sendMessage') }}</div>
+      <div class="send-fields">
+        <label class="send-field">
+          <span class="send-label">{{ t('mailbox.from') }}</span>
+          <input v-model="sendForm.from_agent" type="text" class="send-input" placeholder="agent-id" />
+        </label>
+        <label class="send-field">
+          <span class="send-label">{{ t('mailbox.to') }}</span>
+          <input v-model="sendForm.to_agent" type="text" class="send-input" placeholder="agent-id" />
+        </label>
+        <label class="send-field send-field-wide">
+          <span class="send-label">{{ t('mailbox.message') }}</span>
+          <textarea v-model="sendForm.message" class="send-input send-textarea" rows="2"></textarea>
+        </label>
+        <button
+          class="btn-send"
+          :disabled="sendLoading || !sendForm.from_agent.trim() || !sendForm.to_agent.trim() || !sendForm.message.trim()"
+          @click="sendMessage"
+        >
+          <Loader2 v-if="sendLoading" class="spinner" :size="14" />
+          <Send v-else :size="14" />
+          <span>{{ t('actions.send') }}</span>
+        </button>
       </div>
     </div>
 
@@ -150,6 +209,7 @@ onMounted(fetchMessages)
 .filter-input:focus {
   border-color: rgba(34, 211, 238, 0.35);
   box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.08);
+  outline: none;
 }
 .filter-input::placeholder { color: var(--z-text-muted); }
 .filter-check {
@@ -173,6 +233,88 @@ onMounted(fetchMessages)
   transition: all 0.2s ease;
 }
 .btn-refresh:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); }
+
+.send-section {
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+}
+.send-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--z-text-secondary);
+  margin-bottom: 0.6rem;
+}
+.send-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+  align-items: end;
+}
+.send-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.send-field-wide {
+  grid-column: span 2;
+}
+.send-label {
+  font-size: 0.75rem;
+  color: var(--z-text-secondary);
+}
+.send-input {
+  appearance: none;
+  border: 1px solid var(--z-border);
+  background: rgba(255,255,255,0.04);
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 0.5rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.send-input:focus {
+  border-color: rgba(34,211,238,0.35);
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.08);
+  outline: none;
+}
+.send-textarea {
+  resize: vertical;
+  min-height: 56px;
+}
+.btn-send {
+  appearance: none;
+  border: 1px solid rgba(34,211,238,0.22);
+  background: rgba(34,211,238,0.12);
+  color: var(--z-accent-cyan);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+.btn-send:hover:not(:disabled) { background: rgba(34,211,238,0.2); border-color: rgba(34,211,238,0.35); }
+.btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 480px) {
+  .send-fields {
+    grid-template-columns: 1fr;
+  }
+  .send-field-wide {
+    grid-column: span 1;
+  }
+}
+
 .empty {
   color: var(--z-text-muted);
   font-size: 0.9rem;
@@ -233,5 +375,11 @@ onMounted(fetchMessages)
 .btn-action:hover {
   background: rgba(34,211,238,0.16);
   border-color: rgba(34,211,238,0.35);
+}
+.spinner {
+  animation: spin 1.2s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>
