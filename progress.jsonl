@@ -1,0 +1,6 @@
+{"ts": "2026-04-15T08:55:00Z", "step": "planning", "message": "开始执行 T-V3-022 PostgresStateStore 集成测试与生产验证"}
+{"ts": "2026-04-15T09:00:00Z", "step": "reading", "message": "环境检查：无本地 PostgreSQL 服务，无 Docker，choco 安装因权限失败。T-V3-022 / T-V3-023 被基础设施阻塞。"}
+{"ts": "2026-04-15T09:00:30Z", "step": "planning", "message": "决策：先执行完全无阻塞的 T-V3-026 (Pinia 状态管理) 和 T-V3-027 (v1/v2 清理)，随后用 CI 方式补齐 Postgres / Docker 测试。"}
+{"ts": "2026-04-15T09:01:00Z", "step": "writing", "message": "开始 T-V3-026：安装 Pinia 并创建 stores/taskStore.ts, eventStore.ts, uiStore.ts"}
+{"ts": "2026-04-15T09:20:00Z", "step": "completed", "message": "T-V3-026 Pinia migration finished: Dashboard, TasksPanel, EventsPanel now use stores. 75/75 tests pass. Commit 33e0e94."}
+{"ts": "2026-04-15T09:21:00Z", "step": "blocked", "message": "T-V3-022 Postgres integration tests blocked: no Docker client in PATH, no WSL distro installed, and Windows PostgreSQL install requires elevation."}
