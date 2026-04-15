@@ -1,6 +1,6 @@
 {
   "version": "v3",
-  "updated_at": "2026-04-13T08:00:00Z",
+  "updated_at": "2026-04-15T08:50:00Z",
   "phases": [
     {
       "id": "P-V3-001",
@@ -65,7 +65,7 @@
     {
       "id": "M-V3-003",
       "title": "Ecosystem Extensions",
-      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019"],
+      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021"],
       "status": "completed",
       "progress_percent": 100,
       "story_ids": ["US-V3-005", "US-V3-006", "US-V3-007"]
@@ -193,6 +193,32 @@
       "commit_sha": "8a1423c",
       "created_at": "2026-04-14T16:00:00Z",
       "completed_at": "2026-04-14T14:09:20Z"
+    },
+    {
+      "id": "T-V3-021",
+      "story_id": "US-V3-008",
+      "type": "feat",
+      "title": "Dashboard 功能补全与后端能力对齐",
+      "description": "补齐 Dashboard 中缺失的后端功能 UI：Metrics 分析面板（Task Metrics / Bottleneck / Blocked Chains）、Task 详情侧滑抽屉、Phase/Milestone 完整 CRUD、Mailbox 发送消息表单、Events 历史查询与过滤、Health 状态徽章。保持现有玻璃拟态设计风格，更新 i18n 双语文案，重新构建静态资源。",
+      "wave": 10,
+      "milestone_id": "M-V3-003",
+      "depends_on": ["T-V3-015", "T-V3-018", "T-V3-019"],
+      "files": [
+        ".zeus/v3/web/src/components/MetricsPanel.vue",
+        ".zeus/v3/web/src/components/TaskDetailDrawer.vue",
+        ".zeus/v3/web/src/components/Dashboard.vue",
+        ".zeus/v3/web/src/components/TasksPanel.vue",
+        ".zeus/v3/web/src/components/PhasesPanel.vue",
+        ".zeus/v3/web/src/components/MailboxPanel.vue",
+        ".zeus/v3/web/src/components/EventsPanel.vue",
+        ".zeus/v3/web/src/i18n/locales/en.json",
+        ".zeus/v3/web/src/i18n/locales/zh.json",
+        ".zeus/v3/scripts/api/static/"
+      ],
+      "passes": true,
+      "commit_sha": "e953375",
+      "created_at": "2026-04-15T08:00:00Z",
+      "completed_at": "2026-04-15T08:50:00Z"
     }
   ]
 }
