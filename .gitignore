@@ -4,6 +4,8 @@
 *.pyc
 *.pyo
 .zeus/v2/agent-workspaces/
+.zeus/v2/agent-logs/
+**/__pycache__/
 *.db
 *.sqlite
 *.sqlite3
