@@ -55,3 +55,19 @@
   - 更新 i18n 双语文案，重新构建静态资源
 - **North star impact**: adoption_rate ↑↑ (Dashboard 完整度提升，可直接操作所有后端能力)
 - **Notes**: 75/75 tests passed. Build successful. Commit `e953375`.
+
+---
+
+## FEATURE — 2026-04-15
+
+- **Event**: v3 Dashboard Pinia 状态管理迁移 (T-V3-026)
+- **Version**: v3
+- **Deliverables**:
+  - 安装并集成 `pinia`，重构 Dashboard 状态层
+  - 新增 `taskStore`：统一管理任务、指标、健康状态、SSE 连接与轮询
+  - 新增 `eventStore`：统一管理实时事件流与历史事件
+  - 新增 `uiStore`：统一管理标签页、日志弹窗、任务详情抽屉
+  - `Dashboard.vue`、`TasksPanel.vue`、`EventsPanel.vue` 消除 props drilling，直接消费 store
+  - 保持所有组件模板与视觉风格不变，零破坏性迁移
+- **North star impact**: adoption_rate ↑ (Dashboard 可维护性提升，为后续功能扩展打下基础)
+- **Notes**: 75/75 tests passed. Build successful. Commit `33e0e94`.
