@@ -105,6 +105,17 @@ See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specif
 - **Multi-version Switching** — switch between `main`, `v2`, and future versions directly in the Web UI.
 - **Project Picker** — open and manage other local Zeus projects from the dashboard without restarting the server.
 
+### What's New in v3 (Beta)
+
+- **Database-centric state** — SQLite/PostgreSQL backed task state with async SQLAlchemy
+- **Queue-Worker separation** — horizontally-scalable scheduler + worker pool architecture
+- **Vite + Vue 3 Dashboard** — componentized SPA with Pinia state management and SSE real-time updates
+- **Metrics & Observability** — bottleneck detection, blocked chain analysis, and OpenTelemetry tracing
+- **Hot Reload** — runtime `task.json` re-import without server restart
+- **Docker & K8s Ready** — split `api` / `scheduler` / `worker` containers with Redis queue backend
+
+See [`.zeus/v3/README.md`](.zeus/v3/README.md) for the v3 quick-start guide.
+
 ### Current Development Status
 
 | Milestone | Status | Tasks |
@@ -112,6 +123,8 @@ See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specif
 | M-008 — Web UI & Multi-language | ✅ Completed | T-023 ~ T-025 |
 | M-009 — Phase Layer | ✅ Completed | T-026 ~ T-029 |
 | M-010 — Global Orchestrator & Agent Collaboration | ✅ Completed | T-030 ~ T-034 |
+| v3 Phase 1 — Foundation & Queue-Worker | ✅ Completed | T-V3-001 ~ T-V3-003 |
+| v3 Phase 2 — Real-time Dashboard & Control Plane | ✅ Completed | T-V3-015, T-V3-018, T-V3-019, T-V3-021, T-V3-026 |
 
 ## Workflow
 

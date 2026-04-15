@@ -32,12 +32,17 @@ Open http://127.0.0.1:8000/dashboard
 
 The dashboard includes:
 - **Overview** — live metrics, task list, and event stream
-- **Tasks** — inline actions (Retry / Cancel / Pause / Resume / Quarantine / Logs)
-- **Events** — real-time SSE event log with progress highlights
+- **Tasks** — inline actions (Retry / Cancel / Pause / Resume / Quarantine / Logs / Detail)
+- **Task Detail Drawer** — slide-out panel showing full task fields, dependencies, and activity logs
+- **Events** — real-time SSE event log with progress highlights and searchable history
+- **Metrics** — bottleneck analysis, blocked dependency chains, and per-task duration stats
 - **Graph** — task dependency graph (SVG / Mermaid / ECharts)
-- **Phases** — phase & milestone progress with drill-down
-- **Mailbox** — AgentBus point-to-point message inbox
+- **Phases** — phase & milestone CRUD with drill-down to task lists
+- **Mailbox** — AgentBus point-to-point message inbox with send form
 - **Control** — scheduler / worker management and one-click global run
+- **Hot Reload** — automatically re-imports `task.json` changes in `serve` mode and broadcasts `config.reloaded` via SSE
+
+**Front-end architecture**: the dashboard uses **Pinia** for global state management (`taskStore`, `eventStore`, `uiStore`), eliminating props-drilling and making the UI fully reactive to SSE events.
 
 ### Check status without running
 

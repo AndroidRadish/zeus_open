@@ -60,6 +60,11 @@ python .zeus/scripts/zeus_runner.py
 python .zeus/scripts/zeus_runner.py --plan
 ```
 
+#### v3 多 Agent 框架（Beta）
+
+全新的数据库化、水平可扩展执行引擎，支持实时 SSE 控制台与 Docker Compose 部署：
+详见 [`.zeus/v3/README.md`](.zeus/v3/README.md)。
+
 #### v2 并行模式与 Web 控制台
 
 如需并行波次执行和可视化控制台，启动 v2 后端并打开零构建 Web UI：
@@ -89,6 +94,17 @@ Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档
 - **多版本切换** — 在 Web UI 中直接切换 `main`、`v2` 及未来版本。
 - **项目选择器** — 无需重启服务，即可在控制台中打开并管理其他本地 Zeus 项目。
 
+### v3 新特性（Beta）
+
+- **数据库化状态管理** — 基于 SQLite/PostgreSQL 的异步任务状态存储，彻底替代文件锁
+- **调度-执行分离** — 调度器与 Worker 池解耦，支持水平扩展
+- **Vite + Vue 3 控制台** — 组件化单页应用，采用 Pinia 全局状态管理，SSE 实时推送
+- **Metrics 与可观测性** — 瓶颈检测、阻塞链分析、OpenTelemetry 链路追踪
+- **热重载** — `serve` 模式下自动监听 `task.json` 变更并重新导入，无需重启服务
+- **Docker 与 K8s 就绪** — 支持 `api` / `scheduler` / `worker` 多容器拆分，Redis 队列后端
+
+详见 [`.zeus/v3/README.md`](.zeus/v3/README.md)。
+
 ### 当前开发状态
 
 | 里程碑 | 状态 | 任务 |
@@ -96,6 +112,8 @@ Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档
 | M-008 — Web UI 与多语言 | ✅ 已完成 | T-023 ~ T-025 |
 | M-009 — 阶段（Phase）层 | ✅ 已完成 | T-026 ~ T-029 |
 | M-010 — 全局调度器与 Agent 协作 | ✅ 已完成 | T-030 ~ T-034 |
+| v3 Phase 1 — 基础架构与队列 worker | ✅ 已完成 | T-V3-001 ~ T-V3-003 |
+| v3 Phase 2 — 实时控制台与控制平面 | ✅ 已完成 | T-V3-015、T-V3-018、T-V3-019、T-V3-021、T-V3-026 |
 
 ## 工作流
 
