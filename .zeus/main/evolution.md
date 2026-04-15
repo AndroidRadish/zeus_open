@@ -71,3 +71,28 @@
   - 保持所有组件模板与视觉风格不变，零破坏性迁移
 - **North star impact**: adoption_rate ↑ (Dashboard 可维护性提升，为后续功能扩展打下基础)
 - **Notes**: 75/75 tests passed. Build successful. Commit `33e0e94`.
+
+---
+
+## CHORE — 2026-04-15
+
+- **Event**: v1/v2 废弃代码与临时产物清理 (T-V3-027)
+- **Version**: v3
+- **Deliverables**:
+  - 清理 `.zeus/v2/agent-workspaces/` 与 `agent-logs/` 中的历史运行残留（约 1800+ 文件）
+  - 清理 `.zeus/v2/` 下的 `__pycache__` 与 `.pyc` 文件
+  - 更新 `.gitignore`，防止临时产物再次进入版本控制
+- **North star impact**: cross_platform_coverage ↑（减少仓库体积，降低克隆时间）
+- **Notes**: Commit `3deb5af`.
+
+---
+
+## DOCS — 2026-04-15
+
+- **Event**: v3 文档同步与 README 更新 (T-V3-028)
+- **Version**: v3
+- **Deliverables**:
+  - 更新 `.zeus/v3/README.md`：补充 Dashboard 新功能（Metrics、Task Detail Drawer、Events History、Hot Reload、Pinia 架构）
+  - 更新主 `README.md` / `README.zh-CN.md`：新增 v3 Beta 特性摘要与开发状态
+- **North star impact**: documentation_completeness ↑，adoption_rate ↑（降低新用户上手成本）
+- **Notes**: Commit `ac546c4`.

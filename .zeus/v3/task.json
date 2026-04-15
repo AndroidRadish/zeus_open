@@ -221,6 +221,97 @@
       "completed_at": "2026-04-15T08:50:00Z"
     },
     {
+      "id": "T-V3-022",
+      "story_id": "US-V3-009",
+      "type": "feat",
+      "title": "PostgresStateStore 集成测试与生产验证",
+      "description": "为 PostgresStateStore 编写完整的 asyncpg 集成测试，覆盖任务生命周期、隔离、事件存储与 metrics 查询。测试需在 Docker PostgreSQL 或 CI 环境中运行。",
+      "wave": 12,
+      "milestone_id": "M-V3-003",
+      "depends_on": ["T-V3-026"],
+      "files": [
+        ".zeus/v3/scripts/store/postgres_store.py",
+        ".zeus/v3/scripts/tests/test_v3_postgres_store.py"
+      ],
+      "passes": false,
+      "notes": "Blocked: 当前环境缺少 Docker 客户端与 WSL，无法本地运行 PostgreSQL 容器。等待用户修复 Docker 环境后执行。",
+      "created_at": "2026-04-15T09:20:00Z"
+    },
+    {
+      "id": "T-V3-023",
+      "story_id": "US-V3-010",
+      "type": "feat",
+      "title": "Docker sandbox dispatcher 完善与测试",
+      "description": "完善 docker dispatcher 的资源限制（cgroup/cpu/memory）、只读挂载与输出 volume 隔离，并补充端到端测试。",
+      "wave": 13,
+      "milestone_id": "M-V3-003",
+      "depends_on": ["T-V3-022"],
+      "files": [
+        ".zeus/v3/scripts/dispatcher/docker.py",
+        ".zeus/v3/scripts/tests/test_v3_dispatcher_docker.py"
+      ],
+      "passes": false,
+      "notes": "Blocked: 依赖 Docker 运行时。等待用户修复 Docker 环境后执行。",
+      "created_at": "2026-04-15T09:20:00Z"
+    },
+    {
+      "id": "T-V3-024",
+      "story_id": "US-V3-010",
+      "type": "feat",
+      "title": "多镜像拆分与 docker-compose 生产验证",
+      "description": "验证 zeus-api / zeus-scheduler / zeus-worker 三容器拆分在 docker-compose 中的协同工作，确保 Redis queue、状态共享、控制平面禁用等配置正确。",
+      "wave": 14,
+      "milestone_id": "M-V3-003",
+      "depends_on": ["T-V3-023"],
+      "files": [
+        ".zeus/v3/Dockerfile",
+        ".zeus/v3/docker-compose.yml",
+        ".zeus/v3/scripts/"
+      ],
+      "passes": false,
+      "notes": "Blocked: 依赖 Docker 运行时。等待用户修复 Docker 环境后执行。",
+      "created_at": "2026-04-15T09:20:00Z"
+    },
+    {
+      "id": "T-V3-027",
+      "story_id": "US-V3-011",
+      "type": "chore",
+      "title": "v1/v2 废弃代码与临时产物清理",
+      "description": "清理 .zeus/v2/agent-workspaces 与 agent-logs 中的历史运行残留，移除不再引用的旧脚本与临时文件，确保仓库体积可控。",
+      "wave": 15,
+      "milestone_id": "M-V3-003",
+      "depends_on": ["T-V3-026"],
+      "files": [
+        ".zeus/v2/agent-workspaces/",
+        ".zeus/v2/agent-logs/",
+        ".gitignore"
+      ],
+      "passes": true,
+      "commit_sha": "3deb5af",
+      "created_at": "2026-04-15T09:20:00Z",
+      "completed_at": "2026-04-15T09:30:00Z"
+    },
+    {
+      "id": "T-V3-028",
+      "story_id": "US-V3-011",
+      "type": "docs",
+      "title": "v3 文档同步与 README 更新",
+      "description": "更新 .zeus/v3/README.md 与主 README.md，补充 Dashboard Pinia 架构、MetricsPanel、TaskDetailDrawer、Phase/Milestone/ Mailbox/ Hot-reload 等新功能的使用说明与截图占位。",
+      "wave": 16,
+      "milestone_id": "M-V3-003",
+      "depends_on": ["T-V3-027"],
+      "files": [
+        ".zeus/v3/README.md",
+        ".zeus/v3/README.zh-CN.md",
+        "README.md",
+        "README.zh-CN.md"
+      ],
+      "passes": true,
+      "commit_sha": "ac546c4",
+      "created_at": "2026-04-15T09:20:00Z",
+      "completed_at": "2026-04-15T09:35:00Z"
+    },
+    {
       "id": "T-V3-026",
       "story_id": "US-V3-008",
       "type": "refactor",

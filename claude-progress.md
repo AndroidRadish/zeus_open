@@ -201,3 +201,19 @@
   - ✅ `npm run build` 零错误，静态资源已重新生成
   - ✅ 75/75 v3 测试全绿
   - **Commit**: `33e0e94`
+
+- **North star impact**: adoption_rate ↑ (Dashboard 可维护性提升，为后续功能扩展打下基础)
+- **Notes**: 75/75 tests passed. Build successful. Commit `33e0e94`.
+
+### 2026-04-15 (continued)
+- **已完成（T-V3-027）**：v1/v2 废弃代码与临时产物清理
+  - ✅ 删除 `.zeus/v2/agent-workspaces/` 中 11 个历史残留目录（共 1859 个文件/目录）
+  - ✅ 删除 `.zeus/v2/agent-logs/` 中 12 个历史日志目录（共 22 个文件）
+  - ✅ 删除 `.zeus/v2/` 下 3 个 `__pycache__` 目录与 47 个 `.pyc` 文件
+  - ✅ 更新 `.gitignore`，新增 `.zeus/v2/agent-logs/` 与 `**/__pycache__/` 规则
+  - **Commit**: `3deb5af`
+
+- **已完成（T-V3-028）**：v3 文档同步与 README 更新
+  - ✅ `.zeus/v3/README.md`：补充 Dashboard 新功能说明（Metrics、Task Detail Drawer、Events History、Hot Reload、Pinia 架构）
+  - ✅ `README.md` / `README.zh-CN.md`：新增 "What's New in v3 (Beta)" 板块，更新开发状态表格
+  - **Commit**: `ac546c4`
