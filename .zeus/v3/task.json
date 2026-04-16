@@ -65,7 +65,7 @@
     {
       "id": "M-V3-003",
       "title": "Ecosystem Extensions",
-      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021", "T-V3-030", "T-V3-031"],
+      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021", "T-V3-030", "T-V3-031", "T-V3-032"],
       "status": "completed",
       "progress_percent": 100,
       "story_ids": ["US-V3-005", "US-V3-006", "US-V3-007"]
@@ -370,6 +370,23 @@
       "commit_sha": "e21bc73",
       "created_at": "2026-04-17T06:25:00Z",
       "completed_at": "2026-04-17T06:35:00Z"
+    },
+    {
+      "id": "T-V3-032",
+      "story_id": "US-V3-012",
+      "type": "docs",
+      "title": "修复测试策略：禁止不加区分跑全量测试",
+      "description": "发现 AGENTS.md 和 PROMPT.md 中的'测试全部通过'要求导致纯前端/UI 修改也需要跑后端并发全量测试，严重浪费时间和算力。更新完成定义，引入'测试范围矩阵'，明确按修改类型选择验证范围。",
+      "wave": 17,
+      "milestone_id": "M-V3-003",
+      "depends_on": ["T-V3-031"],
+      "files": [
+        "AGENTS.md",
+        ".zeus/v3/scripts/workspace/base.py",
+        ".zeus/v3/task.json"
+      ],
+      "passes": false,
+      "created_at": "2026-04-17T06:40:00Z"
     },
     {
       "id": "T-V3-026",

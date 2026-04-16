@@ -88,9 +88,14 @@ class BaseWorkspaceManager(abc.ABC):
 - **多文件任务**：每改 1-2 个文件后就要运行相关测试，禁止一次性改完所有文件再统一验证
 - 多步骤任务需在 ai-log 中按 `1. [步骤] → 验证：[检查点]` 格式记录计划
 
-### 3. 工程规范
+### 3. 工程规范与测试范围
 - 在隔离工作区中实现上述任务
-- 如有 typecheck / lint / test 配置，运行并保证通过
+- **测试必须遵循范围矩阵，禁止不加区分跑全量测试**：
+  - 纯前端/Dashboard/UI 改动 → 只需 `npm run build`（及前端单测，如有）
+  - 纯后端 API/核心逻辑改动 → 只跑相关后端测试文件（如 `test_v3_api.py` 或 `test_v3_core.py` 的子集）
+  - DB model / store 变更 → 跑 store 相关测试
+  - 文档/配置/脚本 → 最小语法/格式验证即可
+- 如有 typecheck / lint 配置，运行并保证通过
 - 在 `.zeus/{self.version}/ai-logs/` 目录写入 ai-log 文件（如 `{task_id}.md`）
 - **完成后必须**在当前工作区根目录写入 `zeus-result.json`，格式如下：
   ```json
