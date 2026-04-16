@@ -161,6 +161,17 @@ class WorkflowGraph:
             waves.setdefault(wave, []).append(task)
         sorted_waves = sorted(waves.keys())
 
+        if not self.tasks:
+            width, height = 320, 120
+            return (
+                '<?xml version="1.0" encoding="UTF-8"?>\n'
+                f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+                f'viewBox="0 0 {width} {height}" style="background:#0a0a0f">\n'
+                f'  <text x="{width // 2}" y="{height // 2}" text-anchor="middle" '
+                'fill="#94a3b8" font-size="14" font-weight="500">No tasks available</text>\n'
+                '</svg>\n'
+            )
+
         positions: dict[str, tuple[int, int]] = {}
         for wave in sorted_waves:
             for idx, task in enumerate(waves[wave]):

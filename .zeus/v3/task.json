@@ -65,7 +65,7 @@
     {
       "id": "M-V3-003",
       "title": "Ecosystem Extensions",
-      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021"],
+      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021", "T-V3-030"],
       "status": "completed",
       "progress_percent": 100,
       "story_ids": ["US-V3-005", "US-V3-006", "US-V3-007"]
@@ -326,9 +326,30 @@
         ".zeus/v3/task.json"
       ],
       "passes": true,
-      "commit_sha": "7f9db11",
+      "commit_sha": "d15d42c",
       "created_at": "2026-04-17T05:40:00Z",
       "completed_at": "2026-04-17T05:55:00Z"
+    },
+    {
+      "id": "T-V3-030",
+      "story_id": "US-V3-012",
+      "type": "fix",
+      "title": "修复 Dashboard 依赖图渲染（SVG/Mermaid/ECharts）",
+      "description": "修复 WorkflowGraphPanel 中 SVG 空图、Mermaid 和 ECharts 仅显示原始文字的问题。引入 mermaid 与 echarts 依赖并实现真正的图形渲染；后端为空任务时返回带提示的 SVG；补充 i18n 文案并重新构建静态资源。",
+      "wave": 17,
+      "milestone_id": "M-V3-003",
+      "depends_on": [],
+      "files": [
+        ".zeus/v3/scripts/api/workflow_graph.py",
+        ".zeus/v3/web/src/components/WorkflowGraphPanel.vue",
+        ".zeus/v3/web/src/i18n/locales/en.json",
+        ".zeus/v3/web/src/i18n/locales/zh.json",
+        ".zeus/v3/web/package.json",
+        ".zeus/v3/web/package-lock.json",
+        ".zeus/v3/scripts/api/static/"
+      ],
+      "passes": false,
+      "created_at": "2026-04-17T06:00:00Z"
     },
     {
       "id": "T-V3-026",

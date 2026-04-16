@@ -112,7 +112,8 @@
     "globalHint": "Import tasks and start scheduler + 3 workers in one click"
   },
   "graph": {
-    "title": "Workflow Graph"
+    "title": "Workflow Graph",
+    "empty": "No tasks available"
   },
   "phases": {
     "title": "Phases & Milestones",

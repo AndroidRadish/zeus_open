@@ -1,28 +1,83 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { GitGraph, Image as ImageIcon, FileCode, Share2 } from 'lucide-vue-next'
+import mermaid from 'mermaid'
+import * as echarts from 'echarts'
 
 const { t } = useI18n()
 
 const format = ref<'svg' | 'mermaid' | 'echarts'>('svg')
-const mermaidSrc = ref('')
-const echartsJson = ref('')
+const mermaidContainer = ref<HTMLDivElement | null>(null)
+const echartsContainer = ref<HTMLDivElement | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
+let echartsInstance: echarts.ECharts | null = null
+
+mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' })
 
 async function fetchGraph() {
   loading.value = true
   error.value = null
   try {
-    if (format.value === 'svg') {
-      // handled by img src directly
-    } else if (format.value === 'mermaid') {
+    if (format.value === 'mermaid') {
       const res = await fetch('/workflow/graph?format=mermaid')
-      mermaidSrc.value = await res.text()
-    } else {
+      const text = await res.text()
+      await nextTick()
+      if (mermaidContainer.value) {
+        mermaidContainer.value.innerHTML = text
+        await mermaid.run({ nodes: [mermaidContainer.value] })
+      }
+    } else if (format.value === 'echarts') {
       const res = await fetch('/workflow/graph?format=echarts')
-      echartsJson.value = JSON.stringify(await res.json(), null, 2)
+      const data = await res.json()
+      await nextTick()
+      if (echartsContainer.value) {
+        if (echartsInstance) {
+          echartsInstance.dispose()
+        }
+        echartsInstance = echarts.init(echartsContainer.value, 'dark')
+        echartsInstance.setOption({
+          backgroundColor: 'transparent',
+          tooltip: {
+            formatter: (params: any) => {
+              if (params.dataType === 'edge') return `${params.data.source} → ${params.data.target}`
+              const d = params.data
+              return `<div style="font-weight:600">${d.name}</div>
+                      <div>Wave: ${d.wave}</div>
+                      <div>Status: ${d.status}</div>
+                      ${d.title ? `<div style="margin-top:4px;color:#94a3b8">${d.title}</div>` : ''}`
+            }
+          },
+          legend: {
+            data: data.categories.map((c: any) => c.name),
+            textStyle: { color: '#e2e8f0' },
+            bottom: 0
+          },
+          series: [
+            {
+              type: 'graph',
+              layout: 'force',
+              data: data.nodes,
+              links: data.links,
+              categories: data.categories,
+              roam: true,
+              label: { show: true, color: '#e2e8f0', fontSize: 11 },
+              force: { repulsion: 320, edgeLength: [80, 150] },
+              lineStyle: { color: '#64748b', curveness: 0.2, width: 1.5 },
+              emphasis: {
+                focus: 'adjacency',
+                lineStyle: { width: 3 },
+                label: { fontSize: 13, fontWeight: 'bold' }
+              },
+              itemStyle: {
+                borderColor: 'rgba(255,255,255,0.2)',
+                borderWidth: 1
+              }
+            }
+          ]
+        })
+      }
     }
   } catch (e: any) {
     error.value = e?.message || String(e)
@@ -32,6 +87,13 @@ async function fetchGraph() {
 }
 
 watch(format, fetchGraph, { immediate: true })
+
+onUnmounted(() => {
+  if (echartsInstance) {
+    echartsInstance.dispose()
+    echartsInstance = null
+  }
+})
 </script>
 
 <template>
@@ -60,8 +122,8 @@ watch(format, fetchGraph, { immediate: true })
         alt="Workflow Graph"
         class="graph-img"
       />
-      <pre v-else-if="format === 'mermaid'" class="graph-code">{{ mermaidSrc }}</pre>
-      <pre v-else-if="format === 'echarts'" class="graph-code">{{ echartsJson }}</pre>
+      <div v-else-if="format === 'mermaid'" ref="mermaidContainer" class="graph-mermaid"></div>
+      <div v-else-if="format === 'echarts'" ref="echartsContainer" class="graph-echarts"></div>
     </div>
   </section>
 </template>
@@ -136,19 +198,19 @@ watch(format, fetchGraph, { immediate: true })
   border: 1px solid var(--z-border);
 }
 
-.graph-code {
+.graph-mermaid {
   width: 100%;
-  margin: 0;
-  padding: 0.85rem 1.1rem;
-  border-radius: 0.6rem;
-  background: rgba(0,0,0,0.28);
-  color: #e2e8f0;
-  font-size: 0.8rem;
-  line-height: 1.55;
-  overflow: auto;
-  white-space: pre;
-  font-family: var(--font-mono);
-  border: 1px solid var(--z-border);
+  min-height: 400px;
+}
+
+.graph-mermaid :deep(.node rect) {
+  stroke: rgba(255,255,255,0.2);
+  stroke-width: 1px;
+}
+
+.graph-echarts {
+  width: 100%;
+  height: 520px;
 }
 
 .graph-error {
