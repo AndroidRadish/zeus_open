@@ -39,7 +39,7 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   async function switchProject(root: string) {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE || ''}/project`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE || ''}/control/project/switch`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ root }),
