@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Layers, Target, Plus, Pencil, Trash2, X, Loader2 } from 'lucide-vue-next'
 
@@ -173,9 +173,21 @@ function toggleTaskSelection(tid: string) {
   modalData.value.task_ids = [...list]
 }
 
+let pollTimer: any = null
+
 onMounted(() => {
   fetchPhases()
   fetchTasks()
+  pollTimer = setInterval(() => {
+    fetchPhases()
+  }, 10000)
+})
+
+onUnmounted(() => {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
 })
 </script>
 

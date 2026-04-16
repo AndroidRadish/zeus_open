@@ -91,15 +91,34 @@ class EventBus:
     async def subscribe(self):
         """Yield SSE-formatted messages as an async generator.
 
+        Sends a heartbeat comment every 15s to keep the connection alive.
         Usage:
             async for msg in bus.subscribe():
                 yield msg
         """
-        q: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=256)
+        q: asyncio.Queue[dict[str, Any] | None] = asyncio.Queue(maxsize=256)
         self._queues.add(q)
+
+        async def heartbeat():
+            while True:
+                await asyncio.sleep(15)
+                try:
+                    q.put_nowait(None)
+                except asyncio.QueueFull:
+                    pass
+
+        heartbeat_task = asyncio.create_task(heartbeat())
         try:
             while True:
                 msg = await q.get()
-                yield f"data: {json.dumps(msg)}\n\n"
+                if msg is None:
+                    yield ": heartbeat\n\n"
+                else:
+                    yield f"data: {json.dumps(msg)}\n\n"
         finally:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
             self._queues.discard(q)
