@@ -1,6 +1,6 @@
 {
   "version": "v3",
-  "updated_at": "2026-04-15T08:50:00Z",
+  "updated_at": "2026-04-17T06:50:00Z",
   "phases": [
     {
       "id": "P-V3-001",
@@ -38,8 +38,8 @@
       "summary": "Phase, Mailbox, and hot-reload capabilities",
       "summary_en": "Phase, Mailbox, and hot-reload capabilities",
       "summary_zh": "阶段、信箱与热重载能力",
-      "status": "completed",
-      "progress_percent": 100,
+      "status": "in_progress",
+      "progress_percent": 79,
       "milestone_ids": ["M-V3-003"],
       "wave_start": 7,
       "wave_end": 9
@@ -65,9 +65,9 @@
     {
       "id": "M-V3-003",
       "title": "Ecosystem Extensions",
-      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021", "T-V3-030", "T-V3-031", "T-V3-032"],
-      "status": "completed",
-      "progress_percent": 100,
+      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021", "T-V3-026", "T-V3-027", "T-V3-028", "T-V3-029", "T-V3-030", "T-V3-031", "T-V3-032", "T-V3-022", "T-V3-023", "T-V3-024"],
+      "status": "in_progress",
+      "progress_percent": 79,
       "story_ids": ["US-V3-005", "US-V3-006", "US-V3-007"]
     }
   ],
