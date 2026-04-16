@@ -312,6 +312,25 @@
       "completed_at": "2026-04-15T09:35:00Z"
     },
     {
+      "id": "T-V3-029",
+      "story_id": "US-V3-012",
+      "type": "docs",
+      "title": "Agent 行为规范升级（Karpathy 四大原则）",
+      "description": "升级 zeus-open/AGENTS.md 和 workspace/base.py 中的 PROMPT 生成逻辑，系统性地引入 Think Before Coding、Simplicity First、Surgical Changes、Goal-Driven Execution 四大原则，减少子 Agent 返工、过度工程和 diff 污染。",
+      "wave": 17,
+      "milestone_id": "M-V3-003",
+      "depends_on": [],
+      "files": [
+        "AGENTS.md",
+        ".zeus/v3/scripts/workspace/base.py",
+        ".zeus/v3/task.json"
+      ],
+      "passes": true,
+      "commit_sha": "294dced",
+      "created_at": "2026-04-17T05:40:00Z",
+      "completed_at": "2026-04-17T05:55:00Z"
+    },
+    {
       "id": "T-V3-026",
       "story_id": "US-V3-008",
       "type": "refactor",
