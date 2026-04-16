@@ -59,24 +59,29 @@ export const useTaskStore = defineStore('task', () => {
   function connectSSE(locale?: string) {
     closeSSE()
     currentLocale = locale
-    const base = import.meta.env.VITE_API_BASE || window.location.origin
-    const url = new URL(`${base}/events/stream`)
-    if (locale) url.searchParams.set('lang', locale)
-    es = new EventSource(url.toString())
-    es.onopen = () => {
-      connected.value = true
-      reconnectDelay = 3000
-    }
-    es.onerror = () => {
+    try {
+      const base = (import.meta.env.VITE_API_BASE as string) || (typeof window !== 'undefined' ? window.location.origin : '')
+      const urlStr = `${base.replace(/\/$/, '')}/events/stream${locale ? `?lang=${encodeURIComponent(locale)}` : ''}`
+      es = new EventSource(urlStr)
+      es.onopen = () => {
+        connected.value = true
+        reconnectDelay = 3000
+      }
+      es.onerror = () => {
+        connected.value = false
+        scheduleReconnect()
+      }
+      const eventStore = useEventStore()
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data)
+          eventStore.pushLive(data)
+        } catch {}
+      }
+    } catch (e) {
+      console.error('[SSE] failed to connect:', e)
       connected.value = false
       scheduleReconnect()
-    }
-    const eventStore = useEventStore()
-    es.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data)
-        eventStore.pushLive(data)
-      } catch {}
     }
   }
 
