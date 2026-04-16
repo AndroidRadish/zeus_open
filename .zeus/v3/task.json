@@ -65,7 +65,7 @@
     {
       "id": "M-V3-003",
       "title": "Ecosystem Extensions",
-      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021", "T-V3-030"],
+      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021", "T-V3-030", "T-V3-031"],
       "status": "completed",
       "progress_percent": 100,
       "story_ids": ["US-V3-005", "US-V3-006", "US-V3-007"]
@@ -352,6 +352,22 @@
       "commit_sha": "4c1e73f",
       "created_at": "2026-04-17T06:00:00Z",
       "completed_at": "2026-04-17T06:20:00Z"
+    },
+    {
+      "id": "T-V3-031",
+      "story_id": "US-V3-012",
+      "type": "fix",
+      "title": "精简 Dashboard 依赖图为仅 ECharts",
+      "description": "移除 WorkflowGraphPanel 中的 SVG 和 Mermaid 切换与渲染逻辑，仅保留 ECharts 力导向图展示。简化 UI 并重新构建静态资源。",
+      "wave": 17,
+      "milestone_id": "M-V3-003",
+      "depends_on": ["T-V3-030"],
+      "files": [
+        ".zeus/v3/web/src/components/WorkflowGraphPanel.vue",
+        ".zeus/v3/scripts/api/static/"
+      ],
+      "passes": false,
+      "created_at": "2026-04-17T06:25:00Z"
     },
     {
       "id": "T-V3-026",
