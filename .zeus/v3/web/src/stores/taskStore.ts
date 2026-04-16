@@ -9,6 +9,10 @@ export const useTaskStore = defineStore('task', () => {
   const health = ref<any>(null)
   let es: EventSource | null = null
   let pollTimer: any = null
+  let reconnectTimer: any = null
+  let reconnectDelay = 3000
+  const maxReconnectDelay = 30000
+  let currentLocale: string | undefined
 
   async function fetchTasks() {
     try {
@@ -54,15 +58,18 @@ export const useTaskStore = defineStore('task', () => {
 
   function connectSSE(locale?: string) {
     closeSSE()
+    currentLocale = locale
     const base = import.meta.env.VITE_API_BASE || window.location.origin
     const url = new URL(`${base}/events/stream`)
     if (locale) url.searchParams.set('lang', locale)
     es = new EventSource(url.toString())
     es.onopen = () => {
       connected.value = true
+      reconnectDelay = 3000
     }
     es.onerror = () => {
       connected.value = false
+      scheduleReconnect()
     }
     const eventStore = useEventStore()
     es.onmessage = (e) => {
@@ -73,10 +80,25 @@ export const useTaskStore = defineStore('task', () => {
     }
   }
 
+  function scheduleReconnect() {
+    if (reconnectTimer) return
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
+      if (!es) return
+      reconnectDelay = Math.min(reconnectDelay * 2, maxReconnectDelay)
+      connectSSE(currentLocale)
+    }, reconnectDelay)
+  }
+
   function closeSSE() {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer)
+      reconnectTimer = null
+    }
     es?.close()
     es = null
     connected.value = false
+    reconnectDelay = 3000
   }
 
   function startPolling() {
