@@ -11,42 +11,6 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 let echartsInstance: echarts.ECharts | null = null
 
-/** Clamp viewport so nodes stay inside the canvas after drag/refresh. */
-function clampViewport() {
-  if (!echartsInstance) return
-  const opt = echartsInstance.getOption() as any
-  const series = opt.series?.[0]
-  if (!series?.data?.length) return
-
-  const width = echartsInstance.getWidth()
-  const height = echartsInstance.getHeight()
-  const margin = 60
-
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
-  for (const n of series.data) {
-    const x = n.x ?? 0
-    const y = n.y ?? 0
-    minX = Math.min(minX, x)
-    maxX = Math.max(maxX, x)
-    minY = Math.min(minY, y)
-    maxY = Math.max(maxY, y)
-  }
-
-  const cx = (minX + maxX) / 2
-  const cy = (minY + maxY) / 2
-  const spanX = Math.max(maxX - minX, width * 0.4)
-  const spanY = Math.max(maxY - minY, height * 0.4)
-
-  // Zoom so graph fits with padding
-  const zoomX = (width - margin * 2) / (spanX + margin * 2)
-  const zoomY = (height - margin * 2) / (spanY + margin * 2)
-  const zoom = Math.min(zoomX, zoomY, 1.5)
-
-  echartsInstance.setOption({
-    series: [{ center: [cx, cy], zoom: zoom }]
-  })
-}
-
 async function fetchGraph() {
   loading.value = true
   error.value = null
@@ -79,7 +43,6 @@ async function fetchGraph() {
                     ${d.title ? `<div style="margin-top:6px;color:#94a3b8;font-size:12px;max-width:240px;white-space:normal;line-height:1.4">${d.title}</div>` : ''}`
           }
         },
-        // No legend — aligned with v2 clean style
         series: [
           {
             type: 'graph',
@@ -89,8 +52,6 @@ async function fetchGraph() {
             categories: data.categories,
             roam: true,
             draggable: true,
-            // Limit zoom to prevent nodes flying off-screen
-            scaleLimit: { min: 0.3, max: 3 },
             label: {
               show: true,
               color: '#e2e8f0',
@@ -122,17 +83,8 @@ async function fetchGraph() {
               shadowColor: 'rgba(0,0,0,0.3)',
             },
             symbol: 'circle',
-            // Keep graph centered and bounded after initial layout
-            center: ['50%', '50%'],
           }
         ]
-      })
-
-      // Auto-fit viewport once layout stabilises
-      echartsInstance.on('finished', () => {
-        clampViewport()
-        // Detach after first fit so user drag/zoom isn't fighting it
-        echartsInstance?.off('finished')
       })
     }
   } catch (e: any) {
