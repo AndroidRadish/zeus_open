@@ -1,139 +1,109 @@
 {
   "version": "v3",
-  "updated_at": "2026-04-17T06:50:00Z",
-  "phases": [
-    {
-      "id": "P-V3-001",
-      "title": "Foundation",
-      "title_en": "Foundation",
-      "title_zh": "基础架构",
-      "summary": "Observable sub-agent execution",
-      "summary_en": "Observable sub-agent execution",
-      "summary_zh": "子 Agent 执行可观测化",
-      "status": "completed",
-      "progress_percent": 100,
-      "milestone_ids": ["M-V3-001"],
-      "wave_start": 1,
-      "wave_end": 1
-    },
-    {
-      "id": "P-V3-002",
-      "title": "Platform",
-      "title_en": "Platform",
-      "title_zh": "平台化",
-      "summary": "Dashboard experience and state-machine control plane",
-      "summary_en": "Dashboard experience and state-machine control plane",
-      "summary_zh": "Dashboard 体验优化与状态机控制平面",
-      "status": "completed",
-      "progress_percent": 100,
-      "milestone_ids": ["M-V3-002"],
-      "wave_start": 2,
-      "wave_end": 3
-    },
-    {
-      "id": "P-V3-003",
-      "title": "Ecosystem",
-      "title_en": "Ecosystem",
-      "title_zh": "生态扩展",
-      "summary": "Phase, Mailbox, and hot-reload capabilities",
-      "summary_en": "Phase, Mailbox, and hot-reload capabilities",
-      "summary_zh": "阶段、信箱与热重载能力",
-      "status": "in_progress",
-      "progress_percent": 79,
-      "milestone_ids": ["M-V3-003"],
-      "wave_start": 7,
-      "wave_end": 9
-    }
-  ],
-  "milestones": [
-    {
-      "id": "M-V3-001",
-      "title": "Sub-agent Observability",
-      "task_ids": ["T-V3-001"],
-      "status": "completed",
-      "progress_percent": 100,
-      "story_ids": ["US-V3-001"]
-    },
-    {
-      "id": "M-V3-002",
-      "title": "Dashboard & ControlPlane Platform",
-      "task_ids": ["T-V3-002", "T-V3-003"],
-      "status": "completed",
-      "progress_percent": 100,
-      "story_ids": ["US-V3-002", "US-V3-003"]
-    },
-    {
-      "id": "M-V3-003",
-      "title": "Ecosystem Extensions",
-      "task_ids": ["T-V3-015", "T-V3-018", "T-V3-019", "T-V3-021", "T-V3-026", "T-V3-027", "T-V3-028", "T-V3-029", "T-V3-030", "T-V3-031", "T-V3-032", "T-V3-022", "T-V3-023", "T-V3-024"],
-      "status": "in_progress",
-      "progress_percent": 79,
-      "story_ids": ["US-V3-005", "US-V3-006", "US-V3-007"]
-    }
-  ],
+  "updated_at": "2026-04-17T10:37:32.644404+00:00",
   "tasks": [
     {
       "id": "T-V3-001",
       "story_id": "US-V3-001",
-      "type": "feat",
       "title": "子 Agent 进度上报机制（A+B 方案）",
       "description": "解决子 Agent 黑盒执行不可见的问题。A 方案：Prompt 要求子 Agent 写入 progress.jsonl，Worker heartbeat 扫描并转发到 EventBus/EventLog；B 方案：提供 POST /tasks/{id}/progress HTTP 端点供子 Agent 主动上报。Dashboard Events 面板需展示进度事件。",
       "wave": 1,
-      "milestone_id": "M-V3-001",
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
       "depends_on": [],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/scripts/workspace/base.py",
         ".zeus/v3/scripts/core/worker.py",
         ".zeus/v3/scripts/api/server.py",
         ".zeus/v3/web/src/components/EventsPanel.vue"
       ],
+      "milestone_id": "M-V3-001",
+      "extra": {
+        "type": "feat",
+        "created_at": "2026-04-13T08:00:00Z"
+      },
+      "created_at": "2026-04-14T08:26:11",
+      "status": "completed",
       "passes": true,
-      "created_at": "2026-04-13T08:00:00Z"
+      "commit_sha": null,
+      "worker_id": null,
+      "heartbeat_at": "2026-04-14T08:26:11",
+      "updated_at": "2026-04-14T12:17:40"
     },
     {
       "id": "T-V3-002",
       "story_id": "US-V3-002",
-      "type": "fix",
       "title": "Dashboard Control Center 体验优化",
       "description": "修复 uvicorn 直接启动时 ControlPlane 503 的防御逻辑；优化 Control Center 视觉层级：引入图标库、紧凑 Bento 布局、加载/错误/空状态处理。",
       "wave": 2,
-      "milestone_id": "M-V3-002",
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
       "depends_on": [],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/scripts/api/server.py",
         ".zeus/v3/web/src/components/ControlCenter.vue",
         ".zeus/v3/web/src/components/Dashboard.vue"
       ],
+      "milestone_id": "M-V3-002",
+      "extra": {
+        "type": "fix",
+        "created_at": "2026-04-13T08:00:00Z"
+      },
+      "created_at": "2026-04-14T08:26:11",
+      "status": "completed",
       "passes": true,
-      "created_at": "2026-04-13T08:00:00Z"
+      "commit_sha": null,
+      "worker_id": null,
+      "heartbeat_at": "2026-04-14T08:26:11",
+      "updated_at": "2026-04-14T12:17:40"
     },
     {
       "id": "T-V3-003",
       "story_id": "US-V3-003",
-      "type": "feat",
       "title": "v3 ControlPlane 进程管理 Option B 预研",
       "description": "将当前 Option A（子进程模式）升级为 Option B（watch-mode 状态机）。API 只写 scheduler_meta，scheduler/worker 进程通过 watch 数据库状态自行启停。目标是让 API server 完全无状态，适配 K8s。",
       "wave": 3,
-      "milestone_id": "M-V3-002",
-      "depends_on": ["T-V3-002"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-002"
+      ],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/scripts/core/scheduler.py",
         ".zeus/v3/scripts/core/worker.py",
         ".zeus/v3/scripts/api/server.py",
         ".zeus/v3/scripts/db/models.py"
       ],
+      "milestone_id": "M-V3-002",
+      "extra": {
+        "type": "feat",
+        "created_at": "2026-04-13T08:00:00Z"
+      },
+      "created_at": "2026-04-14T08:26:11",
+      "status": "completed",
       "passes": true,
-      "created_at": "2026-04-13T08:00:00Z"
+      "commit_sha": null,
+      "worker_id": null,
+      "heartbeat_at": "2026-04-14T08:26:11",
+      "updated_at": "2026-04-14T12:17:40"
     },
     {
       "id": "T-V3-015",
       "story_id": "US-V3-005",
-      "type": "feat",
       "title": "Phase & Milestone API and Dashboard panels",
       "description": "Implement REST endpoints for Phase and Milestone CRUD, plus a Dashboard Phases tab with milestone drill-down and task lists. Update i18n for EN/ZH.",
       "wave": 7,
-      "milestone_id": "M-V3-003",
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
       "depends_on": [],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/scripts/db/models.py",
         ".zeus/v3/scripts/store/base.py",
@@ -144,19 +114,30 @@
         ".zeus/v3/web/src/i18n/locales/en.json",
         ".zeus/v3/web/src/i18n/locales/zh.json"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "feat",
+        "created_at": "2026-04-14T14:00:00Z"
+      },
+      "created_at": "2026-04-14T08:26:11",
+      "status": "completed",
       "passes": true,
       "commit_sha": "db2aa0f",
-      "created_at": "2026-04-14T14:00:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-14T08:26:11",
+      "updated_at": "2026-04-14T12:17:40"
     },
     {
       "id": "T-V3-018",
       "story_id": "US-V3-006",
-      "type": "feat",
       "title": "AgentBus Mailbox API, DB model, and Dashboard panel",
       "description": "Add Mailbox SQLAlchemy model, CRUD methods in AsyncStateStore, REST endpoints for sending and reading messages, and a Dashboard Mailbox tab with unread filtering.",
       "wave": 8,
-      "milestone_id": "M-V3-003",
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
       "depends_on": [],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/scripts/db/models.py",
         ".zeus/v3/scripts/store/base.py",
@@ -167,19 +148,30 @@
         ".zeus/v3/web/src/i18n/locales/en.json",
         ".zeus/v3/web/src/i18n/locales/zh.json"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "feat",
+        "created_at": "2026-04-14T14:00:00Z"
+      },
+      "created_at": "2026-04-14T08:26:11",
+      "status": "completed",
       "passes": true,
       "commit_sha": "db2aa0f",
-      "created_at": "2026-04-14T14:00:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-14T08:26:11",
+      "updated_at": "2026-04-14T12:17:40"
     },
     {
       "id": "T-V3-019",
       "story_id": "US-V3-007",
-      "type": "feat",
       "title": "Config and task.json hot reload in serve mode",
       "description": "Add a background file watcher to the API server lifespan that monitors .zeus/v3/task.json and config.json for changes. On change, automatically re-import tasks and emit a config.reloaded event via EventBus. Protect against concurrent scheduler ticks during reload.",
       "wave": 9,
-      "milestone_id": "M-V3-003",
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
       "depends_on": [],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/scripts/api/server.py",
         ".zeus/v3/scripts/api/control_plane.py",
@@ -189,20 +181,35 @@
         ".zeus/v3/web/src/i18n/locales/en.json",
         ".zeus/v3/web/src/i18n/locales/zh.json"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "feat",
+        "created_at": "2026-04-14T16:00:00Z",
+        "completed_at": "2026-04-14T14:09:20Z"
+      },
+      "created_at": "2026-04-14T11:39:30",
+      "status": "completed",
       "passes": true,
       "commit_sha": "8a1423c",
-      "created_at": "2026-04-14T16:00:00Z",
-      "completed_at": "2026-04-14T14:09:20Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-14T11:59:38",
+      "updated_at": "2026-04-14T12:17:40"
     },
     {
       "id": "T-V3-021",
       "story_id": "US-V3-008",
-      "type": "feat",
       "title": "Dashboard 功能补全与后端能力对齐",
       "description": "补齐 Dashboard 中缺失的后端功能 UI：Metrics 分析面板（Task Metrics / Bottleneck / Blocked Chains）、Task 详情侧滑抽屉、Phase/Milestone 完整 CRUD、Mailbox 发送消息表单、Events 历史查询与过滤、Health 状态徽章。保持现有玻璃拟态设计风格，更新 i18n 双语文案，重新构建静态资源。",
       "wave": 10,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-015", "T-V3-018", "T-V3-019"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-015",
+        "T-V3-018",
+        "T-V3-019"
+      ],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/web/src/components/MetricsPanel.vue",
         ".zeus/v3/web/src/components/TaskDetailDrawer.vue",
@@ -215,133 +222,220 @@
         ".zeus/v3/web/src/i18n/locales/zh.json",
         ".zeus/v3/scripts/api/static/"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "feat",
+        "created_at": "2026-04-15T08:00:00Z",
+        "completed_at": "2026-04-15T08:50:00Z"
+      },
+      "created_at": "2026-04-15T01:55:35",
+      "status": "completed",
       "passes": true,
       "commit_sha": "e953375",
-      "created_at": "2026-04-15T08:00:00Z",
-      "completed_at": "2026-04-15T08:50:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-15T01:55:35",
+      "updated_at": "2026-04-15T01:55:35"
     },
     {
       "id": "T-V3-022",
       "story_id": "US-V3-009",
-      "type": "feat",
       "title": "PostgresStateStore 集成测试与生产验证",
       "description": "为 PostgresStateStore 编写完整的 asyncpg 集成测试，覆盖任务生命周期、隔离、事件存储与 metrics 查询。测试需在 Docker PostgreSQL 或 CI 环境中运行。",
       "wave": 12,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-026"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-026"
+      ],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/scripts/store/postgres_store.py",
         ".zeus/v3/scripts/tests/test_v3_postgres_store.py"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "feat",
+        "notes": "Blocked: 当前环境缺少 Docker 客户端与 WSL，无法本地运行 PostgreSQL 容器。等待用户修复 Docker 环境后执行。",
+        "created_at": "2026-04-15T09:20:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
-      "commit_sha": "e7772e8",
-      "created_at": "2026-04-15T09:20:00Z",
-      "completed_at": "2026-04-17T08:20:00Z"
+      "commit_sha": "",
+      "worker_id": null,
+      "heartbeat_at": "2026-04-17T08:43:53",
+      "updated_at": "2026-04-17T08:44:01"
     },
     {
       "id": "T-V3-023",
       "story_id": "US-V3-010",
-      "type": "feat",
       "title": "Docker sandbox dispatcher 完善与测试",
       "description": "完善 docker dispatcher 的资源限制（cgroup/cpu/memory）、只读挂载与输出 volume 隔离，并补充端到端测试。",
       "wave": 13,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-022"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-022"
+      ],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/scripts/dispatcher/docker.py",
         ".zeus/v3/scripts/tests/test_v3_dispatcher_docker.py"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "feat",
+        "notes": "Blocked: 依赖 Docker 运行时。等待用户修复 Docker 环境后执行。",
+        "created_at": "2026-04-15T09:20:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
-      "commit_sha": "e7772e8",
-      "created_at": "2026-04-15T09:20:00Z",
-      "completed_at": "2026-04-17T08:30:00Z"
+      "commit_sha": "",
+      "worker_id": null,
+      "heartbeat_at": "2026-04-17T09:04:07",
+      "updated_at": "2026-04-17T09:04:15"
     },
     {
       "id": "T-V3-024",
       "story_id": "US-V3-010",
-      "type": "feat",
       "title": "多镜像拆分与 docker-compose 生产验证",
       "description": "验证 zeus-api / zeus-scheduler / zeus-worker 三容器拆分在 docker-compose 中的协同工作，确保 Redis queue、状态共享、控制平面禁用等配置正确。",
       "wave": 14,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-023"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-023"
+      ],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/Dockerfile",
         ".zeus/v3/docker-compose.yml",
         ".zeus/v3/scripts/"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "feat",
+        "notes": "Blocked: 依赖 Docker 运行时。等待用户修复 Docker 环境后执行。",
+        "created_at": "2026-04-15T09:20:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
-      "commit_sha": "e7772e8",
-      "created_at": "2026-04-15T09:20:00Z",
-      "completed_at": "2026-04-17T08:45:00Z"
+      "commit_sha": null,
+      "worker_id": null,
+      "heartbeat_at": "2026-04-16T23:44:34",
+      "updated_at": "2026-04-17T08:58:52.602778+00:00"
     },
     {
       "id": "T-V3-027",
       "story_id": "US-V3-011",
-      "type": "chore",
       "title": "v1/v2 废弃代码与临时产物清理",
       "description": "清理 .zeus/v2/agent-workspaces 与 agent-logs 中的历史运行残留，移除不再引用的旧脚本与临时文件，确保仓库体积可控。",
       "wave": 15,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-026"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-026"
+      ],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v2/agent-workspaces/",
         ".zeus/v2/agent-logs/",
         ".gitignore"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "chore",
+        "created_at": "2026-04-15T09:20:00Z",
+        "completed_at": "2026-04-15T09:30:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
       "commit_sha": "3deb5af",
-      "created_at": "2026-04-15T09:20:00Z",
-      "completed_at": "2026-04-15T09:30:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-16T23:44:34",
+      "updated_at": "2026-04-16T23:44:34"
     },
     {
       "id": "T-V3-028",
       "story_id": "US-V3-011",
-      "type": "docs",
       "title": "v3 文档同步与 README 更新",
       "description": "更新 .zeus/v3/README.md 与主 README.md，补充 Dashboard Pinia 架构、MetricsPanel、TaskDetailDrawer、Phase/Milestone/ Mailbox/ Hot-reload 等新功能的使用说明与截图占位。",
       "wave": 16,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-027"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-027"
+      ],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/README.md",
         ".zeus/v3/README.zh-CN.md",
         "README.md",
         "README.zh-CN.md"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "docs",
+        "created_at": "2026-04-15T09:20:00Z",
+        "completed_at": "2026-04-15T09:35:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
       "commit_sha": "ac546c4",
-      "created_at": "2026-04-15T09:20:00Z",
-      "completed_at": "2026-04-15T09:35:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-16T23:44:34",
+      "updated_at": "2026-04-16T23:44:34"
     },
     {
       "id": "T-V3-029",
       "story_id": "US-V3-012",
-      "type": "docs",
       "title": "Agent 行为规范升级（Karpathy 四大原则）",
       "description": "升级 zeus-open/AGENTS.md 和 workspace/base.py 中的 PROMPT 生成逻辑，系统性地引入 Think Before Coding、Simplicity First、Surgical Changes、Goal-Driven Execution 四大原则，减少子 Agent 返工、过度工程和 diff 污染。",
       "wave": 17,
-      "milestone_id": "M-V3-003",
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
       "depends_on": [],
+      "ai_log_ref": null,
       "files": [
         "AGENTS.md",
         ".zeus/v3/scripts/workspace/base.py",
         ".zeus/v3/task.json"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "docs",
+        "created_at": "2026-04-17T05:40:00Z",
+        "completed_at": "2026-04-17T05:55:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
       "commit_sha": "d15d42c",
-      "created_at": "2026-04-17T05:40:00Z",
-      "completed_at": "2026-04-17T05:55:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-16T23:44:34",
+      "updated_at": "2026-04-16T23:44:34"
     },
     {
       "id": "T-V3-030",
       "story_id": "US-V3-012",
-      "type": "fix",
       "title": "修复 Dashboard 依赖图渲染（SVG/Mermaid/ECharts）",
       "description": "修复 WorkflowGraphPanel 中 SVG 空图、Mermaid 和 ECharts 仅显示原始文字的问题。引入 mermaid 与 echarts 依赖并实现真正的图形渲染；后端为空任务时返回带提示的 SVG；补充 i18n 文案并重新构建静态资源。",
       "wave": 17,
-      "milestone_id": "M-V3-003",
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
       "depends_on": [],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/scripts/api/workflow_graph.py",
         ".zeus/v3/web/src/components/WorkflowGraphPanel.vue",
@@ -351,81 +445,96 @@
         ".zeus/v3/web/package-lock.json",
         ".zeus/v3/scripts/api/static/"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "fix",
+        "created_at": "2026-04-17T06:00:00Z",
+        "completed_at": "2026-04-17T06:20:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
       "commit_sha": "4c1e73f",
-      "created_at": "2026-04-17T06:00:00Z",
-      "completed_at": "2026-04-17T06:20:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-16T23:44:34",
+      "updated_at": "2026-04-16T23:44:34"
     },
     {
       "id": "T-V3-031",
       "story_id": "US-V3-012",
-      "type": "fix",
       "title": "精简 Dashboard 依赖图为仅 ECharts",
       "description": "移除 WorkflowGraphPanel 中的 SVG 和 Mermaid 切换与渲染逻辑，仅保留 ECharts 力导向图展示。简化 UI 并重新构建静态资源。",
       "wave": 17,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-030"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-030"
+      ],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/web/src/components/WorkflowGraphPanel.vue",
         ".zeus/v3/scripts/api/static/"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "fix",
+        "created_at": "2026-04-17T06:25:00Z",
+        "completed_at": "2026-04-17T06:35:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
       "commit_sha": "e21bc73",
-      "created_at": "2026-04-17T06:25:00Z",
-      "completed_at": "2026-04-17T06:35:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-16T23:44:34",
+      "updated_at": "2026-04-16T23:44:34"
     },
     {
       "id": "T-V3-032",
       "story_id": "US-V3-012",
-      "type": "docs",
       "title": "修复测试策略：禁止不加区分跑全量测试",
       "description": "发现 AGENTS.md 和 PROMPT.md 中的'测试全部通过'要求导致纯前端/UI 修改也需要跑后端并发全量测试，严重浪费时间和算力。更新完成定义，引入'测试范围矩阵'，明确按修改类型选择验证范围。",
       "wave": 17,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-031"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-031"
+      ],
+      "ai_log_ref": null,
       "files": [
         "AGENTS.md",
         ".zeus/v3/scripts/workspace/base.py",
         ".zeus/v3/task.json"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "docs",
+        "created_at": "2026-04-17T06:40:00Z",
+        "completed_at": "2026-04-17T06:45:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
       "commit_sha": "3239025",
-      "created_at": "2026-04-17T06:40:00Z",
-      "completed_at": "2026-04-17T06:45:00Z"
-    },
-    {
-      "id": "T-V3-033",
-      "story_id": "US-V3-013",
-      "type": "feat",
-      "title": "完全移除 task.json 运行时依赖，实现数据库单一事实来源",
-      "description": "将 task.json 从'双轨状态源'彻底降级为可选导出产物。所有任务、phase、milestone 的增删改查完全通过数据库和 API/CLI 进行。新增 history 表用于审计计划变更，提供 export-plan 命令生成人类可读的 JSON 快照。",
-      "wave": 18,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-032"],
-      "files": [
-        ".zeus/v3/scripts/db/models.py",
-        ".zeus/v3/scripts/store/base.py",
-        ".zeus/v3/scripts/store/sqlalchemy_base.py",
-        ".zeus/v3/scripts/api/server.py",
-        ".zeus/v3/scripts/importer.py",
-        ".zeus/v3/scripts/exporter.py",
-        ".zeus/v3/scripts/run.py",
-        ".zeus/v3/scripts/tests/"
-      ],
-      "passes": true,
-      "commit_sha": "06eb7b4",
-      "created_at": "2026-04-17T08:50:00Z",
-      "completed_at": "2026-04-17T09:30:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-16T23:44:34",
+      "updated_at": "2026-04-16T23:44:34"
     },
     {
       "id": "T-V3-026",
       "story_id": "US-V3-008",
-      "type": "refactor",
       "title": "Dashboard Pinia 状态管理迁移",
       "description": "将 Dashboard 从 props  drilling 重构为 Pinia 全局状态管理。新增 taskStore、eventStore、uiStore，统一任务数据、SSE 连接、事件历史、UI 弹窗/抽屉状态。保持现有组件结构与视觉风格不变。",
       "wave": 11,
-      "milestone_id": "M-V3-003",
-      "depends_on": ["T-V3-021"],
+      "original_wave": null,
+      "scheduled_wave": null,
+      "rescheduled_from": null,
+      "depends_on": [
+        "T-V3-021"
+      ],
+      "ai_log_ref": null,
       "files": [
         ".zeus/v3/web/src/main.ts",
         ".zeus/v3/web/src/components/Dashboard.vue",
@@ -436,10 +545,133 @@
         ".zeus/v3/web/src/stores/uiStore.ts",
         ".zeus/v3/web/package.json"
       ],
+      "milestone_id": "M-V3-003",
+      "extra": {
+        "type": "refactor",
+        "created_at": "2026-04-15T09:00:00Z",
+        "completed_at": "2026-04-15T09:15:00Z"
+      },
+      "created_at": "2026-04-16T23:44:34",
+      "status": "completed",
       "passes": true,
       "commit_sha": "33e0e94",
-      "created_at": "2026-04-15T09:00:00Z",
-      "completed_at": "2026-04-15T09:15:00Z"
+      "worker_id": null,
+      "heartbeat_at": "2026-04-16T23:44:34",
+      "updated_at": "2026-04-16T23:44:34"
+    }
+  ],
+  "phases": [
+    {
+      "id": "P-V3-001",
+      "title": "Foundation",
+      "title_en": "Foundation",
+      "title_zh": "基础架构",
+      "summary": "Observable sub-agent execution",
+      "summary_en": "Observable sub-agent execution",
+      "summary_zh": "子 Agent 执行可观测化",
+      "status": "completed",
+      "progress_percent": 100,
+      "milestone_ids": [
+        "M-V3-001"
+      ],
+      "wave_start": 1,
+      "wave_end": 1,
+      "extra": null
+    },
+    {
+      "id": "P-V3-002",
+      "title": "Platform",
+      "title_en": "Platform",
+      "title_zh": "平台化",
+      "summary": "Dashboard experience and state-machine control plane",
+      "summary_en": "Dashboard experience and state-machine control plane",
+      "summary_zh": "Dashboard 体验优化与状态机控制平面",
+      "status": "completed",
+      "progress_percent": 100,
+      "milestone_ids": [
+        "M-V3-002"
+      ],
+      "wave_start": 2,
+      "wave_end": 3,
+      "extra": null
+    },
+    {
+      "id": "P-V3-003",
+      "title": "Ecosystem",
+      "title_en": "Ecosystem",
+      "title_zh": "生态扩展",
+      "summary": "Phase, Mailbox, and hot-reload capabilities",
+      "summary_en": "Phase, Mailbox, and hot-reload capabilities",
+      "summary_zh": "阶段、信箱与热重载能力",
+      "status": "in_progress",
+      "progress_percent": 79,
+      "milestone_ids": [
+        "M-V3-003"
+      ],
+      "wave_start": 7,
+      "wave_end": 9,
+      "extra": null
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M-V3-001",
+      "title": "Sub-agent Observability",
+      "task_ids": [
+        "T-V3-001"
+      ],
+      "status": "completed",
+      "progress_percent": 100,
+      "spec_ref": null,
+      "story_ids": [
+        "US-V3-001"
+      ],
+      "extra": null
+    },
+    {
+      "id": "M-V3-002",
+      "title": "Dashboard & ControlPlane Platform",
+      "task_ids": [
+        "T-V3-002",
+        "T-V3-003"
+      ],
+      "status": "completed",
+      "progress_percent": 100,
+      "spec_ref": null,
+      "story_ids": [
+        "US-V3-002",
+        "US-V3-003"
+      ],
+      "extra": null
+    },
+    {
+      "id": "M-V3-003",
+      "title": "Ecosystem Extensions",
+      "task_ids": [
+        "T-V3-015",
+        "T-V3-018",
+        "T-V3-019",
+        "T-V3-021",
+        "T-V3-026",
+        "T-V3-027",
+        "T-V3-028",
+        "T-V3-029",
+        "T-V3-030",
+        "T-V3-031",
+        "T-V3-032",
+        "T-V3-022",
+        "T-V3-023",
+        "T-V3-024"
+      ],
+      "status": "in_progress",
+      "progress_percent": 79,
+      "spec_ref": null,
+      "story_ids": [
+        "US-V3-005",
+        "US-V3-006",
+        "US-V3-007"
+      ],
+      "extra": null
     }
   ]
 }

@@ -35,7 +35,8 @@
 0. 回答上面的「动手前四问」（如有歧义/困惑，先向用户/调度器提问）
 1. `pwd` — 确认当前在项目根目录
 2. 读取 `claude-progress.md`（或 `.zeus/main/evolution.md`）— 了解最新状态
-3. 读取 `.zeus/main/task.json` — 查看待完成任务
+3. 读取 `.zeus/v3/task.json`（导出产物）或查询数据库（`state.db`）— 查看待完成任务
+   - **v3 事实来源是数据库**：`task.json` 只是可选导出产物，运行时状态（status/passes/commit_sha）永远以数据库为准
 4. `git log --oneline -5` — 查看最近提交
 5. 运行状态检查：`python .zeus/scripts/zeus_runner.py --status`
 6. 如果基础验证失败，先修复基础状态
@@ -50,6 +51,12 @@
 - 不要因为"代码已经写了"就把功能标记为完成
 - 实现过程中不要悄悄改弱验证规则
 - 优先依赖仓库里的持久化文件，而不是聊天记录
+- **v3 状态管理规则**：
+  - `.zeus/v3/state.db` 是唯一事实来源（task status、passes、commit_sha、quarantine、events）
+  - `.zeus/v3/task.json` 只是静态计划导出产物，修改它不会自动同步到数据库
+  - 需要通过 API/CLI（`python .zeus/v3/scripts/run.py --export-plan`）或 Dashboard 操作状态
+  - 子 Agent 完成工作后必须写入 `zeus-result.json`，Worker 自动将结果同步到数据库
+  - **禁止直接修改 task.json 的运行时字段（passes/status/commit_sha），这些字段在 v3 中已废弃**
 
 ### 防过度延伸
 - 如果发现"需要顺便做"的其他功能：

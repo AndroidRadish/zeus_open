@@ -251,3 +251,27 @@
   - ✅ `task.schema.json`：运行时字段标记为 DEPRECATED
   - ✅ 93/93 v3 测试全绿
   - **Commit**: `06eb7b4`
+
+
+### 2026-04-17 (continued) — 待办交接
+- **待执行：整理 Phase/Milestone 结构**（用户已确认方案）
+  - 当前问题：M-V3-003 一个 milestone 塞了 14 个 task，横跨 Dashboard/Docker/Postgres/文档/规范 5 个完全不同的功能域
+  - 社区视角打开 Dashboard 只看到 3 Phase/3 Milestone，无法理解项目全貌
+  - 废弃的 `roadmap.json`（4 Phase/6 Milestone/旧 task IDs）与数据库不同步，需要删除
+  - **执行方案**：
+    1. 备份 `state.db` ✅（已完成：`state.db.backup.20260417`）
+    2. 数据库脚本重组：
+       - 删除旧 Phase/Milestone（P-V3-001~003, M-V3-001~003）
+       - 新建 4 Phase + 8 Milestone：
+         - P-V3-001 Foundation → M-V3-001 Core Execution (T-001, T-003)
+         - P-V3-002 Dashboard & Observability → M-V3-002 Dashboard Core (T-002, T-015, T-021), M-V3-003 Dashboard Interactivity (T-018, T-019, T-026), M-V3-004 Visualization (T-030, T-031)
+         - P-V3-003 Infrastructure → M-V3-005 Persistence (T-022), M-V3-006 Containerization (T-023, T-024)
+         - P-V3-004 Quality & Standards → M-V3-007 Cleanup & Docs (T-027, T-028), M-V3-008 Engineering Standards (T-029, T-032, T-033)
+       - 更新所有 task 的 `milestone_id` 字段
+    3. 验证 Dashboard 各面板数据正确
+    4. 运行 `--export-plan` 生成新 task.json
+    5. 删除废弃的 `roadmap.json`
+    6. 更新 README 和 claude-progress.md
+    7. 提交变更
+  - **风险**：ID 变更可能导致 Dashboard milestone 钻取断裂，需逐个验证
+- **AGENTS.md 已更新**：新增 v3 状态管理规则，明确数据库是唯一事实来源
