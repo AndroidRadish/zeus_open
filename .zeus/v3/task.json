@@ -1,6 +1,6 @@
 {
   "version": "v3",
-  "updated_at": "2026-04-17T10:37:32.644404+00:00",
+  "updated_at": "2026-04-17T10:46:43.460339+00:00",
   "tasks": [
     {
       "id": "T-V3-001",
@@ -80,7 +80,7 @@
         ".zeus/v3/scripts/api/server.py",
         ".zeus/v3/scripts/db/models.py"
       ],
-      "milestone_id": "M-V3-002",
+      "milestone_id": "M-V3-001",
       "extra": {
         "type": "feat",
         "created_at": "2026-04-13T08:00:00Z"
@@ -114,7 +114,7 @@
         ".zeus/v3/web/src/i18n/locales/en.json",
         ".zeus/v3/web/src/i18n/locales/zh.json"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-002",
       "extra": {
         "type": "feat",
         "created_at": "2026-04-14T14:00:00Z"
@@ -222,7 +222,7 @@
         ".zeus/v3/web/src/i18n/locales/zh.json",
         ".zeus/v3/scripts/api/static/"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-002",
       "extra": {
         "type": "feat",
         "created_at": "2026-04-15T08:00:00Z",
@@ -253,7 +253,7 @@
         ".zeus/v3/scripts/store/postgres_store.py",
         ".zeus/v3/scripts/tests/test_v3_postgres_store.py"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-005",
       "extra": {
         "type": "feat",
         "notes": "Blocked: 当前环境缺少 Docker 客户端与 WSL，无法本地运行 PostgreSQL 容器。等待用户修复 Docker 环境后执行。",
@@ -284,7 +284,7 @@
         ".zeus/v3/scripts/dispatcher/docker.py",
         ".zeus/v3/scripts/tests/test_v3_dispatcher_docker.py"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-006",
       "extra": {
         "type": "feat",
         "notes": "Blocked: 依赖 Docker 运行时。等待用户修复 Docker 环境后执行。",
@@ -316,7 +316,7 @@
         ".zeus/v3/docker-compose.yml",
         ".zeus/v3/scripts/"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-006",
       "extra": {
         "type": "feat",
         "notes": "Blocked: 依赖 Docker 运行时。等待用户修复 Docker 环境后执行。",
@@ -348,7 +348,7 @@
         ".zeus/v2/agent-logs/",
         ".gitignore"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-007",
       "extra": {
         "type": "chore",
         "created_at": "2026-04-15T09:20:00Z",
@@ -381,7 +381,7 @@
         "README.md",
         "README.zh-CN.md"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-007",
       "extra": {
         "type": "docs",
         "created_at": "2026-04-15T09:20:00Z",
@@ -411,7 +411,7 @@
         ".zeus/v3/scripts/workspace/base.py",
         ".zeus/v3/task.json"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-008",
       "extra": {
         "type": "docs",
         "created_at": "2026-04-17T05:40:00Z",
@@ -445,7 +445,7 @@
         ".zeus/v3/web/package-lock.json",
         ".zeus/v3/scripts/api/static/"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-004",
       "extra": {
         "type": "fix",
         "created_at": "2026-04-17T06:00:00Z",
@@ -476,7 +476,7 @@
         ".zeus/v3/web/src/components/WorkflowGraphPanel.vue",
         ".zeus/v3/scripts/api/static/"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-004",
       "extra": {
         "type": "fix",
         "created_at": "2026-04-17T06:25:00Z",
@@ -508,7 +508,7 @@
         ".zeus/v3/scripts/workspace/base.py",
         ".zeus/v3/task.json"
       ],
-      "milestone_id": "M-V3-003",
+      "milestone_id": "M-V3-008",
       "extra": {
         "type": "docs",
         "created_at": "2026-04-17T06:40:00Z",
@@ -575,101 +575,189 @@
         "M-V3-001"
       ],
       "wave_start": 1,
-      "wave_end": 1,
-      "extra": null
-    },
-    {
-      "id": "P-V3-002",
-      "title": "Platform",
-      "title_en": "Platform",
-      "title_zh": "平台化",
-      "summary": "Dashboard experience and state-machine control plane",
-      "summary_en": "Dashboard experience and state-machine control plane",
-      "summary_zh": "Dashboard 体验优化与状态机控制平面",
-      "status": "completed",
-      "progress_percent": 100,
-      "milestone_ids": [
-        "M-V3-002"
-      ],
-      "wave_start": 2,
       "wave_end": 3,
       "extra": null
     },
     {
-      "id": "P-V3-003",
-      "title": "Ecosystem",
-      "title_en": "Ecosystem",
-      "title_zh": "生态扩展",
-      "summary": "Phase, Mailbox, and hot-reload capabilities",
-      "summary_en": "Phase, Mailbox, and hot-reload capabilities",
-      "summary_zh": "阶段、信箱与热重载能力",
-      "status": "in_progress",
-      "progress_percent": 79,
+      "id": "P-V3-002",
+      "title": "Dashboard & Observability",
+      "title_en": "Dashboard & Observability",
+      "title_zh": "仪表盘与可观测性",
+      "summary": "Dashboard experience, interactivity and visualization",
+      "summary_en": "Dashboard experience, interactivity and visualization",
+      "summary_zh": "Dashboard 体验、交互与可视化",
+      "status": "completed",
+      "progress_percent": 100,
       "milestone_ids": [
-        "M-V3-003"
+        "M-V3-002",
+        "M-V3-003",
+        "M-V3-004"
       ],
-      "wave_start": 7,
-      "wave_end": 9,
+      "wave_start": 2,
+      "wave_end": 11,
+      "extra": null
+    },
+    {
+      "id": "P-V3-003",
+      "title": "Infrastructure",
+      "title_en": "Infrastructure",
+      "title_zh": "基础设施",
+      "summary": "Persistence and containerization hardening",
+      "summary_en": "Persistence and containerization hardening",
+      "summary_zh": "持久化与容器化加固",
+      "status": "completed",
+      "progress_percent": 100,
+      "milestone_ids": [
+        "M-V3-005",
+        "M-V3-006"
+      ],
+      "wave_start": 12,
+      "wave_end": 14,
+      "extra": null
+    },
+    {
+      "id": "P-V3-004",
+      "title": "Quality & Standards",
+      "title_en": "Quality & Standards",
+      "title_zh": "质量与规范",
+      "summary": "Code cleanup, docs and engineering standards",
+      "summary_en": "Code cleanup, docs and engineering standards",
+      "summary_zh": "代码清理、文档与工程规范",
+      "status": "completed",
+      "progress_percent": 100,
+      "milestone_ids": [
+        "M-V3-007",
+        "M-V3-008"
+      ],
+      "wave_start": 15,
+      "wave_end": 17,
       "extra": null
     }
   ],
   "milestones": [
     {
       "id": "M-V3-001",
-      "title": "Sub-agent Observability",
+      "title": "Core Execution",
       "task_ids": [
-        "T-V3-001"
-      ],
-      "status": "completed",
-      "progress_percent": 100,
-      "spec_ref": null,
-      "story_ids": [
-        "US-V3-001"
-      ],
-      "extra": null
-    },
-    {
-      "id": "M-V3-002",
-      "title": "Dashboard & ControlPlane Platform",
-      "task_ids": [
-        "T-V3-002",
+        "T-V3-001",
         "T-V3-003"
       ],
       "status": "completed",
       "progress_percent": 100,
       "spec_ref": null,
       "story_ids": [
-        "US-V3-002",
+        "US-V3-001",
         "US-V3-003"
       ],
       "extra": null
     },
     {
-      "id": "M-V3-003",
-      "title": "Ecosystem Extensions",
+      "id": "M-V3-002",
+      "title": "Dashboard Core",
       "task_ids": [
+        "T-V3-002",
         "T-V3-015",
+        "T-V3-021"
+      ],
+      "status": "completed",
+      "progress_percent": 100,
+      "spec_ref": null,
+      "story_ids": [
+        "US-V3-002",
+        "US-V3-005",
+        "US-V3-008"
+      ],
+      "extra": null
+    },
+    {
+      "id": "M-V3-003",
+      "title": "Dashboard Interactivity",
+      "task_ids": [
         "T-V3-018",
         "T-V3-019",
-        "T-V3-021",
-        "T-V3-026",
-        "T-V3-027",
-        "T-V3-028",
-        "T-V3-029",
+        "T-V3-026"
+      ],
+      "status": "completed",
+      "progress_percent": 100,
+      "spec_ref": null,
+      "story_ids": [
+        "US-V3-006",
+        "US-V3-007",
+        "US-V3-008"
+      ],
+      "extra": null
+    },
+    {
+      "id": "M-V3-004",
+      "title": "Visualization",
+      "task_ids": [
         "T-V3-030",
-        "T-V3-031",
-        "T-V3-032",
-        "T-V3-022",
+        "T-V3-031"
+      ],
+      "status": "completed",
+      "progress_percent": 100,
+      "spec_ref": null,
+      "story_ids": [
+        "US-V3-012"
+      ],
+      "extra": null
+    },
+    {
+      "id": "M-V3-005",
+      "title": "Persistence",
+      "task_ids": [
+        "T-V3-022"
+      ],
+      "status": "completed",
+      "progress_percent": 100,
+      "spec_ref": null,
+      "story_ids": [
+        "US-V3-009"
+      ],
+      "extra": null
+    },
+    {
+      "id": "M-V3-006",
+      "title": "Containerization",
+      "task_ids": [
         "T-V3-023",
         "T-V3-024"
       ],
-      "status": "in_progress",
-      "progress_percent": 79,
+      "status": "completed",
+      "progress_percent": 100,
       "spec_ref": null,
       "story_ids": [
-        "US-V3-005",
-        "US-V3-006",
-        "US-V3-007"
+        "US-V3-010"
+      ],
+      "extra": null
+    },
+    {
+      "id": "M-V3-007",
+      "title": "Cleanup & Docs",
+      "task_ids": [
+        "T-V3-027",
+        "T-V3-028"
+      ],
+      "status": "completed",
+      "progress_percent": 100,
+      "spec_ref": null,
+      "story_ids": [
+        "US-V3-011"
+      ],
+      "extra": null
+    },
+    {
+      "id": "M-V3-008",
+      "title": "Engineering Standards",
+      "task_ids": [
+        "T-V3-029",
+        "T-V3-032"
+      ],
+      "status": "completed",
+      "progress_percent": 100,
+      "spec_ref": null,
+      "story_ids": [
+        "US-V3-012"
       ],
       "extra": null
     }
