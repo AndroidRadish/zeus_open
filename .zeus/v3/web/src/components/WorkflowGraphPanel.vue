@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { GitGraph, Share2 } from 'lucide-vue-next'
+import { GitGraph, Share2, RefreshCw } from 'lucide-vue-next'
 import * as echarts from 'echarts'
 
 const { t } = useI18n()
@@ -10,6 +10,42 @@ const echartsContainer = ref<HTMLDivElement | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 let echartsInstance: echarts.ECharts | null = null
+
+/** Clamp viewport so nodes stay inside the canvas after drag/refresh. */
+function clampViewport() {
+  if (!echartsInstance) return
+  const opt = echartsInstance.getOption() as any
+  const series = opt.series?.[0]
+  if (!series?.data?.length) return
+
+  const width = echartsInstance.getWidth()
+  const height = echartsInstance.getHeight()
+  const margin = 60
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  for (const n of series.data) {
+    const x = n.x ?? 0
+    const y = n.y ?? 0
+    minX = Math.min(minX, x)
+    maxX = Math.max(maxX, x)
+    minY = Math.min(minY, y)
+    maxY = Math.max(maxY, y)
+  }
+
+  const cx = (minX + maxX) / 2
+  const cy = (minY + maxY) / 2
+  const spanX = Math.max(maxX - minX, width * 0.4)
+  const spanY = Math.max(maxY - minY, height * 0.4)
+
+  // Zoom so graph fits with padding
+  const zoomX = (width - margin * 2) / (spanX + margin * 2)
+  const zoomY = (height - margin * 2) / (spanY + margin * 2)
+  const zoom = Math.min(zoomX, zoomY, 1.5)
+
+  echartsInstance.setOption({
+    series: [{ center: [cx, cy], zoom: zoom }]
+  })
+}
 
 async function fetchGraph() {
   loading.value = true
@@ -23,6 +59,7 @@ async function fetchGraph() {
         echartsInstance.dispose()
       }
       echartsInstance = echarts.init(echartsContainer.value, 'dark')
+
       echartsInstance.setOption({
         backgroundColor: 'transparent',
         tooltip: {
@@ -51,6 +88,9 @@ async function fetchGraph() {
             links: data.links,
             categories: data.categories,
             roam: true,
+            draggable: true,
+            // Limit zoom to prevent nodes flying off-screen
+            scaleLimit: { min: 0.3, max: 3 },
             label: {
               show: true,
               color: '#e2e8f0',
@@ -58,12 +98,15 @@ async function fetchGraph() {
               fontFamily: 'JetBrains Mono, monospace',
             },
             force: {
-              repulsion: 400,
-              edgeLength: [80, 160],
-              gravity: 0.1,
+              initLayout: 'circular',
+              repulsion: 600,
+              edgeLength: [60, 180],
+              gravity: 0.15,
+              friction: 0.85,
+              layoutAnimation: true,
             },
             lineStyle: {
-              color: 'rgba(100,116,139,0.5)',
+              color: 'rgba(100,116,139,0.4)',
               curveness: 0.2,
               width: 1.2,
             },
@@ -79,8 +122,17 @@ async function fetchGraph() {
               shadowColor: 'rgba(0,0,0,0.3)',
             },
             symbol: 'circle',
+            // Keep graph centered and bounded after initial layout
+            center: ['50%', '50%'],
           }
         ]
+      })
+
+      // Auto-fit viewport once layout stabilises
+      echartsInstance.on('finished', () => {
+        clampViewport()
+        // Detach after first fit so user drag/zoom isn't fighting it
+        echartsInstance?.off('finished')
       })
     }
   } catch (e: any) {
@@ -104,9 +156,15 @@ onUnmounted(() => {
   <section class="glass-card panel graph-panel">
     <div class="panel-head">
       <h2><GitGraph :size="18" class="head-icon" /> {{ t('graph.title') }}</h2>
-      <div class="format-badge">
-        <Share2 :size="13" />
-        <span>ECHARTS</span>
+      <div class="head-actions">
+        <button class="btn-refresh" :disabled="loading" @click="fetchGraph">
+          <RefreshCw :size="14" :class="{ spinner: loading }" />
+          {{ t('actions.refresh') }}
+        </button>
+        <div class="format-badge">
+          <Share2 :size="13" />
+          <span>ECHARTS</span>
+        </div>
       </div>
     </div>
     <div class="graph-body custom-scrollbar">
@@ -140,6 +198,37 @@ onUnmounted(() => {
   gap: 0.4rem;
 }
 .head-icon { color: var(--z-accent-cyan); opacity: 0.9; }
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-refresh {
+  appearance: none;
+  border: 1px solid var(--z-border);
+  background: rgba(255,255,255,0.04);
+  color: #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.btn-refresh:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); }
+.btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.spinner {
+  animation: spin 1.2s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 .format-badge {
   display: inline-flex;
