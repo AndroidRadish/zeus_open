@@ -11,12 +11,39 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 let echartsInstance: echarts.ECharts | null = null
 
+const STATUS_GLOW: Record<string, { color: string; glow: string; border: string }> = {
+  completed: { color: '#10b981', glow: 'rgba(16,185,129,0.55)', border: 'rgba(16,185,129,0.6)' },
+  running:   { color: '#06b6d4', glow: 'rgba(6,182,212,0.55)',  border: 'rgba(6,182,212,0.6)' },
+  failed:    { color: '#f43f5e', glow: 'rgba(244,63,94,0.55)',  border: 'rgba(244,63,94,0.6)' },
+  pending:   { color: '#64748b', glow: 'rgba(100,116,139,0.35)', border: 'rgba(100,116,139,0.5)' },
+  paused:    { color: '#a78bfa', glow: 'rgba(167,139,250,0.45)', border: 'rgba(167,139,250,0.55)' },
+  cancelled: { color: '#94a3b8', glow: 'rgba(148,163,184,0.30)', border: 'rgba(148,163,184,0.4)' },
+}
+
+function getNodeStyle(status: string) {
+  const s = STATUS_GLOW[status] || STATUS_GLOW.pending
+  return {
+    color: s.color,
+    borderColor: s.border,
+    borderWidth: 2,
+    shadowBlur: 14,
+    shadowColor: s.glow,
+  }
+}
+
 async function fetchGraph() {
   loading.value = true
   error.value = null
   try {
     const res = await fetch('/workflow/graph?format=echarts')
     const data = await res.json()
+
+    // Apply glow styles per status
+    for (const n of data.nodes) {
+      n.itemStyle = getNodeStyle(n.status)
+      n.label = { color: '#e2e8f0', fontSize: 11, fontFamily: 'JetBrains Mono, monospace' }
+    }
+
     await nextTick()
     if (echartsContainer.value) {
       if (echartsInstance) {
@@ -31,12 +58,14 @@ async function fetchGraph() {
           borderColor: 'rgba(255,255,255,0.08)',
           textStyle: { color: '#e2e8f0' },
           formatter: (params: any) => {
-            if (params.dataType === 'edge') return `${params.data.source} → ${params.data.target}`
+            if (params.dataType === 'edge') {
+              return `<span style="color:#94a3b8">${params.data.source}</span> <span style="color:#64748b">→</span> <span style="color:#94a3b8">${params.data.target}</span>`
+            }
             const d = params.data
-            const statusColor = d.status === 'completed' ? '#10b981' : d.status === 'failed' ? '#f43f5e' : d.status === 'running' ? '#06b6d4' : '#94a3b8'
+            const s = STATUS_GLOW[d.status] || STATUS_GLOW.pending
             return `<div style="font-weight:600;margin-bottom:4px">${d.name}</div>
                     <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
-                      <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};display:inline-block"></span>
+                      <span style="width:8px;height:8px;border-radius:50%;background:${s.color};box-shadow:0 0 6px ${s.glow};display:inline-block"></span>
                       <span style="text-transform:capitalize">${d.status}</span>
                     </div>
                     <div style="color:#64748b;font-size:12px">Wave ${d.wave}</div>
@@ -52,6 +81,7 @@ async function fetchGraph() {
             categories: data.categories,
             roam: true,
             draggable: true,
+            cursor: 'grab',
             label: {
               show: true,
               color: '#e2e8f0',
@@ -60,31 +90,45 @@ async function fetchGraph() {
             },
             force: {
               initLayout: 'circular',
-              repulsion: 600,
-              edgeLength: [60, 180],
-              gravity: 0.15,
-              friction: 0.85,
+              repulsion: 800,
+              edgeLength: [50, 200],
+              gravity: 0.12,
+              friction: 0.65,
               layoutAnimation: true,
             },
             lineStyle: {
-              color: 'rgba(100,116,139,0.4)',
+              color: 'rgba(100,116,139,0.35)',
               curveness: 0.2,
               width: 1.2,
             },
             emphasis: {
               focus: 'adjacency',
-              lineStyle: { width: 2.5, color: 'rgba(6,182,212,0.6)' },
-              label: { fontSize: 13, fontWeight: 'bold' }
+              lineStyle: { width: 3, color: 'rgba(6,182,212,0.5)' },
+              label: { fontSize: 13, fontWeight: 'bold', color: '#fff' },
+              itemStyle: {
+                shadowBlur: 24,
+                borderWidth: 3,
+              }
             },
             itemStyle: {
-              borderColor: 'rgba(255,255,255,0.15)',
+              borderColor: 'rgba(255,255,255,0.2)',
               borderWidth: 1.5,
-              shadowBlur: 8,
-              shadowColor: 'rgba(0,0,0,0.3)',
             },
             symbol: 'circle',
           }
         ]
+      })
+
+      // Cursor feedback during drag
+      echartsInstance.on('mousedown', () => {
+        if (echartsContainer.value) {
+          echartsContainer.value.style.cursor = 'grabbing'
+        }
+      })
+      echartsInstance.on('mouseup', () => {
+        if (echartsContainer.value) {
+          echartsContainer.value.style.cursor = ''
+        }
       })
     }
   } catch (e: any) {
