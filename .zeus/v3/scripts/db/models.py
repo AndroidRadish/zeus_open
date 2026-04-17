@@ -1,7 +1,7 @@
 """
 ZeusOpen v3 SQLAlchemy async models.
 
-Dynamic state storage for tasks, quarantine, scheduler meta, and event logs.
+Dynamic state storage for tasks, quarantine, scheduler meta, event logs, and plan history.
 """
 from __future__ import annotations
 
@@ -117,9 +117,7 @@ class SchedulerMeta(Base):
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     value: Mapped[Any] = mapped_column(JSON, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
 
@@ -151,3 +149,20 @@ class EventLog(Base):
     agent_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     wave: Mapped[int | None] = mapped_column(Integer, nullable=True)
     payload: Mapped[Any] = mapped_column(JSON, nullable=True)
+
+
+class PlanHistory(Base):
+    """Audit trail for plan mutations (task/phase/milestone CRUD)."""
+
+    __tablename__ = "plan_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ts: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+    entity_type: Mapped[str] = mapped_column(String(32), index=True)
+    entity_id: Mapped[str] = mapped_column(String(64), index=True)
+    action: Mapped[str] = mapped_column(String(32), index=True)
+    changed_by: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    snapshot_before: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    snapshot_after: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)

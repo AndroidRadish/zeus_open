@@ -47,8 +47,8 @@
             "items": { "type": "string" },
             "description": "可选：依赖的既有模块路径或标识"
           },
-          "passes":     { "type": "boolean", "default": false },
-          "commit_sha": { "type": ["string", "null"], "default": null },
+          "passes":     { "type": "boolean", "default": false, "description": "DEPRECATED in v3: runtime state lives in the database" },
+          "commit_sha": { "type": ["string", "null"], "default": null, "description": "DEPRECATED in v3: runtime state lives in the database" },
           "ai_log_ref": {
             "type": ["string", "null"],
             "description": "指向 ai-logs/ 中对应的三段式日志文件名",
@@ -75,12 +75,12 @@
             "default": null
           },
           "created_at":  { "type": "string", "format": "date-time" },
-          "completed_at": { "type": ["string", "null"], "format": "date-time", "default": null },
+          "completed_at": { "type": ["string", "null"], "format": "date-time", "default": null, "description": "DEPRECATED in v3: runtime state lives in the database" },
           "status": {
             "type": "string",
             "enum": ["pending", "running", "paused", "completed", "failed", "cancelled"],
             "default": "pending",
-            "description": "任务生命周期状态"
+            "description": "DEPRECATED in v3: runtime state lives in the database. Optional for backward compatibility."
           }
         }
       }

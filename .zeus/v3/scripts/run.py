@@ -43,7 +43,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--queue-backend", default="memory", choices=["memory", "sqlite", "redis"], help="Task queue backend")
     parser.add_argument("--redis-url", default=None, help="Redis URL (required if queue-backend=redis)")
     parser.add_argument("--dispatcher", default=None, choices=["mock", "kimi", "claude", "auto"], help="Override dispatcher mode")
-    parser.add_argument("--import-only", action="store_true", help="Only import task.json and exit")
+    parser.add_argument("--import-only", action="store_true", help="Only import task.json into DB and exit")
+    parser.add_argument("--export-plan", action="store_true", help="Export current DB plan to task.json and exit")
     parser.add_argument("--mode", default="combined", choices=["combined", "scheduler", "worker", "serve"], help="Execution mode")
     parser.add_argument("--host", default="127.0.0.1", help="API server host")
     parser.add_argument("--port", type=int, default=8000, help="API server port")
@@ -54,9 +55,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-async def _print_status(store: SQLiteStateStore, task_json_path: Path) -> None:
+async def _print_status(store: SQLiteStateStore) -> None:
     """Print human-readable project status from the DB."""
-    import json
     tasks = await store.list_tasks()
     total = len(tasks)
     passed = sum(1 for t in tasks if t.get("passes"))
@@ -65,18 +65,10 @@ async def _print_status(store: SQLiteStateStore, task_json_path: Path) -> None:
     failed = sum(1 for t in tasks if t.get("status") == "failed")
     quarantined = len(await store.list_quarantine())
 
-    # Read config from task.json for project name / north star
-    project_name = "ZeusOpen Project"
-    north_star = "N/A"
-    try:
-        with open(task_json_path, "r", encoding="utf-8-sig") as f:
-            data = json.load(f)
-        meta = data.get("meta", {})
-        project_name = meta.get("project", {}).get("name", project_name)
-        north_star = meta.get("metrics", {}).get("north_star", north_star)
-        current_wave = meta.get("current_wave", 1)
-    except Exception:
-        current_wave = 1
+    # Read project meta from DB (fallback to defaults)
+    project_name = await store.get_meta("project_name", "ZeusOpen Project")
+    north_star = await store.get_meta("north_star", "N/A")
+    current_wave = await store.get_meta("current_wave", 1)
 
     print("\nZeusOpen v3 Status")
     print(f"Project    : {project_name}")
@@ -122,9 +114,15 @@ async def main(argv: list[str] | None = None) -> int:
             if candidate_task_json.exists():
                 project_root = candidate
                 task_json_path = candidate_task_json
-    if not task_json_path.exists():
-        print(f"[ERROR] task.json not found: {task_json_path}")
-        return 1
+
+    # Warn if run from unexpected cwd without explicit --project-root
+    explicit_project_root = any(arg.startswith("--project-root") for arg in (argv or sys.argv[1:]))
+    if not explicit_project_root:
+        auto_root = Path(__file__).resolve().parent.parent.parent.parent
+        if Path.cwd().resolve() != auto_root.resolve():
+            print(f"[WARN] Current working directory is {Path.cwd()}")
+            print(f"[WARN] Detected project root is {auto_root}")
+            print(f"[INFO] To avoid loading the wrong project, cd into the project root or use --project-root")
 
     database_url = args.database_url or f"sqlite+aiosqlite:///{project_root / '.zeus' / version / 'state.db'}"
     tracer = init_tracing(export_to_console=args.trace)
@@ -142,26 +140,41 @@ async def main(argv: list[str] | None = None) -> int:
     store = SQLiteStateStore(database_url)
 
     if args.status:
-        await _print_status(store, task_json_path)
+        await _print_status(store)
         await store.close()
         return 0
 
-    # Cold-start auto-import if DB is empty
-    existing_tasks = await store.list_tasks()
-    if args.mode == "serve" and not existing_tasks:
-        import_result = await import_tasks_from_json(store, task_json_path)
-        print(f"[SERVE] Cold-start auto-import: {import_result['imported_tasks']} tasks imported")
-    elif args.mode != "serve":
-        import_result = await import_tasks_from_json(store, task_json_path)
-        print(f"[IMPORT] Imported {import_result['imported_tasks']} tasks, "
-              f"{import_result['quarantine_count']} quarantined, "
-              f"meta keys: {import_result['meta_keys']}")
+    if args.export_plan:
+        from exporter import export_plan_to_file
+        result = await export_plan_to_file(store, task_json_path, include_runtime=True)
+        await store.close()
+        print(f"[EXPORT] {result['task_count']} tasks, {result['phase_count']} phases, {result['milestone_count']} milestones")
+        print(f"         written to {result['output_path']}")
+        return 0
 
-        if args.import_only:
-            await store.close()
-            print("[OK] Import complete.")
-            return 0
+    # Import tasks from task.json if it exists (cold-start or explicit request)
+    existing_tasks = await store.list_tasks()
+    if task_json_path.exists():
+        if args.mode == "serve" and not existing_tasks:
+            import_result = await import_tasks_from_json(store, task_json_path)
+            print(f"[SERVE] Cold-start auto-import: {import_result['imported_tasks']} tasks imported")
+        elif args.mode != "serve":
+            import_result = await import_tasks_from_json(store, task_json_path)
+            print(f"[IMPORT] Imported {import_result['imported_tasks']} tasks, "
+                  f"{import_result['quarantine_count']} quarantined, "
+                  f"meta keys: {import_result['meta_keys']}")
+
+            if args.import_only:
+                await store.close()
+                print("[OK] Import complete.")
+                return 0
+        else:
+            import_result = {"imported_tasks": 0, "quarantine_count": 0, "meta_keys": []}
     else:
+        if not existing_tasks and args.mode != "serve":
+            print("[WARN] No task.json found and DB is empty. Nothing to run.")
+            await store.close()
+            return 0
         import_result = {"imported_tasks": 0, "quarantine_count": 0, "meta_keys": []}
 
     # 3. API server mode

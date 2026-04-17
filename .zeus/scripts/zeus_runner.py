@@ -379,7 +379,7 @@ class ZeusRunner:
 2. 如有 typecheck/lint/test 配置，运行并保证通过
 3. 完成后立即进行原子 git commit，格式建议：
    {self._suggest_commit_type(task_type)}({task_id}): {task_title}
-4. 将 task.json 中此任务的 passes 字段更新为 true，填写 commit_sha
+4. 在当前工作区根目录写入 `zeus-result.json`，Worker 会自动将结果同步到数据库
 5. 在 {self.log_dir}/ 目录写入三段式 ai-log 文件，文件名格式：
    {now_compact()}-{task_id}.md
 

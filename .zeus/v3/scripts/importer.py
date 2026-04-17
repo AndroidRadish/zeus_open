@@ -1,8 +1,10 @@
 """
-Import static task plans from v2 task.json into the v3 database state store.
+Import static task plans from an optional task.json into the v3 database state store.
 
-This is a one-way migration: task.json becomes the read-only plan source,
-and the database becomes the mutable runtime state source.
+v3 design:
+- task.json is an optional static plan source (id, title, description, depends_on, wave, files, phases, milestones).
+- Runtime fields (status, passes, commit_sha, worker_id, heartbeat_at) live in the database ONLY.
+- Importing never overwrites existing runtime state.
 """
 from __future__ import annotations
 
@@ -13,9 +15,25 @@ from typing import Any
 from store.base import AsyncStateStore
 
 
+# Fields that belong to the static plan definition
+_STATIC_TASK_FIELDS = {
+    "id", "story_id", "title", "description", "wave", "original_wave",
+    "scheduled_wave", "rescheduled_from", "depends_on", "ai_log_ref",
+    "files", "milestone_id", "extra", "created_at",
+}
+
+
 async def import_tasks_from_json(store: AsyncStateStore, task_json_path: Path | str) -> dict[str, Any]:
-    """Read a v2-format task.json and upsert all tasks into the state store."""
+    """Read a task.json and upsert static fields into the state store.
+
+    Existing tasks are merged: static fields are updated from the JSON,
+    but runtime fields (status, passes, commit_sha, worker_id, heartbeat_at)
+    are always preserved from the database.
+    """
     path = Path(task_json_path)
+    if not path.exists():
+        return {"imported_tasks": 0, "imported_phases": 0, "imported_milestones": 0, "quarantine_count": 0, "meta_keys": [], "skipped": True}
+
     with open(path, "r", encoding="utf-8-sig") as f:
         data = json.load(f)
 
@@ -25,31 +43,40 @@ async def import_tasks_from_json(store: AsyncStateStore, task_json_path: Path | 
 
     imported = 0
     for t in tasks:
-        passes = t.get("passes", False)
-        # Infer completion from passes: a passed task is considered completed
-        status = t.get("status", "completed" if passes else "pending")
-        task_state = {
-            "id": t["id"],
-            "story_id": t.get("story_id"),
-            "title": t.get("title", ""),
-            "description": t.get("description"),
-            "status": status,
-            "passes": passes,
-            "wave": t.get("wave", 1),
-            "original_wave": t.get("original_wave"),
-            "scheduled_wave": t.get("scheduled_wave"),
-            "rescheduled_from": t.get("rescheduled_from"),
-            "depends_on": t.get("depends_on", []),
-            "commit_sha": t.get("commit_sha"),
-            "ai_log_ref": t.get("ai_log_ref"),
-            "files": t.get("files"),
-            "milestone_id": t.get("milestone_id"),
-            "extra": {k: v for k, v in t.items() if k not in {
-                "id", "story_id", "title", "description", "status", "passes",
-                "wave", "original_wave", "scheduled_wave", "rescheduled_from",
-                "depends_on", "commit_sha", "ai_log_ref", "files", "milestone_id",
-            }},
-        }
+        tid = t["id"]
+        existing = await store.get_task(tid)
+        if existing:
+            # Preserve scalar runtime fields from DB; overlay static fields from JSON
+            # NOTE: heartbeat_at is a DateTime column and must not be passed as a string
+            task_state: dict[str, Any] = {k: existing[k] for k in ("status", "passes", "commit_sha", "worker_id") if k in existing}
+            extra: dict[str, Any] = {}
+            for k, v in t.items():
+                if k in _STATIC_TASK_FIELDS:
+                    task_state[k] = v
+                elif k not in ("status", "passes", "commit_sha", "worker_id", "heartbeat_at"):
+                    extra[k] = v
+            if extra:
+                task_state["extra"] = extra
+            task_state["id"] = tid
+        else:
+            # New task: default runtime state
+            task_state = {
+                "id": tid,
+                "status": "pending",
+                "passes": False,
+                "commit_sha": None,
+                "worker_id": None,
+                "heartbeat_at": None,
+            }
+            extra = {}
+            for k, v in t.items():
+                if k in _STATIC_TASK_FIELDS:
+                    task_state[k] = v
+                elif k not in ("status", "passes", "commit_sha", "worker_id", "heartbeat_at"):
+                    extra[k] = v
+            if extra:
+                task_state["extra"] = extra
+
         await store.upsert_task(task_state)
         imported += 1
 
@@ -78,4 +105,5 @@ async def import_tasks_from_json(store: AsyncStateStore, task_json_path: Path | 
         "imported_milestones": len(milestones),
         "quarantine_count": len(quarantine),
         "meta_keys": list(meta.keys()),
+        "skipped": False,
     }

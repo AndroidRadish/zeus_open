@@ -10,7 +10,7 @@ from typing import Any
 
 
 class AsyncStateStore(abc.ABC):
-    """Abstract async store for task/quarantine/scheduler/event state."""
+    """Abstract async store for task/quarantine/scheduler/event/plan state."""
 
     @abc.abstractmethod
     async def health(self) -> dict[str, Any]:
@@ -163,4 +163,43 @@ class AsyncStateStore(abc.ABC):
         limit: int = 100,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
+        raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Plan History
+    # ------------------------------------------------------------------
+    @abc.abstractmethod
+    async def log_plan_history(
+        self,
+        entity_type: str,
+        entity_id: str,
+        action: str,
+        *,
+        changed_by: str | None = None,
+        snapshot_before: dict[str, Any] | None = None,
+        snapshot_after: dict[str, Any] | None = None,
+    ) -> int:
+        """Append a plan mutation audit record and return the generated id."""
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def query_plan_history(
+        self,
+        *,
+        entity_type: str | None = None,
+        entity_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[dict[str, Any]]:
+        raise NotImplementedError
+
+    # ------------------------------------------------------------------
+    # Plan Export
+    # ------------------------------------------------------------------
+    @abc.abstractmethod
+    async def export_plan(self, *, include_runtime: bool = False) -> dict[str, Any]:
+        """Export the current plan (tasks, phases, milestones) as a JSON-serializable dict.
+
+        If include_runtime is True, also include current runtime status fields.
+        """
         raise NotImplementedError

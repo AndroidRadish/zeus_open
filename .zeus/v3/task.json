@@ -394,6 +394,28 @@
       "completed_at": "2026-04-17T06:45:00Z"
     },
     {
+      "id": "T-V3-033",
+      "story_id": "US-V3-013",
+      "type": "feat",
+      "title": "完全移除 task.json 运行时依赖，实现数据库单一事实来源",
+      "description": "将 task.json 从'双轨状态源'彻底降级为可选导出产物。所有任务、phase、milestone 的增删改查完全通过数据库和 API/CLI 进行。新增 history 表用于审计计划变更，提供 export-plan 命令生成人类可读的 JSON 快照。",
+      "wave": 18,
+      "milestone_id": "M-V3-003",
+      "depends_on": ["T-V3-032"],
+      "files": [
+        ".zeus/v3/scripts/db/models.py",
+        ".zeus/v3/scripts/store/base.py",
+        ".zeus/v3/scripts/store/sqlalchemy_base.py",
+        ".zeus/v3/scripts/api/server.py",
+        ".zeus/v3/scripts/importer.py",
+        ".zeus/v3/scripts/exporter.py",
+        ".zeus/v3/scripts/run.py",
+        ".zeus/v3/scripts/tests/"
+      ],
+      "passes": false,
+      "created_at": "2026-04-17T08:50:00Z"
+    },
+    {
       "id": "T-V3-026",
       "story_id": "US-V3-008",
       "type": "refactor",

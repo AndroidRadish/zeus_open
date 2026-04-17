@@ -76,6 +76,54 @@ async def test_tasks_crud(api_client, sqlite_store):
 
 
 @pytest.mark.asyncio
+async def test_tasks_create_update_delete(api_client, sqlite_store):
+    client, _ = api_client
+
+    # Create
+    resp = await client.post("/tasks", json={"id": "T-API-NEW", "title": "New Task", "wave": 2, "depends_on": []})
+    assert resp.status_code == 200
+    assert resp.json()["id"] == "T-API-NEW"
+
+    # Update
+    resp = await client.put("/tasks/T-API-NEW", json={"title": "Updated Task", "wave": 3})
+    assert resp.status_code == 200
+    task = await sqlite_store.get_task("T-API-NEW")
+    assert task["title"] == "Updated Task"
+    assert task["wave"] == 3
+
+    # Delete
+    resp = await client.delete("/tasks/T-API-NEW")
+    assert resp.status_code == 200
+    assert await sqlite_store.get_task("T-API-NEW") is None
+
+
+@pytest.mark.asyncio
+async def test_plan_export(api_client, sqlite_store):
+    client, _ = api_client
+    await sqlite_store.upsert_task({"id": "T-EXP-1", "status": "completed", "passes": True, "wave": 1, "depends_on": []})
+    await sqlite_store.upsert_phase({"id": "P-EXP", "title": "Phase", "milestone_ids": []})
+    await sqlite_store.upsert_milestone({"id": "M-EXP", "title": "Milestone", "task_ids": ["T-EXP-1"]})
+
+    # Default export does NOT include runtime
+    resp = await client.get("/plan/export")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "tasks" in data
+    assert "phases" in data
+    assert "milestones" in data
+    task = next(t for t in data["tasks"] if t["id"] == "T-EXP-1")
+    assert "status" not in task
+    assert "passes" not in task
+
+    # With runtime
+    resp = await client.get("/plan/export?include_runtime=true")
+    assert resp.status_code == 200
+    task = next(t for t in resp.json()["tasks"] if t["id"] == "T-EXP-1")
+    assert task["status"] == "completed"
+    assert task["passes"] is True
+
+
+@pytest.mark.asyncio
 async def test_events_query(api_client, sqlite_store):
     client, _ = api_client
     await sqlite_store.log_event("task.started", task_id="T-API-1", agent_id="w-0", payload={"x": 1})

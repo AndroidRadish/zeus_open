@@ -300,6 +300,34 @@ def create_app(
             raise HTTPException(status_code=404, detail="Task not found")
         return task
 
+    @app.post("/tasks")
+    async def create_task(request: FastAPIRequest, body: dict[str, Any]) -> dict[str, Any]:
+        tid = body.get("id")
+        if not tid:
+            raise HTTPException(status_code=400, detail="id is required")
+        existing = await request.app.state.store.get_task(tid)
+        if existing:
+            raise HTTPException(status_code=409, detail="Task already exists")
+        await request.app.state.store.upsert_task(body)
+        return {"success": True, "id": tid}
+
+    @app.put("/tasks/{task_id}")
+    async def update_task(request: FastAPIRequest, task_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        existing = await request.app.state.store.get_task(task_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="Task not found")
+        body["id"] = task_id
+        await request.app.state.store.upsert_task(body)
+        return {"success": True, "id": task_id}
+
+    @app.delete("/tasks/{task_id}")
+    async def delete_task(request: FastAPIRequest, task_id: str) -> dict[str, Any]:
+        existing = await request.app.state.store.get_task(task_id)
+        if not existing:
+            raise HTTPException(status_code=404, detail="Task not found")
+        await request.app.state.store.delete_task(task_id)
+        return {"success": True, "id": task_id}
+
     # ------------------------------------------------------------------
     # Task actions
     # ------------------------------------------------------------------
@@ -508,6 +536,25 @@ def create_app(
         return {"agent_id": agent_id, "activity": activity, "reasoning": events, "source": "eventlog"}
 
     # ------------------------------------------------------------------
+    # Plan Export & History
+    # ------------------------------------------------------------------
+    @app.get("/plan/export")
+    async def plan_export(request: FastAPIRequest, include_runtime: bool = Query(False)) -> dict[str, Any]:
+        return await request.app.state.store.export_plan(include_runtime=include_runtime)
+
+    @app.get("/plan/history")
+    async def plan_history(
+        request: FastAPIRequest,
+        entity_type: str | None = Query(None),
+        entity_id: str | None = Query(None),
+        limit: int = Query(100, ge=1, le=1000),
+        offset: int = Query(0, ge=0),
+    ) -> list[dict[str, Any]]:
+        return await request.app.state.store.query_plan_history(
+            entity_type=entity_type, entity_id=entity_id, limit=limit, offset=offset
+        )
+
+    # ------------------------------------------------------------------
     # Phase & Milestone
     # ------------------------------------------------------------------
     @app.get("/phases")
@@ -700,7 +747,7 @@ def _auto_detect_project_root(fallback: pathlib.Path, version: str = "v3") -> pa
         and this_file.parent.parent.name == "scripts"
     ):
         candidate = this_file.parent.parent.parent.parent
-        if (candidate / ".zeus" / version / "task.json").exists():
+        if (candidate / ".zeus" / version / "config.json").exists():
             return candidate
     return fallback
 
@@ -717,7 +764,7 @@ def main(argv: list[str] | None = None) -> FastAPI:
     project_root = pathlib.Path(args.project_root).resolve()
     version = args.version
 
-    if not (project_root / ".zeus" / version / "task.json").exists():
+    if not (project_root / ".zeus" / version / "config.json").exists():
         project_root = _auto_detect_project_root(project_root, version)
 
     if not args.database_url:

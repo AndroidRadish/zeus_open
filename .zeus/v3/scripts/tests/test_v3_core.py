@@ -170,6 +170,43 @@ async def test_import_phases_and_milestones(sqlite_store, tmp_path):
     assert m["task_ids"] == ["T-201"]
 
 
+@pytest.mark.asyncio
+async def test_import_preserves_runtime_state(sqlite_store, tmp_path):
+    """Importer must never overwrite status, passes, commit_sha from task.json."""
+    store = sqlite_store
+    # Pre-seed DB with a completed task
+    await store.upsert_task({
+        "id": "T-RUNTIME",
+        "title": "DB Title",
+        "status": "completed",
+        "passes": True,
+        "commit_sha": "abc1234",
+        "wave": 5,
+        "depends_on": [],
+    })
+
+    # task.json tries to change runtime fields back to pending/false
+    task_json = {
+        "meta": {},
+        "tasks": [
+            {"id": "T-RUNTIME", "title": "JSON Title", "status": "pending", "passes": False, "wave": 1, "depends_on": []},
+        ],
+        "quarantine": [],
+    }
+    path = tmp_path / "task.json"
+    path.write_text(json.dumps(task_json), encoding="utf-8")
+    await import_tasks_from_json(store, path)
+
+    t = await store.get_task("T-RUNTIME")
+    # Static fields should be updated
+    assert t["title"] == "JSON Title"
+    assert t["wave"] == 1
+    # Runtime fields must be preserved from DB
+    assert t["status"] == "completed"
+    assert t["passes"] is True
+    assert t["commit_sha"] == "abc1234"
+
+
 # ---------------------------------------------------------------------------
 # Workspace tests
 # ---------------------------------------------------------------------------
