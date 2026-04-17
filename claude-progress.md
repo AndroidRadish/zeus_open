@@ -87,6 +87,7 @@
 | **T-V3-022** | PostgresStateStore 集成测试与生产验证 | ✅ 已完成 (`e7772e8`) |
 | **T-V3-023** | Docker sandbox dispatcher 完善与测试 | ✅ 已完成 (`e7772e8`) |
 | **T-V3-024** | 多镜像拆分与 docker-compose 生产验证 | ✅ 已完成 (`e7772e8`) |
+| **T-V3-033** | 完全移除 task.json 运行时依赖，实现数据库单一事实来源 | ✅ 已完成 (`06eb7b4`) |
 
 ### v3 已修复关键问题
 - **Windows subprocess ARP 路径转义**: `repr(str(path))` 保证 `python -c` 中的字符串字面量安全
@@ -236,3 +237,17 @@
   - ✅ `docker-compose.yml` 启用 `--no-embedded-scheduler`，scheduler/worker 通过 entrypoint 自动初始化 watch-mode 状态
   - ✅ 3 个 Docker Compose 集成测试通过（config / build / stack health）
   - ✅ Commit: `e7772e8`
+
+
+### 2026-04-17 (continued)
+- **已完成（T-V3-033）**：完全移除 task.json 运行时依赖，实现数据库单一事实来源
+  - ✅ `db/models.py`：新增 `PlanHistory` 审计表
+  - ✅ `store/base.py` / `sqlalchemy_base.py`：新增计划历史记录与导出能力
+  - ✅ `importer.py`：运行时字段（status/passes/commit_sha）100% 受保护，不再被 task.json 覆盖
+  - ✅ `exporter.py`：新增 `export_plan_to_json/file`，一键导出当前计划
+  - ✅ `api/server.py`：新增 Task CRUD（POST/PUT/DELETE）+ `/plan/export` + `/plan/history`
+  - ✅ `run.py`：新增 `--export-plan`；允许无 task.json 启动；`_print_status` 完全走数据库
+  - ✅ `zeus_runner.py` Prompt：修正为要求子 Agent 写 `zeus-result.json` 而非改 task.json
+  - ✅ `task.schema.json`：运行时字段标记为 DEPRECATED
+  - ✅ 93/93 v3 测试全绿
+  - **Commit**: `06eb7b4`
