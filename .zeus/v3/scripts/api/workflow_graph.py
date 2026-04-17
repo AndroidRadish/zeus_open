@@ -8,13 +8,14 @@ from __future__ import annotations
 from typing import Any
 
 
+# Aligned with v2 dashboard palette (tailwind-like)
 COLOR_MAP = {
-    "pending": "#9ca3af",
-    "running": "#3b82f6",
-    "completed": "#22c55e",
-    "failed": "#ef4444",
+    "pending": "#64748b",
+    "running": "#06b6d4",
+    "completed": "#10b981",
+    "failed": "#f43f5e",
     "paused": "#a78bfa",
-    "cancelled": "#64748b",
+    "cancelled": "#94a3b8",
 }
 
 
@@ -102,14 +103,6 @@ class WorkflowGraph:
         return "\n".join(lines) + "\n"
 
     def to_echarts(self) -> dict[str, Any]:
-        waves: dict[int, list[dict[str, Any]]] = {}
-        for task in self.tasks:
-            wave = task.get("wave", 0) or 0
-            waves.setdefault(wave, []).append(task)
-
-        sorted_waves = sorted(waves.keys())
-        wave_to_category = {wave: idx for idx, wave in enumerate(sorted_waves)}
-
         nodes: list[dict[str, Any]] = []
         for task in self.tasks:
             tid = task["id"]
@@ -121,18 +114,20 @@ class WorkflowGraph:
             dep_count = len(task.get("depends_on", []))
             downstream = sum(1 for t in self.tasks if tid in t.get("depends_on", []))
             symbol_size = 40 + (dep_count + downstream) * 6
+            color = COLOR_MAP.get(status, COLOR_MAP["pending"])
 
             nodes.append(
                 {
                     "id": tid,
                     "name": tid,
                     "value": downstream + dep_count + 1,
-                    "category": wave_to_category.get(wave, 0),
                     "symbolSize": min(symbol_size, 80),
                     "status": status,
                     "wave": wave,
                     "title": title,
                     "description": task.get("description", ""),
+                    "itemStyle": {"color": color},
+                    "label": {"color": "#e2e8f0"},
                 }
             )
 
@@ -143,7 +138,12 @@ class WorkflowGraph:
                 if dep:
                     links.append({"source": dep, "target": tid})
 
-        categories = [{"name": f"Wave {w}"} for w in sorted_waves]
+        # Status-based categories for legend-free grouping
+        status_order = ["completed", "running", "pending", "failed", "paused", "cancelled"]
+        seen_status = set()
+        for task in self.tasks:
+            seen_status.add(_resolve_status(task))
+        categories = [{"name": s, "itemStyle": {"color": COLOR_MAP.get(s, COLOR_MAP["pending"])}} for s in status_order if s in seen_status]
 
         return {"nodes": nodes, "links": links, "categories": categories}
 

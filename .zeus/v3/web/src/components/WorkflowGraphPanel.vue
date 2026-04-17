@@ -26,20 +26,23 @@ async function fetchGraph() {
       echartsInstance.setOption({
         backgroundColor: 'transparent',
         tooltip: {
+          backgroundColor: 'rgba(10,12,24,0.95)',
+          borderColor: 'rgba(255,255,255,0.08)',
+          textStyle: { color: '#e2e8f0' },
           formatter: (params: any) => {
             if (params.dataType === 'edge') return `${params.data.source} → ${params.data.target}`
             const d = params.data
-            return `<div style="font-weight:600">${d.name}</div>
-                    <div>Wave: ${d.wave}</div>
-                    <div>Status: ${d.status}</div>
-                    ${d.title ? `<div style="margin-top:4px;color:#94a3b8">${d.title}</div>` : ''}`
+            const statusColor = d.status === 'completed' ? '#10b981' : d.status === 'failed' ? '#f43f5e' : d.status === 'running' ? '#06b6d4' : '#94a3b8'
+            return `<div style="font-weight:600;margin-bottom:4px">${d.name}</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                      <span style="width:8px;height:8px;border-radius:50%;background:${statusColor};display:inline-block"></span>
+                      <span style="text-transform:capitalize">${d.status}</span>
+                    </div>
+                    <div style="color:#64748b;font-size:12px">Wave ${d.wave}</div>
+                    ${d.title ? `<div style="margin-top:6px;color:#94a3b8;font-size:12px;max-width:240px;white-space:normal;line-height:1.4">${d.title}</div>` : ''}`
           }
         },
-        legend: {
-          data: data.categories.map((c: any) => c.name),
-          textStyle: { color: '#e2e8f0' },
-          bottom: 0
-        },
+        // No legend — aligned with v2 clean style
         series: [
           {
             type: 'graph',
@@ -48,18 +51,34 @@ async function fetchGraph() {
             links: data.links,
             categories: data.categories,
             roam: true,
-            label: { show: true, color: '#e2e8f0', fontSize: 11 },
-            force: { repulsion: 320, edgeLength: [80, 150] },
-            lineStyle: { color: '#64748b', curveness: 0.2, width: 1.5 },
+            label: {
+              show: true,
+              color: '#e2e8f0',
+              fontSize: 11,
+              fontFamily: 'JetBrains Mono, monospace',
+            },
+            force: {
+              repulsion: 400,
+              edgeLength: [80, 160],
+              gravity: 0.1,
+            },
+            lineStyle: {
+              color: 'rgba(100,116,139,0.5)',
+              curveness: 0.2,
+              width: 1.2,
+            },
             emphasis: {
               focus: 'adjacency',
-              lineStyle: { width: 3 },
+              lineStyle: { width: 2.5, color: 'rgba(6,182,212,0.6)' },
               label: { fontSize: 13, fontWeight: 'bold' }
             },
             itemStyle: {
-              borderColor: 'rgba(255,255,255,0.2)',
-              borderWidth: 1
-            }
+              borderColor: 'rgba(255,255,255,0.15)',
+              borderWidth: 1.5,
+              shadowBlur: 8,
+              shadowColor: 'rgba(0,0,0,0.3)',
+            },
+            symbol: 'circle',
           }
         ]
       })
