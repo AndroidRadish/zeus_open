@@ -11,8 +11,11 @@ services:
 
   zeus-api:
     build:
-      context: ..
-      dockerfile: v3/Dockerfile
+      context: ../..
+      dockerfile: .zeus/v3/Dockerfile
+    environment:
+      - ZEUS_MODE=serve
+      - ZEUS_DATABASE_URL=sqlite+aiosqlite:////app/.zeus/v3/state.db
     command:
       - --mode=serve
       - --project-root=/app
@@ -21,6 +24,7 @@ services:
       - --database-url=sqlite+aiosqlite:////app/.zeus/v3/state.db
       - --queue-backend=redis
       - --redis-url=redis://redis:6379/0
+      - --no-embedded-scheduler
     ports:
       - "8000:8000"
     volumes:
@@ -31,8 +35,11 @@ services:
 
   zeus-scheduler:
     build:
-      context: ..
-      dockerfile: v3/Dockerfile
+      context: ../..
+      dockerfile: .zeus/v3/Dockerfile
+    environment:
+      - ZEUS_MODE=scheduler
+      - ZEUS_DATABASE_URL=sqlite+aiosqlite:////app/.zeus/v3/state.db
     command:
       - --mode=scheduler
       - --project-root=/app
@@ -48,8 +55,12 @@ services:
 
   zeus-worker:
     build:
-      context: ..
-      dockerfile: v3/Dockerfile
+      context: ../..
+      dockerfile: .zeus/v3/Dockerfile
+    environment:
+      - ZEUS_MODE=worker
+      - ZEUS_MAX_WORKERS=3
+      - ZEUS_DATABASE_URL=sqlite+aiosqlite:////app/.zeus/v3/state.db
     command:
       - --mode=worker
       - --project-root=/app

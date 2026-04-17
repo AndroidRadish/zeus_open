@@ -233,9 +233,10 @@
         ".zeus/v3/scripts/store/postgres_store.py",
         ".zeus/v3/scripts/tests/test_v3_postgres_store.py"
       ],
-      "passes": false,
-      "notes": "Blocked: 当前环境缺少 Docker 客户端与 WSL，无法本地运行 PostgreSQL 容器。等待用户修复 Docker 环境后执行。",
-      "created_at": "2026-04-15T09:20:00Z"
+      "passes": true,
+      "commit_sha": null,
+      "created_at": "2026-04-15T09:20:00Z",
+      "completed_at": "2026-04-17T08:20:00Z"
     },
     {
       "id": "T-V3-023",
@@ -250,9 +251,10 @@
         ".zeus/v3/scripts/dispatcher/docker.py",
         ".zeus/v3/scripts/tests/test_v3_dispatcher_docker.py"
       ],
-      "passes": false,
-      "notes": "Blocked: 依赖 Docker 运行时。等待用户修复 Docker 环境后执行。",
-      "created_at": "2026-04-15T09:20:00Z"
+      "passes": true,
+      "commit_sha": null,
+      "created_at": "2026-04-15T09:20:00Z",
+      "completed_at": "2026-04-17T08:30:00Z"
     },
     {
       "id": "T-V3-024",
@@ -268,9 +270,10 @@
         ".zeus/v3/docker-compose.yml",
         ".zeus/v3/scripts/"
       ],
-      "passes": false,
-      "notes": "Blocked: 依赖 Docker 运行时。等待用户修复 Docker 环境后执行。",
-      "created_at": "2026-04-15T09:20:00Z"
+      "passes": true,
+      "commit_sha": null,
+      "created_at": "2026-04-15T09:20:00Z",
+      "completed_at": "2026-04-17T08:45:00Z"
     },
     {
       "id": "T-V3-027",

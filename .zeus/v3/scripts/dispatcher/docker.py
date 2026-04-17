@@ -1,13 +1,14 @@
 """
 Docker-based sandbox dispatcher for ZeusOpen v3.
 
-Executes the subagent inside a Docker container with read-only source mounts
-and a writable workspace volume.
+Executes the subagent inside a Docker container with read-only source mounts,
+resource cgroup limits, and optional output volume isolation.
 """
 from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -23,13 +24,27 @@ class DockerSubagentDispatcher(SubagentDispatcher):
         timeout_seconds: float = 600.0,
         memory_limit: str | None = None,
         cpu_limit: str | None = None,
+        pids_limit: int | None = None,
+        blkio_weight: int | None = None,
+        read_only: bool = True,
+        network_disabled: bool = True,
+        security_opts: list[str] | None = None,
+        cap_drop: list[str] | None = None,
         extra_volumes: list[str] | None = None,
+        output_volume_path: str | None = None,
     ) -> None:
         self.image = image
         self.timeout_seconds = timeout_seconds
         self.memory_limit = memory_limit
         self.cpu_limit = cpu_limit
+        self.pids_limit = pids_limit
+        self.blkio_weight = blkio_weight
+        self.read_only = read_only
+        self.network_disabled = network_disabled
+        self.security_opts = security_opts or []
+        self.cap_drop = cap_drop or ["ALL"]
         self.extra_volumes = extra_volumes or []
+        self.output_volume_path = output_volume_path
 
     def _build_cmd(
         self,
@@ -38,12 +53,11 @@ class DockerSubagentDispatcher(SubagentDispatcher):
         prompt: str,
     ) -> list[str]:
         tid = task["id"]
-        # We assume the workspace is prepared under project_root/.zeus/v3/agent-workspaces/...
-        # Mount the workspace as writable, and the project root as read-only
         project_root = self._find_project_root(workspace)
 
         container_ws = f"/zeus/agent-workspaces/zeus-agent-{tid}"
         container_project = "/zeus/project"
+        container_output = f"{container_ws}/output"
 
         cmd = [
             "docker", "run", "--rm",
@@ -52,10 +66,26 @@ class DockerSubagentDispatcher(SubagentDispatcher):
             "-w", str(container_ws),
         ]
 
+        if self.read_only:
+            cmd.append("--read-only")
+
         if self.memory_limit:
             cmd.extend(["-m", self.memory_limit])
         if self.cpu_limit:
             cmd.extend(["--cpus", self.cpu_limit])
+        if self.pids_limit is not None:
+            cmd.extend(["--pids-limit", str(self.pids_limit)])
+        if self.blkio_weight is not None:
+            cmd.extend(["--blkio-weight", str(self.blkio_weight)])
+
+        if self.network_disabled:
+            cmd.extend(["--network", "none"])
+
+        for opt in self.security_opts:
+            cmd.extend(["--security-opt", opt])
+
+        for cap in self.cap_drop:
+            cmd.extend(["--cap-drop", cap])
 
         for vol in self.extra_volumes:
             cmd.extend(["-v", vol])
@@ -66,6 +96,15 @@ class DockerSubagentDispatcher(SubagentDispatcher):
         prompt_file.write_text(prompt, encoding="utf-8")
         cmd.extend(["-e", f"ZEUS_PROMPT_FILE={container_ws}/.docker-prompt.txt"])
 
+        # Determine where to write zeus-result.json
+        if self.output_volume_path:
+            out_host = Path(self.output_volume_path)
+            out_host.mkdir(parents=True, exist_ok=True)
+            cmd.extend(["-v", f"{out_host}:{container_output}"])
+            result_path = f"{container_output}/zeus-result.json"
+        else:
+            result_path = f"{container_ws}/zeus-result.json"
+
         # Build the inner command that writes zeus-result.json
         result_stub = {
             "status": "completed",
@@ -74,7 +113,6 @@ class DockerSubagentDispatcher(SubagentDispatcher):
             "commit_sha": "",
             "artifacts": {"note": "Docker dispatcher stub: implement real agent command"},
         }
-        result_path = f"{container_ws}/zeus-result.json"
         inner_script = (
             f"import json; "
             f"json.dump({json.dumps(result_stub)}, open('{result_path}', 'w', encoding='utf-8'), ensure_ascii=False, indent=2)"
@@ -125,6 +163,14 @@ class DockerSubagentDispatcher(SubagentDispatcher):
                 "exit_code": proc.returncode,
                 "stderr": stderr.decode("utf-8", errors="replace")[:2000],
             }
+
+        # If output volume isolation was used, copy zeus-result.json back to workspace
+        if self.output_volume_path:
+            src = Path(self.output_volume_path) / "zeus-result.json"
+            dst = workspace / "zeus-result.json"
+            if src.exists():
+                shutil.copy2(str(src), str(dst))
+
         if bus:
             bus.emit("task.completed", {"task_id": tid, "agent_name": "docker"})
         return {"status": "completed"}

@@ -6,21 +6,24 @@ WORKDIR /app
 # Install system dependencies (git for worktree backend)
 RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements if they exist; otherwise install common deps
-COPY requirements.txt* ./
-RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+# Copy requirements and install
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy v3 scripts
-COPY scripts /app/.zeus/v3/scripts
+COPY .zeus/v3/scripts /app/.zeus/v3/scripts
 
 # Ensure project root config exists at runtime
-COPY config.json /app/.zeus/v3/config.json
+COPY .zeus/v3/config.json /app/.zeus/v3/config.json
+
+# Entrypoint for auto-start initialization
+COPY .zeus/v3/docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
 
 ENV PYTHONPATH=/app/.zeus/v3/scripts
 ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8000
 
-# Default entrypoint allows overriding command
-ENTRYPOINT ["python", "/app/.zeus/v3/scripts/run.py"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["--mode", "combined", "--project-root", "/app"]
