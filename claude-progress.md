@@ -84,6 +84,9 @@
 | **K8s** | Kubernetes manifests (api, scheduler, worker, redis, HPA, PVC) | ✅ 已完成 |
 | **Dashboard Controls** | Task-level actions (retry/cancel/pause/resume/quarantine) + Control Center (scheduler/worker/import/run) | ✅ 已完成 |
 | **ControlPlane** | Embedded subprocess manager for local API server (`/control/*` endpoints) | ✅ 已完成 |
+| **T-V3-022** | PostgresStateStore 集成测试与生产验证 | ✅ 已完成 (`e7772e8`) |
+| **T-V3-023** | Docker sandbox dispatcher 完善与测试 | ✅ 已完成 (`e7772e8`) |
+| **T-V3-024** | 多镜像拆分与 docker-compose 生产验证 | ✅ 已完成 (`e7772e8`) |
 
 ### v3 已修复关键问题
 - **Windows subprocess ARP 路径转义**: `repr(str(path))` 保证 `python -c` 中的字符串字面量安全
@@ -217,3 +220,19 @@
   - ✅ `.zeus/v3/README.md`：补充 Dashboard 新功能说明（Metrics、Task Detail Drawer、Events History、Hot Reload、Pinia 架构）
   - ✅ `README.md` / `README.zh-CN.md`：新增 "What's New in v3 (Beta)" 板块，更新开发状态表格
   - **Commit**: `ac546c4`
+
+
+### 2026-04-17
+- **已完成（T-V3-022）**：PostgresStateStore 集成测试与生产验证
+  - ✅ 新增 `tests/test_v3_postgres_store.py`，module-scoped Docker PostgreSQL fixture
+  - ✅ 覆盖任务生命周期、隔离、事件存储、metrics 查询、mailbox、phase/milestone
+  - ✅ 7/7 测试通过
+- **已完成（T-V3-023）**：Docker sandbox dispatcher 完善与测试
+  - ✅ `dispatcher/docker.py` 新增 cgroup/安全/资源限制：`--pids-limit`, `--blkio-weight`, `--read-only`, `--network none`, `--cap-drop ALL`
+  - ✅ 新增 `output_volume_path` 可选输出 volume 隔离
+  - ✅ 补充 7 个端到端测试（命令构建 + E2E Docker 运行 + 超时/失败场景）
+- **已完成（T-V3-024）**：多镜像拆分与 docker-compose 生产验证
+  - ✅ 修复 `Dockerfile` build context 与 COPY 路径，新增 `docker-entrypoint.sh`
+  - ✅ `docker-compose.yml` 启用 `--no-embedded-scheduler`，scheduler/worker 通过 entrypoint 自动初始化 watch-mode 状态
+  - ✅ 3 个 Docker Compose 集成测试通过（config / build / stack health）
+  - ✅ Commit: `e7772e8`
