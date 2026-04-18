@@ -88,6 +88,9 @@
 | **T-V3-023** | Docker sandbox dispatcher 完善与测试 | ✅ 已完成 (`e7772e8`) |
 | **T-V3-024** | 多镜像拆分与 docker-compose 生产验证 | ✅ 已完成 (`e7772e8`) |
 | **T-V3-033** | 完全移除 task.json 运行时依赖，实现数据库单一事实来源 | ✅ 已完成 (`06eb7b4`) |
+| **T-V3-034** | 修复 WorkspaceManager copytree 性能：排除 node_modules 等目录 | ✅ 已完成 (`9d49694`) |
+| **T-V3-035** | 为 `run.py` 和 `zeus_runner.py` 增加 `--wave` 过滤支持 | ✅ 已完成 (`9750ba9`) |
+| **T-V3-036** | 高并发 DAG 模板与规划指南 | ✅ 已完成 (`8eee4b1`) |
 
 ### v3 已修复关键问题
 - **Windows subprocess ARP 路径转义**: `repr(str(path))` 保证 `python -c` 中的字符串字面量安全

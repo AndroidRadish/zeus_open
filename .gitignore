@@ -5,7 +5,10 @@
 *.pyo
 .zeus/v2/agent-workspaces/
 .zeus/v2/agent-logs/
+.zeus/v3/agent-workspaces/
+.zeus/v3/web/node_modules/
 **/__pycache__/
 *.db
 *.sqlite
 *.sqlite3
+*.db.backup.*
