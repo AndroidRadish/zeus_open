@@ -30,7 +30,26 @@ class WorkspaceManager(BaseWorkspaceManager):
         def _do_copy():
             workspace.mkdir(parents=True, exist_ok=True)
             ignore = shutil.ignore_patterns(
-                ".git", "agent-workspaces", "__pycache__", "*.pyc", "*.tmp", "*.lock"
+                ".git",
+                "agent-workspaces",
+                "__pycache__",
+                "*.pyc",
+                "*.tmp",
+                "*.lock",
+                "node_modules",
+                ".pytest_cache",
+                ".mypy_cache",
+                ".ruff_cache",
+                ".coverage",
+                "htmlcov",
+                "*.egg-info",
+                "dist",
+                "build",
+                ".venv",
+                "venv",
+                ".env",
+                "*.log",
+                "*.pid",
             )
             shutil.copytree(self.project_root, workspace, dirs_exist_ok=True, ignore=ignore)
             subprocess.run(

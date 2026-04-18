@@ -224,6 +224,38 @@ async def test_workspace_prepare_cleans_and_copies(workspace_manager):
     assert "TestProj" in prompt
 
 
+@pytest.mark.asyncio
+async def test_workspace_prepare_ignores_heavy_dirs(tmp_path):
+    """Heavy directories like node_modules should be excluded to keep prepare fast."""
+    (tmp_path / ".zeus" / "v3" / "config.json").parent.mkdir(parents=True)
+    (tmp_path / ".zeus" / "v3" / "config.json").write_text(
+        json.dumps({"project": {"name": "HeavyProj"}, "metrics": {"north_star": "n"}, "subagent": {"dispatcher": "mock"}}),
+        encoding="utf-8",
+    )
+    (tmp_path / "src" / "main.py").parent.mkdir(parents=True)
+    (tmp_path / "src" / "main.py").write_text("# main\n", encoding="utf-8")
+
+    # Create heavy directories that should be ignored
+    for heavy in ["node_modules", "__pycache__", ".pytest_cache", "venv"]:
+        (tmp_path / heavy / "foo" / "bar").mkdir(parents=True)
+        for i in range(50):
+            (tmp_path / heavy / f"file{i}.txt").write_text("x" * 100, encoding="utf-8")
+
+    wm = WorkspaceManager(tmp_path, version="v3")
+    import time
+    start = time.monotonic()
+    ws = await wm.prepare({"id": "T-201", "title": "Test", "wave": 1, "depends_on": []})
+    elapsed = time.monotonic() - start
+
+    assert ws.exists()
+    assert (ws / "src" / "main.py").exists()
+    assert not (ws / "node_modules").exists()
+    assert not (ws / "__pycache__").exists()
+    assert not (ws / ".pytest_cache").exists()
+    assert not (ws / "venv").exists()
+    assert elapsed < 1.0, f"prepare took {elapsed:.2f}s, expected <1.0s"
+
+
 # ---------------------------------------------------------------------------
 # StateStore tests
 # ---------------------------------------------------------------------------
@@ -371,6 +403,26 @@ async def test_scheduler_respects_quarantine(sqlite_store, memory_queue):
     enqueued_ids: set[str] = set()
     ready = await scheduler.tick(enqueued_ids)
     assert len(ready) == 0  # T-503 quarantined, T-504 blocked
+
+
+@pytest.mark.asyncio
+async def test_scheduler_wave_filter_only_enqueues_matching_wave(sqlite_store, memory_queue):
+    store = sqlite_store
+    q = memory_queue
+    await store.upsert_task({"id": "T-505", "status": "pending", "wave": 1, "depends_on": []})
+    await store.upsert_task({"id": "T-506", "status": "pending", "wave": 2, "depends_on": []})
+    await store.upsert_task({"id": "T-507", "status": "pending", "wave": 2, "depends_on": []})
+
+    scheduler = ZeusScheduler(store, q)
+    enqueued_ids: set[str] = set()
+    ready = await scheduler.tick(enqueued_ids, wave_filter=2)
+    assert len(ready) == 2
+    assert {t["id"] for t in ready} == {"T-506", "T-507"}
+    assert await q.size() == 2
+
+    # T-505 should still be pending
+    t505 = await store.get_task("T-505")
+    assert t505["status"] == "pending"
 
 
 @pytest.mark.asyncio
