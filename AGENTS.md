@@ -65,6 +65,17 @@
   3. **不要开始做**
   4. 继续完成当前 task
 
+### v3 高并发任务规划（DAG 设计）
+> 目标：让 WorkerPool 的每个 slot 都有活干，而不是 3 个 worker 只有 1 个在跑。
+
+- **每波至少 2-3 个独立任务**：Wave 1 应该是多个无依赖的并行任务（如 DB schema + API skeleton + config loader），而不是单个"初始化"大任务
+- **扇形依赖优于链式依赖**：
+  - ❌ 反模式：`T-001 → T-002 → T-003 → T-004`（4 个 wave，并发度=1）
+  - ✅ 推荐：`T-001/T-002/T-003` 并行 → `T-004/T-005/T-006` 并行 → `T-007` 集成
+- **大任务横向拆分**：如果一个 task 预计需要改 10+ 个文件，拆成 2-3 个按模块划分的独立 task，共用同一前置依赖
+- **验证方式**：`zeus_runner.py --plan --version v3` 检查每个 wave 的 task 数量；如果某个 wave 只有 1 个 task，考虑拆分或调整依赖
+- **参考模板**：`.zeus/v3/templates/high-concurrency-task-plan.json`
+
 ---
 
 ## ✂️ 代码简洁性三原则（Simplicity First）

@@ -1,0 +1,58 @@
+{
+  "version": "v3",
+  "updated_at": "2026-04-18T00:00:00Z",
+  "_comment": "High-concurrency task plan template. Each wave contains >=2 independent tasks to maximize WorkerPool utilization.",
+  "tasks": [
+    {"id": "T-101", "story_id": "US-001", "title": "Bootstrap DB schema", "wave": 1, "depends_on": [], "milestone_id": "M-001"},
+    {"id": "T-102", "story_id": "US-001", "title": "Bootstrap API skeleton", "wave": 1, "depends_on": [], "milestone_id": "M-001"},
+    {"id": "T-103", "story_id": "US-001", "title": "Bootstrap config loader", "wave": 1, "depends_on": [], "milestone_id": "M-001"},
+
+    {"id": "T-201", "story_id": "US-002", "title": "Implement store CRUD", "wave": 2, "depends_on": ["T-101"], "milestone_id": "M-002"},
+    {"id": "T-202", "story_id": "US-002", "title": "Implement queue backend", "wave": 2, "depends_on": ["T-101"], "milestone_id": "M-002"},
+    {"id": "T-203", "story_id": "US-002", "title": "Implement health endpoint", "wave": 2, "depends_on": ["T-102"], "milestone_id": "M-002"},
+    {"id": "T-204", "story_id": "US-002", "title": "Implement config validation", "wave": 2, "depends_on": ["T-103"], "milestone_id": "M-002"},
+
+    {"id": "T-301", "story_id": "US-003", "title": "Scheduler tick logic", "wave": 3, "depends_on": ["T-201", "T-202"], "milestone_id": "M-003"},
+    {"id": "T-302", "story_id": "US-003", "title": "Worker pool lifecycle", "wave": 3, "depends_on": ["T-201", "T-202"], "milestone_id": "M-003"},
+    {"id": "T-303", "story_id": "US-003", "title": "API integration tests", "wave": 3, "depends_on": ["T-203", "T-204"], "milestone_id": "M-003"},
+
+    {"id": "T-401", "story_id": "US-004", "title": "Dashboard overview page", "wave": 4, "depends_on": ["T-301"], "milestone_id": "M-004"},
+    {"id": "T-402", "story_id": "US-004", "title": "Dashboard task list page", "wave": 4, "depends_on": ["T-301"], "milestone_id": "M-004"},
+    {"id": "T-403", "story_id": "US-004", "title": "End-to-end smoke test", "wave": 4, "depends_on": ["T-302", "T-303"], "milestone_id": "M-004"}
+  ],
+  "phases": [
+    {
+      "id": "P-001",
+      "title": "Bootstrap",
+      "title_en": "Bootstrap",
+      "title_zh": "基础启动",
+      "milestone_ids": ["M-001"],
+      "wave_start": 1,
+      "wave_end": 1
+    },
+    {
+      "id": "P-002",
+      "title": "Core Modules",
+      "title_en": "Core Modules",
+      "title_zh": "核心模块",
+      "milestone_ids": ["M-002", "M-003"],
+      "wave_start": 2,
+      "wave_end": 3
+    },
+    {
+      "id": "P-003",
+      "title": "Integration",
+      "title_en": "Integration",
+      "title_zh": "集成测试",
+      "milestone_ids": ["M-004"],
+      "wave_start": 4,
+      "wave_end": 4
+    }
+  ],
+  "milestones": [
+    {"id": "M-001", "title": "Bootstrap", "task_ids": ["T-101", "T-102", "T-103"]},
+    {"id": "M-002", "title": "Infrastructure", "task_ids": ["T-201", "T-202", "T-203", "T-204"]},
+    {"id": "M-003", "title": "Engine", "task_ids": ["T-301", "T-302", "T-303"]},
+    {"id": "M-004", "title": "UI & E2E", "task_ids": ["T-401", "T-402", "T-403"]}
+  ]
+}
