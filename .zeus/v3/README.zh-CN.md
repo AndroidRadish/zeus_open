@@ -349,6 +349,48 @@ python -m pytest tests/ -v
 
 ---
 
+## 从零初始化新项目
+
+对于没有 v2 历史记录的全新项目：
+
+1. 创建 `.zeus/v3/config.json`：
+
+```json
+{
+  "project": {"name": "my-project"},
+  "metrics": {"north_star": "adoption_rate"},
+  "subagent": {"dispatcher": "auto"},
+  "workspace": {"backend": "copytree"}
+}
+```
+
+2. 创建 `.zeus/v3/task.json`，写入初始任务计划（可参考 `.zeus/v3/templates/high-concurrency-task-plan.json`）。
+
+3. **运行 `python run.py --import-only` 生成 `state.db`**。这一步是**必需的**——如果不执行，`--status` 和调度器都无法正常工作。
+
+```bash
+cd .zeus/v3/scripts
+python run.py --project-root . --import-only
+```
+
+4. 验证初始化结果：
+
+```bash
+python run.py --status
+```
+
+你应该能看到数据库中的任务计数，而不是 "No tasks found"。
+
+5. 启动执行或 serve 模式：
+
+```bash
+# 执行所有待办任务
+python run.py --project-root . --max-workers 3
+
+# 或启动 API 服务器 + 控制台
+python run.py --mode serve --project-root . --host 0.0.0.0 --port 8000
+```
+
 ## 从 v2 迁移
 
 1. 将 v2 的 `task.json` 复制到 `.zeus/v3/task.json`

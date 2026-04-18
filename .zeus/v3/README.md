@@ -354,6 +354,48 @@ Current status: **73/73 tests passing**.
 
 ---
 
+## Bootstrap a New Project
+
+For a brand-new project that does not have a v2 history:
+
+1. Create `.zeus/v3/config.json`:
+
+```json
+{
+  "project": {"name": "my-project"},
+  "metrics": {"north_star": "adoption_rate"},
+  "subagent": {"dispatcher": "auto"},
+  "workspace": {"backend": "copytree"}
+}
+```
+
+2. Create `.zeus/v3/task.json` with your initial task plan (use `.zeus/v3/templates/high-concurrency-task-plan.json` as a reference).
+
+3. **Run `python run.py --import-only` to generate `state.db`**. This step is mandatory — without it, `--status` and the scheduler will not work.
+
+```bash
+cd .zeus/v3/scripts
+python run.py --project-root . --import-only
+```
+
+4. Verify initialization:
+
+```bash
+python run.py --status
+```
+
+You should see task counts from the database, not "No tasks found".
+
+5. Start execution or serve mode:
+
+```bash
+# Run all pending tasks
+python run.py --project-root . --max-workers 3
+
+# Or start the API server + Dashboard
+python run.py --mode serve --project-root . --host 0.0.0.0 --port 8000
+```
+
 ## Migration from v2
 
 1. Copy your v2 `task.json` into `.zeus/v3/task.json`
