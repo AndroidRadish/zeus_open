@@ -17,46 +17,46 @@ Language: [English](README.md) | [简体中文](README.zh-CN.md)
 
 ## Quick Start
 
-### Claude Code Users
+Zeus works with **any AI platform** (Kimi, DeepSeek, GPT, Claude, GLM, Gemini). No special CLI or slash commands required — just talk to your AI in natural language.
+
+### 1) One-time setup
 
 ```bash
-# 1) Install the commit message hook (one-time)
+# Install the commit message hook
 cp .zeus/hooks/commit-msg .git/hooks/commit-msg
-
-# 2) Initialize the Zeus project workspace
-/zeus:init
-
-# Optional for brownfield repositories: map the existing codebase first
-/zeus:discover --depth auto
-
-# 3) Build the first design spec
-/zeus:brainstorm --full
-
-# 4) Convert approved spec to executable artifacts
-/zeus:plan
-
-# 5) Run pending tasks in dependency waves
-/zeus:execute
+# Windows: see docs/init-harness.md for PowerShell hook
 ```
 
-### Universal AI Users (Kimi / GLM / DeepSeek / GPT / Gemini)
+### 2) Start the conversation
 
-These platforms do not have the `claude` CLI or `/zeus:*` skill routing. Use `zeus_runner.py` instead:
+Tell your AI what you want to do. Examples:
+
+| You say | Zeus does |
+|---|---|
+| "Initialize this project" | Creates `.zeus/main/config.json`, sets north-star metrics |
+| "Show me the status" | Reports completed / pending / running tasks |
+| "Map the existing codebase" | Generates `codebase-map.json` for brownfield projects |
+| "Design the auth module" | Writes a spec to `.zeus/main/specs/auth.md` |
+| "Plan the next wave" | Converts spec into stories, tasks, and dependency waves |
+| "Run pending tasks" | Executes current wave, one task at a time |
+| "Generate tests for android" | Creates platform test flow JSON |
+
+The AI reads `.zeus/ZEUS_AGENT.md` to learn the Zeus protocol and handles the rest.
+
+### 3) For scripted / CI usage
 
 ```bash
-# 1) Install the commit-msg hook (Bash)
-cp .zeus/hooks/commit-msg .git/hooks/commit-msg
-
-# Windows PowerShell users: see docs/init-harness.md
-
-# 2) Check project status
+# Check status
 python .zeus/scripts/zeus_runner.py --status
 
-# 3) Run current wave (runner prints task prompts; you complete them in your AI session)
+# View plan
+python .zeus/scripts/zeus_runner.py --plan
+
+# Execute current wave
 python .zeus/scripts/zeus_runner.py
 
-# 4) View execution plan
-python .zeus/scripts/zeus_runner.py --plan
+# Execute specific wave (v3)
+python .zeus/v3/scripts/run.py --wave 2 --max-workers 3
 ```
 
 #### v3 Multi-Agent Framework (Beta)
@@ -150,20 +150,24 @@ init → discover → brainstorm → plan → execute → feedback → evolve
 
 > **Note:** The legacy SVG workflow diagrams have been retired. The above text diagram reflects the current universal workflow.
 
-## Skill Commands
+## Natural Language Intents
 
-| Command | Purpose | Main Output |
+No slash commands needed. Just tell your AI what you want.
+
+| Intent | Example phrases | What happens |
 |---|---|---|
-| `/zeus:init` | Initialize Zeus workspace and north star metrics | `.zeus/main/config.json`, `evolution.md` |
-| `/zeus:discover [--version v2] [--depth quick\|auto\|full]` | Map existing codebase and generate brownfield context artifacts | `codebase-map.json`, `existing-modules.json`, `tech-inventory.md`, `architecture.md` |
-| `/zeus:brainstorm --full` | Full-scope design dialogue and spec authoring | `.zeus/main/specs/*.md` |
-| `/zeus:brainstorm --feature <name>` | Single-feature design loop | feature spec |
-| `/zeus:plan [--version v2]` | Convert spec to user stories and tasks | `prd.json`, `task.json`, `roadmap.json` |
-| `/zeus:execute [--version v2]` | Execute pending tasks wave by wave (see `skills/zeus-execute-v2.md` for v2) | atomic commits, task pass states |
-| `/zeus:test-gen [--version v2] [--platforms android,chrome,ios]` | AI-generate platform test flows from task/prd artifacts | `{version}/tests/*.test.json` |
-| `/zeus:feedback` | Capture feedback and run attribution | `feedback/*.json`, evolution entry |
-| `/zeus:evolve` | Create a new version branch/folder model | `.zeus/vN/*` |
-| `/zeus:status` | Render global status report and next action | health snapshot + recommendation |
+| **init** | "Initialize this project", "Setup Zeus", "开始吧" | Creates config, north-star metrics, evolution baseline |
+| **status** | "What's the status?", "看看进度", "到哪了" | Reports task completion, pending queue, next action |
+| **discover** | "Map the codebase", "扫一下现有代码", "Brownfield check" | Generates codebase-map and module inventory |
+| **brainstorm** | "Design the auth flow", "写个 spec", "Brainstorm payments" | Writes structured spec to `.zeus/{version}/specs/` |
+| **plan** | "Plan the next wave", "拆一下任务", "Convert spec to tasks" | Creates stories, tasks, wave DAG, writes `task.json` |
+| **execute** | "Run pending tasks", "执行当前 wave", "Start working" | Runs scheduler + worker pool, executes task prompts |
+| **execute-one** | "Run T-001 only", "只做这个 task" | Executes a single task by ID |
+| **test-gen** | "Generate tests", "写安卓测试" | Creates platform test flow JSON files |
+| **feedback** | "Login is slow", "用户反馈", "Record production issue" | Attributes signals to tasks, updates evolution |
+| **evolve** | "Create v3", "版本演进", "Start next phase" | Spins up new version track, migrates tasks |
+
+The AI uses `.zeus/ZEUS_AGENT.md` as its instruction manual. It knows which scripts to call and what files to write.
 
 ## Repository Layout
 
@@ -269,21 +273,29 @@ The container exposes port `8234` and mounts the current directory so that `.zeu
 
 ## Brownfield Adoption
 
-For existing repositories, run this path:
+For existing repositories, tell your AI:
 
+> "Map the codebase and initialize Zeus using what you find."
+
+The AI will:
+1. Run **discover** to scan your code and generate `codebase-map.json`
+2. Run **init** with discovered context pre-filled
+3. Ask you to confirm or override inferred values
+4. Then proceed to **brainstorm** → **plan** → **execute**
+
+Or step-by-step:
 ```bash
-# 1) Build codebase context artifacts
-/zeus:discover --version main --depth auto
+# Discover
+"Scan the project structure and create a codebase map"
 
-# 2) Initialize config using discovered context
-/zeus:init --import-existing --version main
+# Init
+"Initialize Zeus with the discovered context"
 
-# 3) Design and plan a scoped feature against existing modules
-/zeus:brainstorm --feature <name> --version main
-/zeus:plan --version main
+# Brainstorm + Plan
+"Design the auth module and plan the tasks"
 
-# 4) Execute with wave gates
-/zeus:execute --version main
+# Execute
+"Run the planned tasks"
 ```
 
 This keeps Zeus backward-compatible for greenfield projects while adding safe brownfield onboarding.
@@ -311,17 +323,18 @@ Skills should delegate intentionally:
 
 Zeus uses AI-generated test flows. **Do not write test cases manually.**
 
+Tell your AI:
+> "Generate tests for android, chrome, and ios"
+
+Or run directly:
 ```bash
-# Generate test flows for all platforms (after zeus:plan)
+# All platforms
 python .zeus/scripts/generate_tests.py --version main --platforms android,chrome,ios
 
-# Or via skill
-/zeus:test-gen
+# Single platform
+python .zeus/scripts/generate_tests.py --version main --platforms chrome
 
-# Target a single platform
-/zeus:test-gen --platforms chrome
-
-# Regenerate (overwrite existing)
+# Force regenerate
 python .zeus/scripts/generate_tests.py --version main --force
 ```
 
@@ -335,7 +348,7 @@ Test execution uses the native platform toolchain directly:
 | Chrome | `chrome-cli` / Chrome DevTools Protocol |
 | iOS | `xcrun simctl` / `libimobiledevice` |
 
-Test flows are regenerated automatically when `/zeus:test-gen` is invoked, and optionally after each execution wave completes.
+Test flows are regenerated when you ask your AI to generate them, or optionally after each execution wave completes.
 
 ## AI Log Contract
 
@@ -363,9 +376,9 @@ chore(zeus): initialize v2 evolution
 
 ## Troubleshooting
 
-- If `/zeus:*` commands are not discovered, restart your AI runtime session.
+- If the AI doesn't recognize Zeus workflows, point it to `.zeus/ZEUS_AGENT.md`.
 - If execution stalls, verify `python .zeus/scripts/zeus_runner.py --status` works.
-- If task updates fail, check JSON validity in `.zeus/*/task.json`.
+- If task updates fail, check JSON validity in `.zeus/*/task.json` (v2) or DB state (v3).
 - If commit hook fails, re-copy `.zeus/hooks/commit-msg` into `.git/hooks/`.
 - On Windows, if the bash hook fails, use `.zeus/hooks/commit-msg.ps1` instead (see `docs/init-harness.md`).
 

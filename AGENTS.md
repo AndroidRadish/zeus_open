@@ -34,14 +34,17 @@
 
 0. 回答上面的「动手前四问」（如有歧义/困惑，先向用户/调度器提问）
 1. `pwd` — 确认当前在项目根目录
-2. 读取 `claude-progress.md`（或 `.zeus/main/evolution.md`）— 了解最新状态
-3. 读取 `.zeus/v3/task.json`（导出产物）或查询数据库（`state.db`）— 查看待完成任务
+2. 读取 `.zeus/ZEUS_AGENT.md` — 确认当前支持的 Zeus Agent 协议版本
+3. 读取 `claude-progress.md`（或 `.zeus/main/evolution.md`）— 了解最新状态
+4. 读取 `.zeus/v3/task.json`（导出产物）或查询数据库（`state.db`）— 查看待完成任务
    - **v3 事实来源是数据库**：`task.json` 只是可选导出产物，运行时状态（status/passes/commit_sha）永远以数据库为准
-4. `git log --oneline -5` — 查看最近提交
-5. 运行状态检查：`python .zeus/scripts/zeus_runner.py --status`
-6. 如果基础验证失败，先修复基础状态
+5. `git log --oneline -5` — 查看最近提交
+6. 运行状态检查：`python .zeus/scripts/zeus_runner.py --status`
+7. 如果基础验证失败，先修复基础状态
 
 ⚠️ **如果状态异常，先修复，不要继续！**
+
+> **自然语言交互优先**：用户不会输入 `/zeus:xxx` 命令。你应该根据用户的自然语言描述识别意图（init / status / discover / brainstorm / plan / execute / feedback / evolve），然后调用对应工具。具体映射参考 `.zeus/ZEUS_AGENT.md`。
 
 ---
 
@@ -210,14 +213,32 @@ init → discover → brainstorm → plan → execute → feedback → evolve
 
 ---
 
-## 🎭 Agent 映射
+## 🎭 Agent 映射与自然语言意图
 
-- **zeus-researcher** → 只读探索（Kimi: `Agent(explore)`）
-- **zeus-planner** → 规划拆解（Kimi: `Agent(plan)`）
-- **zeus-executor** → 执行与验证（Kimi: `Agent(coder)`）
-- **zeus-analyst** → 反馈归因
-- **zeus-tester** → 测试生成
-- **zeus-docs** → 文档一致性
+Zeus 不再依赖 `/zeus:*` 斜杠命令。用户通过自然语言表达意图，Agent 识别后执行对应阶段。
+
+### 意图识别表
+
+| 用户说 | 识别意图 | 推荐处理方式 |
+|---|---|---|
+| "初始化项目" / "Setup Zeus" / "开始吧" | **init** | 主会话直接执行（单轮问答） |
+| "看看进度" / "Status?" / "到哪了" | **status** | 主会话直接执行（调用 runner --status） |
+| "扫一下代码" / "Map codebase" | **discover** | 子 Agent 探索（Kimi: `Agent(explore)`） |
+| "设计 XX 功能" / "写个 spec" | **brainstorm** | 子 Agent 规划（Kimi: `Agent(plan)`） |
+| "拆一下任务" / "Plan next wave" | **plan** | 子 Agent 规划（Kimi: `Agent(plan)`） |
+| "执行当前 wave" / "Run tasks" | **execute** | 子 Agent 编码（Kimi: `Agent(coder)`） |
+| "生成测试" / "Write tests" | **test-gen** | 子 Agent 编码（Kimi: `Agent(coder)`） |
+| "记录反馈" / "Production issue" | **feedback** | 主会话或子 Agent 分析 |
+| "版本演进" / "Create v3" | **evolve** | 主会话直接执行 |
+
+### 传统 Agent 角色（内部实现参考）
+
+- **zeus-researcher** → 只读探索（代码库扫描、状态检查）
+- **zeus-planner** → 规划拆解（spec → story → task → wave）
+- **zeus-executor** → 执行与验证（代码实现、测试、commit）
+- **zeus-analyst** → 反馈归因（信号收集、演化判定）
+- **zeus-tester** → 测试生成（平台测试流程 JSON）
+- **zeus-docs** → 文档一致性（双语对齐、格式校验）
 
 ---
 

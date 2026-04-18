@@ -68,4 +68,4 @@ Create `.zeus/main/ai-logs/{ISO-ts}-init.md` using the 3-section contract.
 
 ### 8) Completion message
 
-Report created artifacts and recommend next step: `zeus:brainstorm --full` or `zeus:discover`.
+Report created artifacts and recommend next step: "Shall we brainstorm the full design?" or "Do you want me to map the existing codebase first?"

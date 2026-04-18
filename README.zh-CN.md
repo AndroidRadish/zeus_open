@@ -17,47 +17,46 @@ Zeus 核心能力：
 
 ## 快速开始
 
-### Claude Code 用户
+Zeus 支持**所有 AI 平台**（Kimi、DeepSeek、GPT、Claude、GLM、Gemini）。不需要特殊的 CLI 或斜杠命令——用自然语言跟你的 AI 交流即可。
+
+### 1) 一次性设置
 
 ```bash
-# 1) 安装 commit-msg hook（一次）
+# 安装 commit message hook
 cp .zeus/hooks/commit-msg .git/hooks/commit-msg
-
-# 2) 初始化 Zeus
-/zeus:init
-
-# 老项目推荐先做代码基线映射
-/zeus:discover --depth auto
-
-# 3) 首次全量设计
-/zeus:brainstorm --full
-
-# 4) 将 spec 转为执行资产
-/zeus:plan
-
-# 5) 按依赖波次执行任务
-/zeus:execute
+# Windows 用户参见 docs/init-harness.md 中的 PowerShell hook 安装说明
 ```
 
-### 通用 AI 用户（Kimi / GLM / DeepSeek / GPT / Gemini）
+### 2) 开始对话
 
-由于这些平台没有 `claude` CLI 和 `/zeus:xxx` skill 路由，请使用 `zeus_runner.py` 和人机协同模式：
+告诉你的 AI 你想做什么。例如：
+
+| 你说 | Zeus 会 |
+|---|---|
+| "初始化这个项目" / "Setup Zeus" | 创建 `.zeus/main/config.json`，设置北极星指标 |
+| "看看现在进度" / "Status?" | 报告已完成 / 待执行 / 运行中任务 |
+| "扫一下代码库" / "Map codebase" | 生成 `codebase-map.json`（老项目适用） |
+| "设计一下鉴权模块" / "Brainstorm auth" | 写 spec 到 `.zeus/main/specs/auth.md` |
+| "规划一下任务" / "Plan next wave" | 将 spec 拆为 story、task、wave |
+| "执行当前 wave" / "Run tasks" | 按 wave 逐个执行任务 |
+| "生成安卓测试" / "Generate android tests" | 创建平台测试流程 JSON |
+
+AI 会读取 `.zeus/ZEUS_AGENT.md` 学习 Zeus 协议，自动处理后续步骤。
+
+### 3) 脚本 / CI 用法
 
 ```bash
-# 1) 安装 commit-msg hook（Bash 用户）
-cp .zeus/hooks/commit-msg .git/hooks/commit-msg
-
-# Windows PowerShell 用户
-# 参见 docs/init-harness.md 中的 Windows hook 安装说明
-
-# 2) 查看全局状态
+# 查看状态
 python .zeus/scripts/zeus_runner.py --status
 
-# 3) 执行当前 wave（runner 会逐个输出 task prompt，由你在 AI 会话中完成）
+# 查看计划
+python .zeus/scripts/zeus_runner.py --plan
+
+# 执行当前 wave
 python .zeus/scripts/zeus_runner.py
 
-# 4) 查看执行计划
-python .zeus/scripts/zeus_runner.py --plan
+# 执行指定 wave（v3）
+python .zeus/v3/scripts/run.py --wave 2 --max-workers 3
 ```
 
 #### v3 多 Agent 框架（Beta）
@@ -77,9 +76,9 @@ python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
 # http://localhost:8234/web
 ```
 
-Zeus 的 `.zeus/v1/skills/` 目录中存放了每个工作环节的 markdown 指令文档（v1 归档），直接在 AI 会话中引用即可（例如："请按照 .zeus/v1/skills/zeus-init.md 初始化本项目"）。
+Zeus 的 `.zeus/ZEUS_AGENT.md` 是所有 AI 平台的通用交互协议。将项目路径提供给 AI 后，它会自动识别 Zeus 工作流并按自然语言指令执行。
 
-更多映射关系参见 [docs/open-agent-mapping.md](docs/open-agent-mapping.md)。
+v1 时代的 skill 文件已归档至 `.zeus/v1/skills/`，如需参考旧版指令格式可查阅。
 
 ## v2 新特性
 
@@ -139,20 +138,24 @@ init → discover → brainstorm → plan → execute → feedback → evolve
 
 > **说明：** 旧的 SVG 流程图已退役。上面的文字流程图反映了当前通用工作流。
 
-## Skill 命令
+## 自然语言意图
 
-| 命令 | 用途 | 主要产物 |
+不需要斜杠命令。直接告诉你的 AI 你想做什么。
+
+| 意图 | 示例说法 | 执行内容 |
 |---|---|---|
-| `/zeus:init` | 初始化 Zeus 工作区与北极星指标 | `.zeus/main/config.json`、`evolution.md` |
-| `/zeus:discover [--version v2] [--depth quick\|auto\|full]` | 映射现有代码库并生成 brownfield 上下文资产 | `codebase-map.json`、`existing-modules.json`、`tech-inventory.md`、`architecture.md` |
-| `/zeus:brainstorm --full` | 全量设计对话与 spec 编写 | `.zeus/main/specs/*.md` |
-| `/zeus:brainstorm --feature <name>` | 单功能设计循环 | feature spec |
-| `/zeus:plan [--version v2]` | 将 spec 拆解为故事与任务 | `prd.json`、`task.json`、`roadmap.json` |
-| `/zeus:execute [--version v2]` | 按 wave 执行未完成任务 | 原子提交、task pass 状态 |
-| `/zeus:test-gen [--version v2] [--platforms android,chrome,ios]` | AI 生成平台测试流程文件 | `{version}/tests/*.test.json` |
-| `/zeus:feedback` | 录入反馈并做归因分析 | `feedback/*.json`、演化记录 |
-| `/zeus:evolve` | 创建新版本轨道 | `.zeus/vN/*` |
-| `/zeus:status` | 输出全局状态与下一步建议 | 状态快照 + 推荐动作 |
+| **init** | "初始化这个项目"、"Setup Zeus"、"开始吧" | 创建配置、北极星指标、演化基线 |
+| **status** | "看看进度"、"Status?"、"到哪了" | 报告任务完成数、待执行队列、下一步建议 |
+| **discover** | "扫一下代码"、"Map the codebase"、"现有代码什么情况" | 生成代码地图与模块清单 |
+| **brainstorm** | "设计鉴权流程"、"写个 spec"、"Brainstorm payments" | 写结构化 spec 到 `.zeus/{version}/specs/` |
+| **plan** | "拆一下任务"、"Plan next wave"、"把 spec 转成 task" | 创建 story、task、依赖 wave，写 `task.json` |
+| **execute** | "执行当前 wave"、"Run pending"、"开始做" | 运行调度器 + Worker 池，按 task prompt 执行 |
+| **execute-one** | "只做 T-001"、"Run this task" | 按 ID 执行单个任务 |
+| **test-gen** | "生成测试"、"写安卓测试" | 创建平台测试流程 JSON |
+| **feedback** | "登录很慢"、"用户反馈"、"Record issue" | 将信号归因到 task，更新演化记录 |
+| **evolve** | "创建 v3"、"版本演进"、"进入下一阶段" | 创建新版本轨道，迁移未完成任务 |
+
+AI 以 `.zeus/ZEUS_AGENT.md` 为操作手册，知道调用哪些脚本、写入哪些文件。
 
 ## 目录结构
 
@@ -258,21 +261,29 @@ docker run --rm -p 8234:8234 -v $(pwd):/app zeus-open:v2
 
 ## 老项目接入（Brownfield）
 
-针对已有代码库，建议按如下顺序：
+针对已有代码库，直接告诉你的 AI：
 
+> "扫一下现有代码，然后用发现的结果初始化 Zeus。"
+
+AI 会：
+1. 运行 **discover** 扫描代码，生成 `codebase-map.json`
+2. 运行 **init**，将发现的内容预填入配置
+3. 问你确认或修改推断值
+4. 继续 **brainstorm** → **plan** → **execute**
+
+或分步执行：
 ```bash
-# 1) 先生成代码地图与上下文资产
-/zeus:discover --version main --depth auto
+# 发现
+"扫描项目结构并创建代码地图"
 
-# 2) 使用 discover 结果初始化配置
-/zeus:init --import-existing --version main
+# 初始化
+"用扫描结果初始化 Zeus"
 
-# 3) 在既有模块约束下做功能设计与拆解
-/zeus:brainstorm --feature <name> --version main
-/zeus:plan --version main
+# 设计 + 规划
+"设计鉴权模块并拆解任务"
 
-# 4) 按 wave 执行
-/zeus:execute --version main
+# 执行
+"运行已规划的任务"
 ```
 
 该流程对新项目保持兼容：不运行 discover 时，原有 init -> brainstorm -> plan -> execute 路径不变。
@@ -300,17 +311,18 @@ Zeus 在 `.claude/agents` 下定义阶段化代理：
 
 Zeus 使用 AI 自动生成测试流程。**不要手写测试用例。**
 
+告诉你的 AI：
+> "为 android、chrome、ios 生成测试"
+
+或直接运行：
 ```bash
-# 在 zeus:plan 之后为所有平台生成测试流程
+# 所有平台
 python .zeus/scripts/generate_tests.py --version main --platforms android,chrome,ios
 
-# 通过 skill 调用
-/zeus:test-gen
+# 单个平台
+python .zeus/scripts/generate_tests.py --version main --platforms chrome
 
-# 仅生成指定平台
-/zeus:test-gen --platforms chrome
-
-# 强制重新生成（覆盖已有文件）
+# 强制重新生成
 python .zeus/scripts/generate_tests.py --version main --force
 ```
 
@@ -324,7 +336,7 @@ python .zeus/scripts/generate_tests.py --version main --force
 | Chrome | `chrome-cli` / Chrome DevTools Protocol |
 | iOS | `xcrun simctl` / `libimobiledevice` |
 
-`/zeus:plan` 完成后会自动询问是否生成测试；`/zeus:execute` 每个 wave 完成后也可选择刷新测试流程。
+plan 完成后可以要求 AI 生成测试；execute 每个 wave 完成后也可选择刷新测试流程。
 
 ## AI 日志约定
 
@@ -352,9 +364,9 @@ chore(zeus): initialize v2 evolution
 
 ## 故障排查
 
-- 若 `/zeus:*` 命令无法识别，请重启 AI 运行时会话。
+- 若 AI 不认识 Zeus 工作流，请指引它阅读 `.zeus/ZEUS_AGENT.md`。
 - 若执行阶段卡住，检查 `python .zeus/scripts/zeus_runner.py --status` 是否能正常运行。
-- 若任务更新失败，先校验 `.zeus/*/task.json` 的 JSON 格式。
+- 若任务更新失败，校验 `.zeus/*/task.json` 的 JSON 格式（v2）或 DB 状态（v3）。
 - 若 commit hook 异常，重新复制 `.zeus/hooks/commit-msg` 到 `.git/hooks/`。
 - Windows 环境下若 bash hook 执行失败，可改用 `.zeus/hooks/commit-msg.ps1`（详见 `docs/init-harness.md`）。
 
