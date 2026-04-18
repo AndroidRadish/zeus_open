@@ -220,6 +220,31 @@ assets/
   zeus-workflow.zh-CN.svg
 ```
 
+## v3 Dashboard
+
+Zeus v3 provides a Vite + Vue 3 dashboard served by the built-in FastAPI server:
+
+- **Overview** — live metrics, task list, and real-time SSE event stream
+- **Tasks** — inline actions (Retry / Cancel / Pause / Resume / Quarantine / Logs / Detail)
+- **Task Detail Drawer** — slide-out panel with full fields, dependencies, and activity logs
+- **Events** — searchable real-time SSE event history with progress highlights
+- **Metrics** — bottleneck analysis, blocked dependency chains, per-task duration stats
+- **Graph** — task dependency graph (SVG / Mermaid / ECharts)
+- **Phases** — phase & milestone CRUD with drill-down to task lists
+- **Mailbox** — AgentBus point-to-point message inbox with send form
+- **Control** — scheduler / worker management and one-click global run
+- **Hot Reload** — auto re-imports `task.json` changes in `serve` mode
+
+Start the server:
+
+```bash
+python .zeus/v3/scripts/run.py --mode serve --project-root . --host 0.0.0.0 --port 8000
+```
+
+Then visit `http://127.0.0.1:8000/dashboard`.
+
+For the full v3 guide, see [`.zeus/v3/README.md`](.zeus/v3/README.md).
+
 ## v2 Dashboard
 
 Zeus v2 provides a zero-build Web UI served by `zeus_server.py` (FastAPI):

@@ -208,6 +208,31 @@ assets/
   zeus-workflow.zh-CN.svg
 ```
 
+## v3 控制台
+
+Zeus v3 提供基于 Vite + Vue 3 的实时控制台，由内置 FastAPI 服务器驱动：
+
+- **概览** — 实时指标、任务列表、SSE 事件流
+- **任务** — 内联操作（重试 / 取消 / 暂停 / 恢复 / 隔离 / 日志 / 详情）
+- **任务详情抽屉** — 滑出面板展示完整字段、依赖关系与活动日志
+- **事件** — 可搜索的实时 SSE 事件历史，含进度高亮
+- **指标** — 瓶颈分析、阻塞依赖链、单任务耗时统计
+- **图** — 任务依赖图（SVG / Mermaid / ECharts）
+- **阶段** — 阶段与里程碑的增删改查，支持下钻到任务列表
+- **邮箱** — AgentBus 点对点消息收件箱与发送表单
+- **控制** — 调度器 / 工作器管理与一键全局运行
+- **热重载** — `serve` 模式下自动重新导入 `task.json` 变更
+
+启动服务：
+
+```bash
+python .zeus/v3/scripts/run.py --mode serve --project-root . --host 0.0.0.0 --port 8000
+```
+
+然后访问 `http://127.0.0.1:8000/dashboard`。
+
+完整 v3 指南请见 [`.zeus/v3/README.zh-CN.md`](.zeus/v3/README.zh-CN.md)。
+
 ## v2 控制台
 
 Zeus v2 由 `zeus_server.py`（FastAPI）驱动零构建 Web UI：
