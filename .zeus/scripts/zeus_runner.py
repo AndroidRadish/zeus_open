@@ -453,7 +453,7 @@ class ZeusRunner:
 
     def run_wave(self, wave: int | None = None, task_id: str | None = None, auto: bool = False) -> None:
         if self.version == "v3":
-            self._run_wave_v3()
+            self._run_wave_v3(wave=wave)
             return
 
         pending = self.get_pending_tasks(wave=wave, task_id=task_id)
@@ -506,7 +506,7 @@ class ZeusRunner:
         print("\n[DONE] 本轮执行结束。")
         self.status()
 
-    def _run_wave_v3(self) -> None:
+    def _run_wave_v3(self, wave: int | None = None) -> None:
         print("\n▶ Delegating to v3 execution engine...\n")
         cmd = [
             sys.executable,
@@ -514,6 +514,8 @@ class ZeusRunner:
             "--project-root", ".",
             "--max-workers", "3",
         ]
+        if wave is not None:
+            cmd.extend(["--wave", str(wave)])
         try:
             subprocess.run(cmd, check=False)
         except KeyboardInterrupt:

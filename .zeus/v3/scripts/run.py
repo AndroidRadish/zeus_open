@@ -52,6 +52,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--embedded-scheduler", action="store_true", default=True, help="Start embedded scheduler+workers in serve mode (default: True)")
     parser.add_argument("--no-embedded-scheduler", action="store_true", default=False, help="Disable embedded scheduler in serve mode")
     parser.add_argument("--status", action="store_true", help="Print human-readable project status and exit")
+    parser.add_argument("--wave", type=int, default=None, help="Only enqueue tasks in the specified wave")
     return parser.parse_args(argv)
 
 
@@ -271,6 +272,9 @@ async def main(argv: list[str] | None = None) -> int:
                 span.set_attribute("max_workers", args.max_workers)
                 span.set_attribute("database_url", database_url)
                 span.set_attribute("mode", args.mode)
+                if args.wave is not None:
+                    span.set_attribute("wave_filter", args.wave)
+                    print(f"   Wave filter: {args.wave}")
                 try:
                     while True:
                         target = await store.get_meta("scheduler_target_state", "stopped")
@@ -282,7 +286,7 @@ async def main(argv: list[str] | None = None) -> int:
                         await store.set_meta("scheduler_actual_state", "running")
                         await store.set_meta("scheduler_active", True)
                         with tracer.start_as_current_span("scheduler-tick") as tick_span:
-                            ready = await scheduler.tick(enqueued_ids)
+                            ready = await scheduler.tick(enqueued_ids, wave_filter=args.wave)
                             ticks += 1
                             tick_span.set_attribute("tick", ticks)
                             tick_span.set_attribute("enqueued_count", len(ready))
@@ -310,14 +314,18 @@ async def main(argv: list[str] | None = None) -> int:
         else:
             # combined mode: old inline behavior
             print(">> Scheduler started")
+            if args.wave is not None:
+                print(f"   Wave filter: {args.wave}")
             with tracer.start_as_current_span("scheduler-run") as span:
                 span.set_attribute("max_workers", args.max_workers)
                 span.set_attribute("database_url", database_url)
                 span.set_attribute("mode", args.mode)
+                if args.wave is not None:
+                    span.set_attribute("wave_filter", args.wave)
                 try:
                     while True:
                         with tracer.start_as_current_span("scheduler-tick") as tick_span:
-                            ready = await scheduler.tick(enqueued_ids)
+                            ready = await scheduler.tick(enqueued_ids, wave_filter=args.wave)
                             ticks += 1
                             tick_span.set_attribute("tick", ticks)
                             tick_span.set_attribute("enqueued_count", len(ready))

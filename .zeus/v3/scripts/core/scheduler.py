@@ -107,11 +107,14 @@ class ZeusScheduler:
                 recovered.append(t["id"])
         return recovered
 
-    async def tick(self, enqueued_ids: set[str]) -> list[dict[str, Any]]:
+    async def tick(self, enqueued_ids: set[str], wave_filter: int | None = None) -> list[dict[str, Any]]:
         """Evaluate once and enqueue all globally ready tasks.
 
         Supports adaptive wave rescheduling: if a wave is blocked, downstream
         ready tasks are rescheduled into the earliest blocked wave.
+
+        Args:
+            wave_filter: If set, only enqueue tasks whose effective wave matches.
         """
         tasks = await self.store.list_tasks()
         await self._recover_expired_leases(tasks)
@@ -165,6 +168,9 @@ class ZeusScheduler:
             quarantine = await self.store.list_quarantine()
             quarantined_ids = {q["task_id"] for q in quarantine}
             ready = self._get_global_ready_tasks(tasks, pass_map, quarantined_ids, enqueued_ids)
+
+        if wave_filter is not None:
+            ready = [t for t in ready if self._task_effective_wave(t) == wave_filter]
 
         for task in ready:
             await self.store.update_task_status(task["id"], "running")
