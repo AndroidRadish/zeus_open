@@ -35,19 +35,20 @@
 0. 回答上面的「动手前四问」（如有歧义/困惑，先向用户/调度器提问）
 1. `pwd` — 确认当前在项目根目录
 2. 读取 `.zeus/ZEUS_AGENT.md` — 确认当前支持的 Zeus Agent 协议版本
-3. **如果是 v3 新项目初始化**，按以下顺序执行：
+3. **优先查运行时状态（真相），后看静态配置（声明）**
+   - **v3**：先运行 `python .zeus/v3/scripts/run.py --status` 查看 `state.db`
+     - 如果返回 0 task → 系统从未启动过，需要执行初始化（见步骤 4）
+     - 如果返回 task 数据 → 以 DB 为准，task.json 仅供参考
+   - **v2 / main**：`python .zeus/scripts/zeus_runner.py --status`
+   - **原则**：`state.db` / `zeus_runner.py --status` 是**唯一真相**；`task.json` 只是人类声明，可能被遗忘、未加载或过期
+4. **如果是 v3 新项目初始化**，按以下顺序执行：
    - 创建 `.zeus/v3/` 目录结构（`config.json` + `task.json`）
    - 运行 `python .zeus/v3/scripts/run.py --import-only` 生成 `state.db`
    - 验证：`python .zeus/v3/scripts/run.py --status` 能正常输出
    - **注意**：`--import-only` 是 v3 初始化的必需步骤，不能省略
-4. 读取 `claude-progress.md`（或 `.zeus/main/evolution.md`）— 了解最新状态
-5. 读取 `.zeus/v3/task.json`（导出产物）或查询数据库（`state.db`）— 查看待完成任务
-   - **v3 事实来源是数据库**：`task.json` 只是静态计划导出产物，运行时状态（status/passes/commit_sha）永远以数据库为准
+5. 读取 `claude-progress.md`（或 `.zeus/main/evolution.md`）— 了解最新状态
 6. `git log --oneline -5` — 查看最近提交
-7. 运行状态检查：
-   - **v2 / main**：`python .zeus/scripts/zeus_runner.py --status`
-   - **v3**：`python .zeus/v3/scripts/run.py --status`
-8. 如果基础验证失败，先修复基础状态
+7. 如果基础验证失败，先修复基础状态
 
 ⚠️ **如果状态异常，先修复，不要继续！**
 

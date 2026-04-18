@@ -15,6 +15,29 @@
 
 ---
 
+## Reading Order: State First, Declaration Second
+
+当你进入任何一个 Zeus 项目时，**不要先读 `task.json`**。遵循以下阅读顺序：
+
+| 优先级 | 看什么 | 为什么 |
+|---|---|---|
+| **1st** | **运行时状态**（`state.db`、日志、`zeus_runner.py --status`） | 这是唯一真相。配置可能是过期的、被人改过的、从来没被加载过的 |
+| **2nd** | **实际代码**（API 路由、服务实现、TODO 注释） | 看真实逻辑，而不是文档里写的"应该做什么" |
+| **3rd** | **静态配置/文档**（`task.json`、README、spec） | 只有当需要理解"设计意图"时才看，而且看完要验证是否和实际一致 |
+
+**v3 具体做法**：
+```bash
+# 先看真相（state.db）
+python .zeus/v3/scripts/run.py --status
+
+# 如果返回 0 task → 系统从未启动过，需要初始化
+# 如果返回 task 数据 → 以 DB 为准，task.json 仅供参考
+```
+
+**关键区分**：`task.json` 是人类对系统"应该是什么样"的**声明**；`state.db` 才是系统"实际上是什么样"的**真相**。如果一个 Agent 连自己的数据库都不查，就像医生只听病人自述症状却不做检查一样。
+
+---
+
 ## Intent Mapping Table
 
 | 用户自然语言示例 | 识别意图 | 你的行动 |
