@@ -77,7 +77,7 @@ python .zeus/v2/scripts/zeus_server.py --port 8234 --project-dir .
 # http://localhost:8234/web
 ```
 
-Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档，直接在 AI 会话中引用即可（例如："请按照 skills/zeus-init.md 初始化本项目"）。
+Zeus 的 `.zeus/v1/skills/` 目录中存放了每个工作环节的 markdown 指令文档（v1 归档），直接在 AI 会话中引用即可（例如："请按照 .zeus/v1/skills/zeus-init.md 初始化本项目"）。
 
 更多映射关系参见 [docs/open-agent-mapping.md](docs/open-agent-mapping.md)。
 
@@ -102,6 +102,9 @@ Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档
 - **Metrics 与可观测性** — 瓶颈检测、阻塞链分析、OpenTelemetry 链路追踪
 - **热重载** — `serve` 模式下自动监听 `task.json` 变更并重新导入，无需重启服务
 - **Docker 与 K8s 就绪** — 支持 `api` / `scheduler` / `worker` 多容器拆分，Redis 队列后端
+- **Wave 级别过滤** — `run.py --wave N` 和 `zeus_runner.py --wave N` 仅执行指定 wave 的任务
+- **工作区性能优化** — `node_modules`、`.pytest_cache`、`venv` 等大目录不再被复制到隔离工作区，prepare 耗时从数秒降至毫秒级
+- **高并发规划模板** — `.zeus/v3/templates/high-concurrency-task-plan.json` 提供最大化 Worker 并行的 DAG 参考（每波 ≥2 个独立任务）
 
 详见 [`.zeus/v3/README.md`](.zeus/v3/README.md)。
 
@@ -114,6 +117,7 @@ Zeus 的 `skills/` 目录中存放了每个工作环节的 markdown 指令文档
 | M-010 — 全局调度器与 Agent 协作 | ✅ 已完成 | T-030 ~ T-034 |
 | v3 Phase 1 — 基础架构与队列 worker | ✅ 已完成 | T-V3-001 ~ T-V3-003 |
 | v3 Phase 2 — 实时控制台与控制平面 | ✅ 已完成 | T-V3-015、T-V3-018、T-V3-019、T-V3-021、T-V3-026 |
+| v3 Phase 3 — 性能优化与规划模板 | ✅ 已完成 | T-V3-034 ~ T-V3-036 |
 
 ## 工作流
 
@@ -167,7 +171,16 @@ init → discover → brainstorm → plan → execute → feedback → evolve
       android.test.json   ← AI 自动生成，不要手动编辑
       chrome.test.json
       ios.test.json
+  v1/                    ← v1 时代归档
+    skills/              ← skill 手册（已从根目录移入）
+    scripts/             ← 工具脚本
+    docs/
+    logs/
   v2/ ... vN/
+  v3/
+    templates/           ← 高并发任务规划模板
+    scripts/
+    web/
   schemas/
     config.schema.json
     codebase-map.schema.json
@@ -186,10 +199,6 @@ init → discover → brainstorm → plan → execute → feedback → evolve
   hooks/
     commit-msg
     commit-msg.ps1
-
-.claude/
-  skills/zeus-*/SKILL.md
-  agents/*.md
 
 assets/
   zeus-workflow.en.svg

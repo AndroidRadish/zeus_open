@@ -86,9 +86,9 @@ To enable true unattended execution, configure the subagent dispatcher in `.zeus
 }
 ```
 
-See `skills/zeus-execute-v2.md` for full dispatcher options (`kimi`, `claude`, `mock`).
+See `.zeus/v1/skills/zeus-execute-v2.md` for full dispatcher options (`kimi`, `claude`, `mock`).
 
-The `skills/` folder contains markdown playbooks for each workflow stage. Reference them directly in your AI session (e.g. "Please follow skills/zeus-init.md to initialize this project").
+The `.zeus/v1/skills/` folder contains archived markdown playbooks for each workflow stage. Reference them directly in your AI session (e.g. "Please follow .zeus/v1/skills/zeus-init.md to initialize this project").
 
 See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specific agent mappings.
 
@@ -113,6 +113,9 @@ See [docs/open-agent-mapping.md](docs/open-agent-mapping.md) for platform-specif
 - **Metrics & Observability** — bottleneck detection, blocked chain analysis, and OpenTelemetry tracing
 - **Hot Reload** — runtime `task.json` re-import without server restart
 - **Docker & K8s Ready** — split `api` / `scheduler` / `worker` containers with Redis queue backend
+- **Wave-level Filtering** — `run.py --wave N` and `zeus_runner.py --wave N` to execute only tasks in a specific wave
+- **Workspace Performance** — heavy directories (`node_modules`, `.pytest_cache`, `venv`, etc.) are now excluded from workspace copytree, cutting prepare time from seconds to milliseconds
+- **High-concurrency Planning Templates** — `.zeus/v3/templates/high-concurrency-task-plan.json` provides a reference DAG for maximizing worker parallelism (≥2 independent tasks per wave)
 
 See [`.zeus/v3/README.md`](.zeus/v3/README.md) for the v3 quick-start guide.
 
@@ -125,6 +128,7 @@ See [`.zeus/v3/README.md`](.zeus/v3/README.md) for the v3 quick-start guide.
 | M-010 — Global Orchestrator & Agent Collaboration | ✅ Completed | T-030 ~ T-034 |
 | v3 Phase 1 — Foundation & Queue-Worker | ✅ Completed | T-V3-001 ~ T-V3-003 |
 | v3 Phase 2 — Real-time Dashboard & Control Plane | ✅ Completed | T-V3-015, T-V3-018, T-V3-019, T-V3-021, T-V3-026 |
+| v3 Phase 3 — Performance & Planning | ✅ Completed | T-V3-034 ~ T-V3-036 |
 
 ## Workflow
 
@@ -178,7 +182,16 @@ init → discover → brainstorm → plan → execute → feedback → evolve
       android.test.json   ← AI-generated, do not edit manually
       chrome.test.json
       ios.test.json
+  v1/                    ← archived v1-era artifacts
+    skills/              ← skill playbooks (moved from root)
+    scripts/             ← utility scripts
+    docs/
+    logs/
   v2/ ... vN/
+  v3/
+    templates/           ← high-concurrency task planning templates
+    scripts/
+    web/
   schemas/
     config.schema.json
     codebase-map.schema.json
@@ -197,10 +210,6 @@ init → discover → brainstorm → plan → execute → feedback → evolve
   hooks/
     commit-msg
     commit-msg.ps1
-
-.claude/
-  skills/zeus-*/SKILL.md
-  agents/*.md
 
 assets/
   zeus-workflow.en.svg
